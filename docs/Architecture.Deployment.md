@@ -1,17 +1,23 @@
 # BigFatFile Architecture: Deployment
 
-Status: design, not yet implemented.
-
-How the server, the replica, the desktop client and the CLI are packaged, installed
+How the Origin, the Replica, the desktop client and the CLI are packaged, installed
 and updated on each platform. Referenced from `Architecture.md`.
 
 ## 1. Rules for every artifact
 
 - One release tag builds every artifact below: images, installers, packages, CLI
   binaries and the package-manager manifests. All carry the same version number, and
-  each client reports its version to the server so the admin UI can show outdated
+  each client reports its version to the Origin so the admin UI can show outdated
   clients.
 - Every .NET artifact is self-contained: no runtime to install on the target machine.
+- Origin and Replica containers use BBR congestion control
+  (`Architecture.Transfer.md`, section 3):
+    - the compose files set `sysctls: net.ipv4.tcp_congestion_control: bbr` on the
+      Origin and Replica services; the setting is per container network, so the host
+      keeps its own;
+    - the host must have the `tcp_bbr` kernel module loaded; the docs give the one
+      command, and the Origin logs a warning at startup when it runs on another
+      algorithm.
 
 ## 2. Server
 
@@ -26,19 +32,19 @@ and updated on each platform. Referenced from `Architecture.md`.
     - carry an SBOM; signed with cosign through GitHub's OIDC; OCI labels point at the
       source and licence.
 - Reference deployment, one `docker-compose.yml` with a `.env.example`:
-    - the server plus a pinned PostgreSQL; a `local` default warehouse on a named volume;
+    - the Origin plus a pinned PostgreSQL; a `local` default warehouse on a named volume;
     - profiles add optional targets (`garage`, `minio`, extra volumes for more local
       targets) and a `proxy` profile (Caddy with automatic TLS);
     - each target a profile starts is referenced from the warehouse file inside the BFF
       container by service name or mounted path;
     - override files cover the cluster and development cases;
-    - migration, backup and restore are commands of the server image.
+    - migration, backup and restore are commands of the Origin image.
 - Other hosts:
     - one-click templates for Unraid Community Applications, TrueNAS SCALE, CasaOS,
       Portainer and Coolify, all wrapping the same compose file;
     - bare-metal Linux without Docker: a self-contained tarball plus a systemd unit, with
       PostgreSQL installed by the operator; documented, not recommended;
-    - Windows Server is not a target for the server.
+    - Windows Server is not a target for the Origin.
 - Upgrade:
     - `docker compose pull && docker compose up -d`; migrations run at startup;
     - a minor release never needs manual steps; breaking changes wait for a major and are
@@ -64,13 +70,13 @@ and updated on each platform. Referenced from `Architecture.md`.
 
 - Primary: Docker Compose, one container, one volume for the mirror.
 - Pairing:
-    - an administrator creates the replica in the web UI and receives a one-time pairing
+    - an administrator creates the Replica in the web UI and receives a one-time pairing
       code;
     - `bff-replica pair <code>` (or the same value in the container's environment)
-      fetches the origin address, the tenant and the key pair; nothing else to configure.
+      fetches the Origin address, the tenant and the key pair; nothing else to configure.
 - Hosts:
     - NAS: the NAS's container UI with the compose file, or the same one-click templates
-      as the server;
+      as the Origin;
     - Linux box or mini PC: Docker, or `.deb` and `.rpm` packages with a systemd service;
     - Windows machine, for offices with no NAS: a self-contained Windows service
       installed by an MSI, also available through `winget`;
@@ -78,7 +84,7 @@ and updated on each platform. Referenced from `Architecture.md`.
 
 ## 4. NAS hosts
 
-- Server and replica both run on NAS units that have Docker, which is most units sold to
+- Origin and Replica both run on NAS units that have Docker, which is most units sold to
   small businesses:
     - Synology (DSM 7.2 and later, Container Manager, "Project" takes a Compose file);
     - QNAP (Container Station, x86 and newer ARM);
@@ -87,30 +93,30 @@ and updated on each platform. Referenced from `Architecture.md`.
     - TrueNAS SCALE 24.10 and later (Docker-based Apps; custom app from Compose);
     - OpenMediaVault (omv-extras with the Compose plugin).
 - Not supported: units without Docker (WD My Cloud, entry ARM models from Synology and
-  QNAP). Those offices use the Windows-service replica.
+  QNAP). Those offices use the Windows-service Replica.
 - What the images do for NAS hosts:
     - `linux/arm64` builds;
     - modest memory: the compose file sets PostgreSQL to `shared_buffers=128MB` and a
-      small `max_connections`; the replica stays well under 500 MB;
+      small `max_connections`; the Replica stays well under 500 MB;
     - `PUID` and `PGID` environment variables (or a `user:` override) so bind mounts owned
       by the NAS user work without permission errors;
-    - data on plain directories of the NAS pool: the `local` warehouse and the replica's
+    - data on plain directories of the NAS pool: the `local` warehouse and the Replica's
       mirror are bind mounts of a share;
-    - the replica's SQLite file must be on the NAS's own filesystem (Btrfs or ext4), never
+    - the Replica's SQLite file must be on the NAS's own filesystem (Btrfs or ext4), never
       on an SMB or NFS mount;
     - health check and restart policy, so the NAS UI shows the state and restarts after a
       power cut;
     - no privileged mode, no host networking; one published port each;
-    - the NAS's built-in reverse proxy with Let's Encrypt sits in front of the server's
+    - the NAS's built-in reverse proxy with Let's Encrypt sits in front of the Origin's
       port.
 
 ## 5. Desktop
 
-| Platform | Primary | Also | Updates |
-|---|---|---|---|
-| Windows | MSIX, signed, installed from the website through App Installer (`.appinstaller`) or `winget install BigFatFile` | Microsoft Store; Intune and Group Policy for managed fleets | App Installer checks the `.appinstaller` URL and updates in the background |
-| macOS | `.app` in a DMG, Developer ID signed and notarized, File Provider extension and the .NET agent inside | `brew install --cask bigfatfile`; Mac App Store later | Sparkle |
-| Linux | `.deb` and `.rpm` from one nfpm definition; installs `fuse3` and a systemd user service | AppImage or tarball; an apt and a dnf repository | package manager |
+| Platform | Primary                                                                                                         | Also                                                        | Updates                                                                    |
+| -------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Windows  | MSIX, signed, installed from the website through App Installer (`.appinstaller`) or `winget install BigFatFile` | Microsoft Store; Intune and Group Policy for managed fleets | App Installer checks the `.appinstaller` URL and updates in the background |
+| macOS    | `.app` in a DMG, Developer ID signed and notarized, File Provider extension and the .NET agent inside           | `brew install --cask bigfatfile`; Mac App Store later       | Sparkle                                                                    |
+| Linux    | `.deb` and `.rpm` from one nfpm definition; installs `fuse3` and a systemd user service                         | AppImage or tarball; an apt and a dnf repository            | package manager                                                            |
 
 - MSIX is required on Windows: sync root registration and the Explorer context menu need
   package identity, and it uninstalls cleanly.
@@ -120,12 +126,12 @@ and updated on each platform. Referenced from `Architecture.md`.
 
 ## 6. CLI
 
-| Platform | Install |
-|---|---|
-| Windows | `winget install BigFatFile.Cli`, `scoop install bff`, or the desktop package |
-| macOS | `brew install bigfatfile/tap/bff` |
-| Linux | the apt and dnf repositories, or a one-line install script that downloads the binary from GitHub Releases |
-| Any | `dotnet tool install -g bff` for people who have .NET; a single binary from GitHub Releases |
+| Platform | Install                                                                                                   |
+| -------- | --------------------------------------------------------------------------------------------------------- |
+| Windows  | `winget install BigFatFile.Cli`, `scoop install bff`, or the desktop package                              |
+| macOS    | `brew install bigfatfile/tap/bff`                                                                         |
+| Linux    | the apt and dnf repositories, or a one-line install script that downloads the binary from GitHub Releases |
+| Any      | `dotnet tool install -g bff` for people who have .NET; a single binary from GitHub Releases               |
 
 - Built with Native AOT where its dependencies allow it; otherwise self-contained and
   trimmed.

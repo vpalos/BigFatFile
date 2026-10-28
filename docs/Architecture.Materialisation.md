@@ -1,6 +1,4 @@
-# BigFatFile Architecture: Local Filesystems
-
-Status: design, not yet implemented.
+# BigFatFile Architecture: Materialisation
 
 How the desktop client shows a remote drive as a local folder on each operating system,
 how content is cached, and how changes travel in both directions. Referenced from
@@ -55,7 +53,7 @@ how content is cached, and how changes travel in both directions. Referenced fro
       history;
     - down-sync: applying the change feed to what is materialised locally;
     - content fetching: byte range to manifest chunks; fetch missing chunks from the
-      replica or origin (or presigned object storage); verify hashes; serve;
+      Replica or Origin (or presigned object storage); verify hashes; serve;
     - up-sync: wait until a changed file is closed and quiet; chunk it; compute the delta
       against the last known manifest; upload missing chunks; complete with `If-Match`;
     - conflict copies, ignore rules, bandwidth limits, pause and resume;
@@ -103,7 +101,7 @@ enum AdapterCapabilities
     - a remote create appears; opening a file hydrates the requested range; an edit
       uploads a delta; a remote rename lands; edits on both sides produce a conflict copy;
       the engine restarts and finishes pending work.
-- An in-memory adapter serves engine unit tests and is the base of the replica's adapter.
+- An in-memory adapter serves engine unit tests and is the base of the Replica's adapter.
 
 ## 4. Metadata: lazy everywhere
 
@@ -133,9 +131,8 @@ enum AdapterCapabilities
       times are unreliable);
     - pinned content and files with pending uploads are never evicted.
 - Reading:
-    - a read of range R on file F maps to the chunks covering R: chunks are 4 MiB at
-      fixed offsets, so the chunk index is arithmetic and F's manifest gives each
-      chunk's hash;
+    - a read of range R on file F maps to the chunks covering R by a binary search over
+      the cumulative chunk sizes in F's manifest;
     - present chunks are served from disk; missing ones are fetched, verified, stored,
       served;
     - sequential reads trigger read-ahead of the next chunks.
@@ -156,7 +153,7 @@ enum AdapterCapabilities
        (folders that must always be offline for that group): pinned and prefetched at
        low priority;
     2. the user's own pins from another device, if any;
-    3. the user's recent files from the server's access history, up to a budget (for
+    3. the user's recent files from the Origin's access history, up to a budget (for
        example the last 200 files or 2 GB);
     4. nothing else.
 - After that: siblings of files just opened, the next file in a sequence for media,
@@ -308,25 +305,25 @@ enum AdapterCapabilities
 
 ## 7. Side by side
 
-| | Windows | macOS | Linux |
-|---|---|---|---|
-| Model | materialised (Cloud Files API) | materialised (File Provider) | projection emulating materialisation (FUSE) |
-| Who owns the local copy | we do, on NTFS, with placeholders | the system | we do, in a cache directory |
-| On-demand content | yes, partial hydration | yes, dataless files | yes, chunk cache |
-| Renames and deletes detected by | filter callbacks | system calls us | FUSE operations |
-| Content writes detected by | not-in-sync state and USN journal | system calls us, already debounced | `release` after a quiet period |
-| Catch-up after being stopped | USN journal, else full scan | the system's queue | dirty directory and outbox |
-| Conflict copies made by | engine | system | engine |
-| Status shown to the user | Explorer icons and column | Finder icons | `bff status`, extended attributes |
-| Language | C# engine and adapter | Swift adapter over the C# engine | C# engine and adapter |
+|                                 | Windows                           | macOS                              | Linux                                       |
+| ------------------------------- | --------------------------------- | ---------------------------------- | ------------------------------------------- |
+| Model                           | materialised (Cloud Files API)    | materialised (File Provider)       | projection emulating materialisation (FUSE) |
+| Who owns the local copy         | we do, on NTFS, with placeholders | the system                         | we do, in a cache directory                 |
+| On-demand content               | yes, partial hydration            | yes, dataless files                | yes, chunk cache                            |
+| Renames and deletes detected by | filter callbacks                  | system calls us                    | FUSE operations                             |
+| Content writes detected by      | not-in-sync state and USN journal | system calls us, already debounced | `release` after a quiet period              |
+| Catch-up after being stopped    | USN journal, else full scan       | the system's queue                 | dirty directory and outbox                  |
+| Conflict copies made by         | engine                            | system                             | engine                                      |
+| Status shown to the user        | Explorer icons and column         | Finder icons                       | `bff status`, extended attributes           |
+| Language                        | C# engine and adapter             | Swift adapter over the C# engine   | C# engine and adapter                       |
 
 ## 8. Effort and order
 
-| | Prototype | Customer-ready | Main risk |
-|---|---|---|---|
-| Windows | 2 to 4 weeks | 2 to 3 months | thin documentation; behaviour discovered by testing |
-| Linux | 3 to 5 weeks | 6 to 8 weeks | filesystem semantics and write-back correctness |
-| macOS | 2 to 3 weeks with Swift experience | 1 to 2 months | toolchain, signing, opaque system behaviour |
+|         | Prototype                          | Customer-ready | Main risk                                           |
+| ------- | ---------------------------------- | -------------- | --------------------------------------------------- |
+| Windows | 2 to 4 weeks                       | 2 to 3 months  | thin documentation; behaviour discovered by testing |
+| Linux   | 3 to 5 weeks                       | 6 to 8 weeks   | filesystem semantics and write-back correctness     |
+| macOS   | 2 to 3 weeks with Swift experience | 1 to 2 months  | toolchain, signing, opaque system behaviour         |
 
 - Order:
     1. the engine with the in-memory adapter and the contract tests;
@@ -334,5 +331,5 @@ enum AdapterCapabilities
        the simplest setup;
     3. Windows, where the customers are;
     4. macOS when there is demand or a Swift developer.
-- The replica adapter takes about a week once the engine exists and can land at any
+- The Replica adapter takes about a week once the engine exists and can land at any
   point after it.

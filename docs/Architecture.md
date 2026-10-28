@@ -1,11 +1,12 @@
 # BigFatFile Architecture (v2)
 
-Status: design, not yet implemented.
-
 Companion documents:
 
-- `Architecture.Filesystems.md`: how the desktop client shows the remote drive as a
+- `Architecture.Materialisation.md`: how the desktop client shows the remote drive as a
   local folder on Windows, macOS and Linux; content caching; platform adapters.
+- `Architecture.Storage.md`: chunking and manifests, warehouses, garbage collection,
+  encryption.
+- `Architecture.Transfer.md`: upload sessions, downloads, sends, transport settings.
 - `Architecture.Deployment.md`: images, compose files, NAS hosts, installers, updates,
   signing.
 - `Architecture.Modules.md`: the open core and licensed modules line, how modules plug
@@ -26,16 +27,27 @@ Companion documents:
         - features that an org's IT, compliance or finance people ask for;
         - features needed to host BFF as a service for other parties.
 - One UI stack:
-    - the web app, the desktop app and the replica admin page are Svelte 5
+    - the web app, the desktop app and the Replica admin page are Svelte 5
       applications that share design, components and translations.
 
 ## 2. Components
 
 Project is a monorepo with sub-projects.
 
+Core topology: Origin Server <-> Replica Server <=> Clients.
+
+- Origin Server, "the Origin" from here on: the one authoritative copy of a tenant's
+  data. Runs in the cloud, on a dedicated instance, or self-hosted.
+- Replica Server, "the Replica" from here on: an optional full mirror on the office
+  network. Talks to the Origin upstream and serves Clients downstream at LAN speed,
+  online or offline.
+- Clients: the desktop app, the web app, the CLI and third-party apps. They talk to the
+  Replica when one is reachable, otherwise to the Origin; the protocol is the same
+  either way.
+
 ### 2.1 Applications
 
-#### **BigFatFile.Server** (.NET):
+#### **BigFatFile.Server** (.NET), aka the Origin Server:
 
 - The same image runs/serves:
     - the API, the web UI and the real-time hub;
@@ -67,7 +79,7 @@ Project is a monorepo with sub-projects.
     - Paraglide (i18n);
     - TanStack Query (server state), TanStack Virtual, TanStack HotKeys.
 - Authentication:
-    - the server is the identity provider for the whole system ([section 8](#8-authentication)).
+    - the Origin is the identity provider for the whole system ([section 8](#8-authentication)).
 
 #### **BigFatFile.Desktop** (.NET):
 
@@ -75,7 +87,7 @@ Project is a monorepo with sub-projects.
     - shows the whole remote drive immediately, however large;
     - fetches file content on first open into a managed local cache (LRU);
 - Uses materialisation model (avoid filesystem drivers where possible):
-    - real folder entries that are hollow until opened (`Architecture.Filesystems.md`).
+    - real folder entries that are hollow until opened ([Architecture.Materialisation.md](Architecture.Materialisation.md)).
 - Platforms:
     - Linux: FUSE with a local write-back cache.
     - Windows: Cloud Files API (similar to OneDrive), Windows 10 1903+, NTFS, packaged as MSIX;
@@ -94,15 +106,15 @@ Project is a monorepo with sub-projects.
 - Native per platform:
     - tray icon and menu, notifications, auto-start, Explorer context-menu actions.
 
-#### **BigFatFile.Replica** (.NET):
+#### **BigFatFile.Replica** (.NET), aka the Replica Server:
 
 - Server app acting as:
     - full mirror of its tenant;
     - the on-prem backup;
 - Runs in an office on the local network (NAS, mini PC, Windows service):
-    - LAN clients use it instead of the origin;
-    - it answers at LAN speed and forwards writes to the origin in the background;
-    - keeps working offline and reconciles with the origin when the link returns ([section 6](#6-real-time-sync));
+    - LAN clients use it instead of the Origin;
+    - it answers at LAN speed and forwards writes to the Origin in the background;
+    - keeps working offline and reconciles with the Origin when the link returns ([section 6](#6-real-time-sync));
 - Local state:
     - SQLite (not PostgreSQL);
     - chunks in a `local` warehouse;
@@ -118,9 +130,9 @@ Project is a monorepo with sub-projects.
 ### 2.2 Libraries
 
 - **BigFatFile.Contracts**:
-    - everything the server and every client must agree on exactly:
+    - everything the Origin, the Replica and every client must agree on exactly:
         - request and response types, error codes, real-time message types;
-        - the chunk size, the hash function and the manifest format;
+        - the chunker and its parameters, the hash function and the manifest format;
         - ID generation, name normalisation, path limits, the conflict-copy naming rule.
     - no dependencies beyond the base classes;
     - covered by test vectors (JSON fixtures) that the TypeScript implementation also runs.
@@ -138,7 +150,7 @@ Project is a monorepo with sub-projects.
     - the transfer engine: chunk, dedup check, parallel upload with resume, verified
       download, presigned direct-to-storage when offered, bandwidth limits, retries;
     - real-time subscription with reconnect; change-feed paging;
-    - endpoint discovery and failover between origin and replica.
+    - endpoint discovery and failover between Origin and Replica.
 - **BigFatFile.Sync**:
     - local state, journal, reconciliation, conflict policy, cache and prefetch policy,
       delta detection, the local API;
@@ -150,13 +162,13 @@ Project is a monorepo with sub-projects.
 ### 2.3 Web workspace (`web/`)
 
 - Web-dedicated workspace:
-    - ui codes: web app, desktop app UI, replica admin UI;
+    - ui codes: web app, desktop app UI, Replica admin UI;
     - common code: design-system tokens, shadcn-svelte components, Paraglide message catalogues etc.;
 - Packages:
     - `@bigfatfile/client`:
         - types generated from the OpenAPI spec;
         - the upload engine ported from `Client`;
-        - the hash function compiled into WebAssembly.
+        - the chunker and the hash function compiled into WebAssembly.
     - `@bigfatfile/ui`:
         - reusable UI components: file browser, uploader, sharing configurator etc.
 
@@ -219,13 +231,13 @@ BigFatFile.Sync
 ### 3.2 File versioning
 
 - Every node has an integer `version` that increases on each change.
-- Every write carries the version the client last saw (`If-Match`); the server rejects
+- Every write carries the version the client last saw (`If-Match`); the Origin rejects
   the write if the version moved on.
 - This detects every conflict case:
     - two web users;
-    - a desktop client against the server;
-    - two clients through one replica;
-    - a replica sync-ing against the origin.
+    - a desktop client against the Origin;
+    - two clients through one Replica;
+    - a Replica sync-ing against the Origin.
 
 ### 3.3 Change log
 
@@ -257,211 +269,91 @@ BigFatFile.Sync
 
 ## 4. Content storage
 
-### 4.1 Chunks and manifests
-
-- Drive files are stored as chunks;
-- Plain sends (transfers) are stored as whole objects ([section 5](#5-transfer-protocol)).
-- A chunk is a fixed-size block of the file at a fixed offset:
-    - 4 MiB, the last chunk is usually shorter;
-    - identified by the BLAKE3 hash of its bytes;
-    - stored once per tenant within a warehouse, however many files or versions of that
-      tenant reference it.
-- Deduplication is scoped to the tenant, never across tenants:
-    - cross-tenant sharing would let anyone test whether a given file exists somewhere
-      in the system by asking "do you already have this chunk?";
-    - it would also make "your data is deleted" untrue while another tenant still
-      references a chunk.
-- A file version is a manifest: the ordered list of chunk hashes and sizes, the total
-  size, and the hash of the whole file.
-
-```json
-{
-    "size": 104857600,
-    "checksum": "blake3:…",
-    "chunks": [
-        { "hash": "blake3:…", "size": 4194304 },
-        { "hash": "blake3:…", "size": 2097152 }
-    ]
-}
-```
-
-- Fixed offsets capture the delta for in-place edits (databases, mail stores, design
-  files, VM images), which is the common case for large working files:
-    - a save uploads only the chunks whose bytes changed;
-    - inserting bytes in the middle of a file shifts every later chunk; content-defined
-      chunking (FastCDC) handles that case and can be added later per file type, since
-      the manifest already allows variable sizes.
-- The manifest has two copies:
-    - database: the working copy; used for range-to-chunk mapping, the missing-chunks
-      check, garbage collection, version history and the `If-Match` check;
-    - warehouse (`manifests/<tenant>/<id>`): the recovery copy, written once at commit
-      and never read in normal operation; carries tenant, node ID, version, size,
-      timestamps and the path at commit time; read only by `bff export`, disaster
-      recovery and integrity audits.
-- A daily job writes a tree snapshot per tenant into the warehouse
-  (`snapshots/<tenant>/<date>.json`), so manifests plus the latest snapshot rebuild
-  names, folders and contents without the database.
-- Commit order: chunks, then the warehouse manifest, then the database transaction. The
-  database never references what the warehouse lacks. The database is authoritative
-  when the two disagree, except in recovery mode.
-- What chunking gives: upload of only the changed parts, instant upload of a file the
-  tenant already has, resumable and parallel transfers, integrity checks per chunk,
-  cheap versioning (a version costs only its new chunks), and a replica that moves only
-  changed chunks.
-
-### 4.2 Warehouses
-
-- A warehouse is a named storage target: an ID, a type and the settings for that type.
-- Types in the open core:
-    - `local`: a directory;
-    - `s3`: endpoint, bucket, region, credentials, whether presigned URLs may be issued;
-      works with Cloudflare R2, Backblaze B2, Wasabi, Garage, RustFS, MinIO.
-- Two sources, merged by `IWarehouseRegistry`:
-    - server configuration, owned by the operator (open core):
-        - a default warehouse is mandatory (`BFF_DEFAULT_WAREHOUSE` names it); more are
-          optional;
-        - definitions live in a mounted file (`/config/warehouses.json`); credentials are
-          referenced from environment variables or Docker secrets, never written in the
-          file;
-    - the database, defined by tenant administrators in the web UI, credentials
-      encrypted at rest (licensed module `storage.tenant-warehouses`); this is how a
-      tenant brings its own bucket.
-- Every tenant has a `warehouse_id`; new tenants get the default unless an administrator
-  assigns another.
-- Chunk identity is `(warehouse_id, tenant_id, hash)`: deduplication, the missing-chunks
-  check and garbage collection run within one tenant of one warehouse.
-- Moving a tenant between warehouses is a job: copy the referenced chunks, switch the
-  tenant, let garbage collection clean the old location.
-- Startup checks:
-    - probe every configured warehouse (write and read a test object);
-    - verify every warehouse referenced by a tenant exists;
-    - either failure stops the server.
-- Cluster mode requires every warehouse to be shared storage (S3 or a shared
-  filesystem); a `local` warehouse on one node's disk fails the check.
-- `local` implementation:
-    - `chunks/<tenant>/ab/cd/<hash>` with two levels of fan-out; `objects/<tenant>/<id>`
-      for sends; `manifests/` and `snapshots/` as in section 4.1;
-    - write to a temporary file in the same directory, fsync, rename into place;
-    - any local filesystem works; network filesystems work too (nothing locks).
-- `s3` implementation:
-    - the AWS SDK with a configurable endpoint;
-    - presigned URLs let browsers and clients move bytes directly to and from storage.
-
-### 4.3 Garbage collection
-
-- A chunk is garbage when no retained version of the tenant references it.
-- Mark and sweep per tenant: list every referenced hash, list the tenant's chunks,
-  delete what is stored but not referenced.
-- A pruned version's warehouse manifest is deleted the same way; an expired send's
-  object is deleted when the send expires.
-- Two safeguards for chunks in flight:
-    - an upload session pins its chunks until it completes or expires;
-    - the sweep never deletes a chunk written less than 24 hours ago.
-- Runs as a recurring Hangfire job.
-
-### 4.4 Encryption
-
-- Client-side (end-to-end) encryption is not part of v2.
-- It would remove deduplication within a tenant, server-side malware scanning, and the
-  replica's ability to serve plain files on the LAN.
-- It stays a research item; the chunk model does not prevent adding it later for
-  specific drives.
+- Drive files are stored in chunks:
+    - content-defined chunks (FastCDC, 1 to 8 MiB, 4 MiB average);
+    - identified by their BLAKE3 hash;
+    - reused within a tenant, never across tenants.
+- A file version is a manifest:
+    - the ordered chunk list, total size and whole-file hash;
+    - kept in the database and, as a recovery copy, in the warehouse.
+- Chunks and send objects live in warehouses:
+    - named storage targets of type `local` or `s3`;
+    - defined by the operator in configuration or per tenant (licensed module).
+- See [Architecture.Storage.md](Architecture.Storage.md) for details.
 
 ## 5. Transfer protocol
 
-### 5.1 Drive files
-
-- Uploads use an upload session shaped like S3 multipart:
-    1. `POST /uploads` with the manifest; the server returns the chunks the tenant does
-       not have and, on S3 warehouses, a presigned URL for each.
-    2. The client uploads the missing chunks in parallel, one request each, to the server
-       (`PUT /uploads/{id}/chunks/{hash}`) or directly to storage; the server verifies
-       each chunk's hash on receipt.
-    3. `POST /uploads/{id}/complete` attaches the manifest to the node, with `If-Match` on
-       the node's version.
-- Resume is automatic: a restarted client repeats step 1 and is told what is still
-  missing. Sessions expire after a configurable time.
-- Downloads by our own clients (desktop, CLI, replica) assemble on the client:
-    - `GET /nodes/{id}/manifest` returns the manifest and, on S3 warehouses, a presigned
-      URL per chunk with a short expiry;
-    - the client fetches the chunks it lacks in parallel (from the replica, the origin or
-      storage), verifies each hash, and writes them at their offsets;
-    - the server moves no bytes on S3 warehouses; corruption is caught per chunk; resume
-      is per chunk.
-- Downloads in the browser:
-    - the web app assembles in the browser where a streaming download is possible
-      (service worker, or the File System Access API), and otherwise falls back to the
-      server;
-    - previews and playback (PDF, video) always go through the server:
-      `GET /nodes/{id}/content` with range support, the server maps the range to chunks
-      and streams only what is requested.
-- Share links to drive files are served by the server (or the replica on the LAN) as a
-  streamed, assembled file; multi-file links as a streamed zip.
-- The web uploader slices the file at 4 MiB and hashes with BLAKE3 in WebAssembly; the
-  desktop client does the same natively.
-
-### 5.2 Sends
-
-- A send (a transfer to recipients outside the system) is stored as whole-file objects,
-  not chunks:
-    - a send is immutable, has no versions and needs no delta;
-    - its traffic is mostly downloads by external recipients on any browser or phone,
-      which must be a plain download.
-- Upload: presigned multipart straight to storage on S3 warehouses (`PUT` to the server
-  on `local` warehouses); resume through the multipart part list.
-- Download: a presigned URL straight from storage on S3 warehouses; the server touches no
-  bytes. On `local` warehouses the server streams the object. Multi-file sends download
-  as a streamed zip.
-- Expiry deletes the objects.
-
-### 5.3 Transport
-
-- HTTP/3 is enabled on the server and the reverse proxy; no custom transport.
+- Drive files upload through an upload session:
+    - manifest first;
+    - then (only) the missing chunks in parallel;
+    - then complete session with `If-Match` check;
+    - our own clients assemble downloads themselves from chunks.
+- Sends are whole objects:
+    - uploaded and downloaded straight to and from storage with presigned URLs.
+- Throughput:
+    - relies on parallel TCP connections, not the protocol or the chunk size;
+    - Origins and Replicas use BBR congestion control.
+- See [Architecture.Transfer.md](Architecture.Transfer.md) for details.
 
 ## 6. Real-time sync
 
-### 6.1 Notification
+### 6.1 Notifications
 
-- The change log is the truth; the push channel only says that something changed.
+- The change log is the authoritative truth;
 - Clients connect to a SignalR hub and receive `ChangesAvailable(tenantId, latestSeq)`;
-  the payload carries no data.
-- A client reads the log from its cursor when it receives that message, after a
-  reconnect, after waking from sleep, and on a timer.
-- Inside one server process, committed changes go on an in-process bus.
-- In cluster mode each node listens on a PostgreSQL `NOTIFY` channel, so a change
-  committed on one node reaches clients connected to another.
+    - the push channel only says that something changed;
+    - the payload carries no data.
+- A client reads the log from its cursor on certain events:
+    - when it receives that message;
+    - after a reconnect;
+    - after waking from sleep;
+    - on a timer.
+- Change storage/detection:
+    - For one server process, committed changes go on an in-process bus.
+    - In cluster mode each node listens on a PostgreSQL `NOTIFY` channel, so changes
+      committed on one node reaches clients connected to another.
 
 ### 6.2 Desktop client loop
 
-1. Read the change log from the stored cursor until empty; apply entries that touch
-   directories the client has materialised; discard the rest; persist the cursor after
-   each page.
-2. Connect to the hub; on each notification, repeat step 1 (debounced).
-3. Receive local changes from the platform adapter; wait until a changed file is closed
-   and quiet; chunk it; upload only the missing chunks; complete with `If-Match`; mark
-   the file in sync.
+1. Sync changes from Origin or Replica:
+    - read the change log from the stored cursor until empty;
+    - apply entries that touch directories the client has materialised;
+    - discard all other entries (not affecting client);
+    - persist the cursor after each page.
+2. Listen for available changes:
+    - connect to the SignalR hub;
+    - on each change notification, repeat step 1 (debounced).
+3. Sync local changes:
+    - receive local changes from the platform adapter;
+    - wait until a changed file is closed and quiet;
+    - chunk the file;
+    - upload only the missing chunks;
+    - complete upload with `If-Match` over the manifest;
+    - mark the file as being "in sync".
 
 - Lazy metadata, content caching and eviction, change detection per platform and the
-  first-sign-in prefetch are in `Architecture.Filesystems.md`.
+  first-sign-in prefetch are in `Architecture.Materialisation.md`.
 
 ### 6.3 Conflicts
 
 - No merges and no silent overwrites.
 - A write rejected because the version moved on becomes a conflict copy:
     - named `<name> (conflict copy, <device>).<ext>`, next to the original;
-    - both appear everywhere; the user resolves afterwards from Explorer or the web UI.
-- A remote delete of a file with unsynced local edits keeps the local file as a conflict
-  copy.
+    - both appear everywhere;
+    - the user resolves afterwards from Explorer or the web UI.
+- A remote delete of a file with un-synced local edits keeps the local file as a
+  conflict copy.
 - Edits by the same client are recognised by the actor's client ID and are not conflicts.
-- Later feature: "someone else is editing this file" notices over the same hub.
+- Later feature:
+    - "someone else is editing this file" notifications sent over the same SignalR hub.
 
 ## 7. Replica
 
 - Registration:
-    - a tenant administrator registers the replica at the origin; it receives a key pair;
-    - the origin publishes the replica's LAN address and public key to the tenant's
+    - a tenant administrator registers the Replica at the Origin; it receives a key pair;
+    - the Origin publishes the Replica's LAN address and public key to the tenant's
       clients;
-    - clients prefer the replica when reachable and fall back to the origin;
+    - clients prefer the Replica when reachable and fall back to the Origin;
     - switching endpoints triggers a version-based reconcile of the client's tree, not a
       cursor replay, because the two servers have different sequence spaces.
 - Full mirror and active backup:
@@ -472,32 +364,32 @@ BigFatFile.Sync
     - applies the whole change feed without filtering; fetches missing chunks in the
       background, prioritising chunks LAN clients ask for;
     - a verification job compares every manifest against the chunks on disk, re-fetches
-      anything missing, and reports status to the origin ("replica complete as of
+      anything missing, and reports status to the Origin ("Replica complete as of
       <time>" in the web UI).
 - Backup semantics:
-    - version retention is configured independently of the origin's plan and may be
+    - version retention is configured independently of the Origin's plan and may be
       longer;
-    - restores run from the replica's admin page: a folder to a point in time, or a
+    - restores run from the Replica's admin page: a folder to a point in time, or a
       single version;
     - a restore is a metadata operation plus local reads, because manifests are
       immutable and chunks are content-addressed.
 - Online:
     - reads are served from the mirror; a chunk not yet mirrored is fetched from the
-      origin on demand;
+      Origin on demand;
     - writes are accepted at LAN speed, acknowledged, and queued in a durable journal (outbox).
 - Offline:
     - reads and writes continue; LAN clients keep receiving change events;
-    - all LAN writes pass through one replica, so the LAN side has one linear history and
+    - all LAN writes pass through one Replica, so the LAN side has one linear history and
       conflicts between two LAN users are detected immediately.
 - Reconnect:
-    - pull the origin's changes since the stored cursor and emit them as local events;
+    - pull the Origin's changes since the stored cursor and emit them as local events;
     - replay the journal in order, each operation carrying its base version;
     - on a rejected write, upload the LAN version as a conflict copy and keep the
-      origin's version as primary;
+      Origin's version as primary;
     - chunks are uploaded before the manifest that references them, so a half-uploaded
       file is never visible.
 - Authentication on the LAN:
-    - tokens are issued by the origin; the replica verifies them offline with the origin's
+    - tokens are issued by the Origin; the Replica verifies them offline with the Origin's
       public signing key and enforces permissions from its local copy;
     - LAN tokens get a longer grace period so an outage does not sign everyone out.
 
@@ -507,7 +399,7 @@ BigFatFile.Sync
 - Accounts:
     - email and password with verification; external providers (Google, Microsoft,
       GitHub) through standard OAuth;
-    - the operator can point the server at one OpenID Connect provider (Keycloak,
+    - the operator can point the Origin at one OpenID Connect provider (Keycloak,
       Authentik, Entra ID);
     - per-tenant identity providers, SAML, SCIM, group sync and LDAP are licensed modules
       behind `IAuthProvider` (`Architecture.Modules.md`).
@@ -521,14 +413,14 @@ BigFatFile.Sync
     - MailKit for email.
 - Flows:
     - web UI: session cookie, same origin, no tokens in the browser;
-    - desktop, replica, CLI: authorization code with PKCE through the system browser and a
+    - desktop, Replica, CLI: authorization code with PKCE through the system browser and a
       loopback redirect, or device code for headless installs;
     - refresh tokens live in the platform's secure store (DPAPI, keychain, protected file).
 - Tokens:
     - JWTs signed with an asymmetric key (ES256); public keys published at the JWKS
       endpoint;
-    - this is what lets the replica verify tokens offline; symmetric signing is not used.
-- On first sign-in the server finds or creates the user, links the external account, and
+    - this is what lets the Replica verify tokens offline; symmetric signing is not used.
+- On first sign-in the Origin finds or creates the user, links the external account, and
   provisions tenant membership from invitations or the tenant's domain rules.
 - Data Protection keys (cookies, anti-forgery) are stored in the database so every node
   and container restart shares them.
@@ -549,13 +441,19 @@ BigFatFile.Sync
     - every tenant-owned table carries `tenant_id`; every query filters on it;
     - an isolation test suite calls every endpoint with another tenant's identifiers and
       expects a 404.
-- Row-level security (second layer): - one policy per tenant-owned table: `tenant_id = current_setting('app.tenant_id',
-true)::uuid`; - request handling opens a transaction and runs `SET LOCAL app.tenant_id = '<id>'`
-  first; the setting dies with the transaction, so a pooled connection never carries
-  a tenant into the next request; - the application connects as a role that does not own the tables (owners bypass
-  RLS); - cross-tenant work (garbage collection, billing, administration) runs under a
-  separate role with `BYPASSRLS`; - predicates stay this simple so the planner keeps using the `(tenant_id, …)`
-  indexes.
+- Row-level security (second layer):
+    - one policy per tenant-owned table:
+        - `tenant_id = current_setting('app.tenant_id', true)::uuid`
+    - request handling opens a transaction and first runs:
+        - `SET LOCAL app.tenant_id = '<id>'`
+    - the setting ends with the transaction, so a pooled connection never carries a
+      tenant into the next request;
+    - the application connects as a role that does not own the tables, because table
+      owners bypass row-level security;
+    - cross-tenant work (garbage collection, billing, administration) runs under a
+      separate role with `BYPASSRLS`;
+    - predicates stay this simple so the planner keeps using the `(tenant_id, …)`
+      indexes.
 - Permissions:
     - rules on nodes grant a role (viewer, editor, owner) to a user or a group;
     - the effective permission is the nearest rule walking up the tree;
@@ -578,12 +476,11 @@ true)::uuid`; - request handling opens a transaction and runs `SET LOCAL app.ten
 
 ## 11. Deployment
 
-- Server and replica are deployed with Docker Compose; the desktop client and the CLI
-  through each platform's installer or package manager.
-- One release tag builds every artifact with one version number; every .NET artifact is
-  self-contained.
-- Images, compose files, NAS hosts, installers, updates and signing are in
-  `Architecture.Deployment.md`.
+- Origin and Replica: with Docker Compose;
+- The Desktop and CLI: platform's installer or package manager.
+- One release tag builds every artifact with one version number;
+    - every .NET artifact is self-contained.
+- See [Architecture.Deployment.md](Architecture.Deployment.md) for details.
 
 ## 12. Open core and licensed modules
 
@@ -599,5 +496,5 @@ true)::uuid`; - request handling opens a transaction and runs `SET LOCAL app.ten
 - Project naming: `Desktop` for the application, `Client` for the SDK, `Replica` for the
   LAN server are the working names.
 - An online compose configurator (a form that generates `docker-compose.yml` and `.env`).
-- Numbers to confirm with a prototype: the 4 MiB chunk size, change-log retention
+- Numbers to confirm with a prototype: the chunker sizes (1, 4 and 8 MiB), change-log retention
   default, garbage-collection grace period.
