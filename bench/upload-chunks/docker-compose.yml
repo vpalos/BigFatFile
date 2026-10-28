@@ -1,0 +1,22 @@
+services:
+  server:
+    image: node:22-alpine
+    working_dir: /bench
+    volumes:
+      - .:/bench:ro
+    command: node server.mjs --delay ${DELAY_MS:-0}
+    ports:
+      - "8081:8081"
+      - "8082:8082"
+
+  # One-off runs: docker compose run --rm client [args]
+  client:
+    image: node:22-alpine
+    working_dir: /bench
+    volumes:
+      - .:/bench:ro
+    environment:
+      HOST: ${HOST:-server}
+    entrypoint: ["sh", "-c", "node matrix.mjs --host $$HOST \"$$@\"", "--"]
+    depends_on:
+      - server

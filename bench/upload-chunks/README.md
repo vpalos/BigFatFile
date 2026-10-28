@@ -2,7 +2,8 @@
 
 Measures upload throughput for a fixed amount of data split into chunks of a chosen
 size, sent over HTTP/1.1 or HTTP/2, with a chosen number of requests in flight.
-Plain Node, no dependencies, Node 20 or later.
+Plain Node, no dependencies. Runs in Docker with the official Node image, or directly
+with Node 20 or later.
 
 ## Files
 
@@ -13,38 +14,58 @@ Plain Node, no dependencies, Node 20 or later.
   `--concurrency <n>`, `--host`, `--port`. Prints one JSON line.
 - `matrix.mjs`: runs protocols x chunk sizes x concurrency levels and prints a table.
   `--chunks 4,64`, `--concurrency 1,8`, `--total 1024`, `--host`.
+- `docker-compose.yml`: a `server` service and a one-off `client` service, both from
+  `node:22-alpine` with this folder mounted. No build step.
 
-## Run
+## Run with Docker
 
-Same machine (loopback):
+Same machine, both sides in containers:
 
 ```sh
-node server.mjs
-node matrix.mjs
+docker compose up -d server
+docker compose run --rm client
+docker compose down
+```
+
+Arguments after `client` go to `matrix.mjs`:
+
+```sh
+docker compose run --rm client --chunks 4,16,64 --concurrency 1,4,8 --total 512
+```
+
+Simulated round trip (the server waits before each response):
+
+```sh
+DELAY_MS=30 docker compose up -d server
+docker compose run --rm client
 ```
 
 Two machines (the realistic case):
 
 ```sh
 # on the receiving machine
-node server.mjs
-# on the sending machine
-node matrix.mjs --host <receiver-ip>
+docker compose up -d server
+# on the sending machine (HOST is the receiver's IP; --no-deps skips the local server)
+HOST=192.168.1.20 docker compose run --rm --no-deps client
 ```
 
-Simulated round trip without a second machine:
+The server publishes ports 8081 and 8082 on the host, so the receiver must allow them
+through its firewall.
+
+## Run with Node directly
 
 ```sh
-node server.mjs --delay 30
-node matrix.mjs
+node server.mjs            # add --delay 30 to simulate a round trip
+node matrix.mjs            # add --host <ip> from a second machine
 ```
 
-On Linux, real latency and bandwidth limits can be added with `tc`:
+Real latency and bandwidth limits on Linux, applied on the sending host (works for the
+Docker case too, since containers share the host's network path):
 
 ```sh
-sudo tc qdisc add dev lo root netem delay 15ms rate 100mbit
+sudo tc qdisc add dev <interface> root netem delay 15ms rate 100mbit
 # ... run the matrix ...
-sudo tc qdisc del dev lo root
+sudo tc qdisc del dev <interface> root
 ```
 
 ## What to look at
@@ -57,7 +78,7 @@ sudo tc qdisc del dev lo root
   windows are large enough (the server and client set 16 MB stream windows and 64 MB
   connection windows; the Node defaults stall bulk uploads).
 
-Example from a container on loopback, 1 GB, `--delay 30`:
+Example on loopback, 1 GB, `--delay 30`:
 
 ```
 proto  chunk MB  in flight     MB/s
@@ -81,4 +102,8 @@ uplink of 10 to 100 Mbit/s the link, not the round trip, is the limit in every r
   (`maxSessionMemory`); the scripts raise it, or a few 4 MB chunks in flight are
   refused with `ENHANCE_YOUR_CALM`.
 - The 64 MB rows at 8 in flight hold 512 MB of request buffers in the client; that is
-  the memory cost of large chunks, not a quirk of the benchmark.
+  the memory cost of large chunks, not a quirk of the benchmark. Give the client
+  container enough memory for the sizes you test.
+- Loopback inside Docker Desktop (Windows, macOS) goes through a virtual machine and
+  is slower than native loopback; compare rows against each other, not against
+  numbers from another machine.
