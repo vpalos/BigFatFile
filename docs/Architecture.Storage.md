@@ -51,8 +51,10 @@ encryption. Referenced from `Architecture.md`.
   vectors check: a different cut means no deduplication between web and desktop
   uploads of the same file.
 - Performance:
-    - chunking runs only where files are produced (desktop, CLI, Replica, browser),
-      never on the Origin; it and hashing are one streaming pass over the file;
+    - chunking runs where files are produced (desktop, CLI, Replica, browser) through
+      the SDKs, and on the Origin, inline, for uploads through the file-level
+      endpoints (`Architecture.Transfer.md`); it and hashing are one streaming pass over the
+      file;
     - about 0.7 to 1 GB/s per core natively and 150 to 300 MB/s in WebAssembly,
       far above any uplink;
     - memory: one chunk per upload in flight must be buffered for hashing, so the 8 MiB

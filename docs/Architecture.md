@@ -2,15 +2,14 @@
 
 Companion documents:
 
-- `Architecture.Materialisation.md`: how the desktop client shows the remote drive as a
-  local folder on Windows, macOS and Linux; content caching; platform adapters.
-- `Architecture.Storage.md`: chunking and manifests, warehouses, garbage collection,
-  encryption.
+- `Architecture.Platform.md`: How BFF is used to build apps, SDKs, packages, conventions.
+- `Architecture.API.md`: the one public API: conventions, authentication, scopes, endpoints.
+- `Architecture.Modules.md`: how the open core and licensed modules plug in, the module list.
+- `Architecture.Storage.md`: content chunking, warehouses, garbage collection, encryption.
 - `Architecture.Transfer.md`: upload sessions, downloads, sends, transport settings.
-- `Architecture.Deployment.md`: images, compose files, NAS hosts, installers, updates,
-  signing.
-- `Architecture.Modules.md`: the open core and licensed modules line, how modules plug
-  in, the module list.
+- `Architecture.Materialisation.md`: how clients show remote drives as local folders.
+- `Architecture.Observability.md`: OTEL instrumentation; what we measure and where the data goes.
+- `Architecture.Deployment.md`: images, compose files, NAS hosts, installers, updates, signing.
 
 ## 1. Goals
 
@@ -29,21 +28,34 @@ Companion documents:
 - One UI stack:
     - the web app, the desktop app and the Replica admin page are Svelte 5
       applications that share design, components and translations.
+- A platform, not only a product:
+    - other applications are built on BFF through the same API and SDKs our own
+      clients use;
+    - our clients are the first third-party apps: they use only the public API
+      (`Architecture.Platform.md`).
 
 ## 2. Components
 
 Project is a monorepo with sub-projects.
 
-Core topology: Origin Server <-> Replica Server <=> Clients.
+Core topology: Origin Server <-> Replica Server <=> Apps (Clients).
 
-- Origin Server, "the Origin" from here on: the one authoritative copy of a tenant's
-  data. Runs in the cloud, on a dedicated instance, or self-hosted.
-- Replica Server, "the Replica" from here on: an optional full mirror on the office
-  network. Talks to the Origin upstream and serves Clients downstream at LAN speed,
-  online or offline.
-- Clients: the desktop app, the web app, the CLI and third-party apps. They talk to the
-  Replica when one is reachable, otherwise to the Origin; the protocol is the same
-  either way.
+- Origin Server, "the Origin" from here on:
+    - the one authoritative copy of a tenant's data.
+    - runs in the cloud, on a dedicated instance, or self-hosted.
+- Replica Server, "the Replica" from here on:
+    - an optional full mirror on the office network.
+    - talks to the Origin upstream and serves Clients downstream at LAN speed, online or offline.
+- Apps (aka "clients"):
+    - the desktop app, the web app, the CLI and any other third-party Apps.
+    - they talk to the Replica when one is reachable, otherwise to the Origin;
+    - the protocol is the same either way: the one public API, whose chunk-level
+      endpoints the SDKs use on their behalf (`Architecture.API.md`).
+- The Replica is itself an App:
+    - a first-party, chunk-level App with the tenant-wide mirror scope, released with
+      the Origin;
+    - it also serves the same API downstream to the office;
+    - there are no private APIs; the platform is the Origin alone.
 
 ### 2.1 Applications
 
@@ -269,30 +281,15 @@ BigFatFile.Sync
 
 ## 4. Content storage
 
-- Drive files are stored in chunks:
-    - content-defined chunks (FastCDC, 1 to 8 MiB, 4 MiB average);
-    - identified by their BLAKE3 hash;
-    - reused within a tenant, never across tenants.
-- A file version is a manifest:
-    - the ordered chunk list, total size and whole-file hash;
-    - kept in the database and, as a recovery copy, in the warehouse.
-- Chunks and send objects live in warehouses:
-    - named storage targets of type `local` or `s3`;
-    - defined by the operator in configuration or per tenant (licensed module).
+- Drive files are stored as content-defined chunks, deduplicated within a tenant,
+  described by manifests and kept in warehouses (`local` or `s3`).
 - See [Architecture.Storage.md](Architecture.Storage.md) for details.
 
 ## 5. Transfer protocol
 
-- Drive files upload through an upload session:
-    - manifest first;
-    - then (only) the missing chunks in parallel;
-    - then complete session with `If-Match` check;
-    - our own clients assemble downloads themselves from chunks.
-- Sends are whole objects:
-    - uploaded and downloaded straight to and from storage with presigned URLs.
-- Throughput:
-    - relies on parallel TCP connections, not the protocol or the chunk size;
-    - Origins and Replicas use BBR congestion control.
+- How bytes move through the file-level and the chunk-level endpoints, the tenant-wide
+  scope mirroring Apps use, how sends move, and why throughput depends on parallel TCP
+  connections.
 - See [Architecture.Transfer.md](Architecture.Transfer.md) for details.
 
 ## 6. Real-time sync
@@ -476,25 +473,30 @@ BigFatFile.Sync
 
 ## 11. Deployment
 
-- Origin and Replica: with Docker Compose;
-- The Desktop and CLI: platform's installer or package manager.
-- One release tag builds every artifact with one version number;
-    - every .NET artifact is self-contained.
+- How the Origin, the Replica, the desktop client and the CLI are packaged, installed
+  and updated on each platform, and how images are signed.
 - See [Architecture.Deployment.md](Architecture.Deployment.md) for details.
 
 ## 12. Open core and licensed modules
 
-- The open core (AGPL) is a complete product for a team.
-- Licensed modules add what an organisation's IT, compliance or finance people ask for,
-  and what is needed to host BFF as a service for other people.
-- A module is one assembly against Server.Abstractions, loaded from `/app/modules/` and
-  enabled by a licence key checked through `IFeatureGate`.
-- The line, the loading mechanism and the module list are in `Architecture.Modules.md`.
+- Where the line between the open core (AGPL) and the licensed modules is, how a module
+  plugs into the Origin, and the list of modules.
+- See [Architecture.Modules.md](Architecture.Modules.md) for details.
 
-## 13. Open items
+## 13. Observability
 
-- Project naming: `Desktop` for the application, `Client` for the SDK, `Replica` for the
-  LAN server are the working names.
-- An online compose configurator (a form that generates `docker-compose.yml` and `.env`).
-- Numbers to confirm with a prototype: the chunker sizes (1, 4 and 8 MiB), change-log retention
-  default, garbage-collection grace period.
+- How the Origin, the Replica and the clients report traces, metrics and logs with
+  OpenTelemetry, what BFF measures, and where the data goes.
+- See [Architecture.Observability.md](Architecture.Observability.md) for details.
+
+## 14. API
+
+- The one public API of the Origin, `/api/v1`: conventions, authentication, scopes and
+  the endpoint list; the chunk-level endpoints are part of it under an "advanced" tag.
+- See [Architecture.API.md](Architecture.API.md) for details.
+
+## 15. Platform
+
+- How other applications are built on BFF: Apps, the primitives they use, API
+  conventions, SDKs and UI packages, and the developer loop.
+- See [Architecture.Platform.md](Architecture.Platform.md) for details.

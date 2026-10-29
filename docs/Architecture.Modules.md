@@ -1,7 +1,9 @@
 # BigFatFile Architecture: Modules
 
 Where the line between the open core and the licensed modules is, how a module plugs
-into the Origin, and the list of modules. Referenced from `Architecture.md`.
+into the Origin, and the list of modules. Referenced from `Architecture.md`. Apps built
+on top of BFF through the API (the out-of-process side) are in
+`Architecture.Platform.md`.
 
 ## 1. The line
 
