@@ -56,7 +56,7 @@ the audit log.
 - The sequence number comes from a counter row on the tenant:
     - incremented inside the transaction, so sequence order == commit order;
     - a plain database sequence would not guarantee that.
-- Clients read it with `GET /changes?since=<seq>` (`Architecture.RealtimeSync.md`).
+- Clients read it with `GET /changes?since=<seq>` (`Architecture.ClientSynchronization.md`).
 - Retention is configurable (default 90 days):
     - a client with an older cursor does a full tree resync.
 

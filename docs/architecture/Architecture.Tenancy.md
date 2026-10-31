@@ -79,7 +79,7 @@ Apps authenticate.
     - Identity and OpenIddict are store-based and ship EF Core implementations;
     - one small EF Core `DbContext` holds only their tables and is used at runtime by
       those two libraries; all BigFatFile tables stay on Dapper;
-    - the SQL for those tables is generated once from EF and committed as Badgie
-      migrations; EF's own migrations never run;
+    - the SQL for those tables is generated once from EF and committed as ordinary
+      `core_` migration files; EF's own migrations never run;
     - row-level security does not apply to these tables; users are global and tenant
       membership is ours.

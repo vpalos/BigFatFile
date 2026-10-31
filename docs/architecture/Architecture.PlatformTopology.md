@@ -63,9 +63,10 @@ Licensed modules are (by exception) kept in a separate repository.
     - Dapper (minimalist ORM, uses explicit SQL);
         - I avoid hidden behaviors (like EF Core generators);
         - some system components still use EF Core internally (auth) and we keep them as they are;
-    - Badgie.Migrator:
-        - runs schema migrations at startup with an advisory lock so concurrent nodes
-          don't race.
+    - schema migrations:
+        - `core_<number>_<name>.sql` files embedded in the Server assembly;
+        - run at startup by `BigFatFile.Migrator`, under a PostgreSQL advisory lock so
+          concurrent nodes don't race.
 - Tenant isolation:
     - application-level scoping;
     - PostgreSQL row-level security (`Architecture.Tenancy.md`, section 2).
@@ -130,7 +131,7 @@ Licensed modules are (by exception) kept in a separate repository.
     - pull the Origin's changes since the stored cursor and emit them as local events;
     - replay the journal in order, each operation carrying its base version;
     - on a rejected write, upload the LAN version as a conflict copy and keep the
-      Origin's version as primary (`Architecture.RealtimeSync.md`, section 3);
+      Origin's version as primary (`Architecture.ClientSynchronization.md`, section 3);
     - chunks are uploaded before the manifest that references them, so a half-uploaded
       file is never visible.
 - Authentication on the LAN:
@@ -213,7 +214,22 @@ Licensed modules are (by exception) kept in a separate repository.
 - **BigFatFile.Sync**:
     - local state, journal, reconciliation, conflict policy, cache and prefetch policy,
       delta detection, the local API;
-    - platform-neutral; used by Desktop, Replica and Cli.
+    - platform-neutral; used by Desktop, Replica and Cli;
+    - its SQLite schema is versioned as `sync_<number>_<name>.sql` files, run by
+      `BigFatFile.Migrator`.
+- **BigFatFile.Migrator**:
+    - our own schema migration runner, on Dapper over `DbConnection`, so it runs on
+      PostgreSQL (Origin) and SQLite (Replica, Desktop);
+    - finds `<prefix>_<number>_<name>.sql` files embedded in the assemblies it is given;
+      each prefix has its own number sequence (`core_`, `sync_`, `sso_`);
+    - records what ran in a `schema_migrations` table with a checksum per file, and
+      refuses to start if an applied file has changed since;
+    - applies pending files in order, each in its own transaction, under a lock:
+      `pg_advisory_lock` on PostgreSQL, `BEGIN IMMEDIATE` on SQLite;
+    - a file starting with `-- no-transaction` runs outside a transaction (for
+      `CREATE INDEX CONCURRENTLY` and the like);
+    - knows nothing about BFF tables; the SQL files live with the project that owns the
+      tables.
 - **Licensed modules** (private repository):
     - the modules listed in section 7, one project each;
     - compile against `Abstractions`;
@@ -240,6 +256,11 @@ BigFatFile.Sync
         +-- BigFatFile.Replica
         +-- BigFatFile.Cli
 
+BigFatFile.Migrator
+        ^
+        +-- BigFatFile.Server   (core_ files, PostgreSQL advisory lock)
+        +-- BigFatFile.Sync     (sync_ files, SQLite)
+
 api/openapi.json --> @bigfatfile/client --> @bigfatfile/ui --> apps/web,
                                                               desktop settings UI,
                                                               Replica admin UI
@@ -247,6 +268,8 @@ api/openapi.json --> @bigfatfile/client --> @bigfatfile/ui --> apps/web,
 
 - An arrow points from the dependency to what depends on it; `api/openapi.json` is
   generated from the Origin and is the source of the TypeScript types.
+- `BigFatFile.Migrator` is used by Server (PostgreSQL) and Sync (SQLite); modules only
+  embed their SQL files and do not reference it.
 - Domain rules (permissions, quotas, plans), database tables and anything that
   references ASP.NET or the database stay in Server and are never shared with clients.
 
@@ -359,8 +382,10 @@ Designed for Apps rather than discovered by them. Our own clients use these.
         - `MapEndpoints`: its endpoints under `/api/<module-prefix>/`;
     - migrations:
         - SQL files embedded in the assembly;
-        - versioned under the module's own prefix (for example `sso_0001`);
-        - run by Badgie at startup.
+        - versioned under the module's own prefix and number sequence (for example
+          `sso_0001_tenant_providers.sql`);
+        - run by `BigFatFile.Migrator` at startup, after the core's own files;
+        - may reference core tables, never another module's tables.
 - Modules own their DB tables and API endpoints;
 - Modules reach core data only through the core service (not directly);
 - Loading:

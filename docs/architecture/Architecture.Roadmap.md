@@ -32,7 +32,7 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 - The Origin skeleton:
     - PostgreSQL;
     - Dapper;
-    - Badgie migrations;
+    - `BigFatFile.Migrator` and the `core_` migration files;
     - Identity and OpenIddict;
     - Hangfire;
     - the module loader with no modules;
