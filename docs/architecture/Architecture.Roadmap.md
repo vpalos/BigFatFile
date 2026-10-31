@@ -18,6 +18,7 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 
 ### M0. Bootstrapping
 
+- Status: done.
 - The repository as in `Architecture.md` section 2:
     - CI building images;
     - packages;
@@ -53,18 +54,137 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 
 ### M1. Origin core
 
-- Data model (tree, versions, change log, audit), warehouses (`local`, `s3`), chunk
-  store and garbage collection.
-- File-level upload with inline chunking and offset resume; chunk-level sessions and
-  manifest downloads; sends as whole objects; file requests.
-- Change feed and the real-time hub; permissions, groups, shares.
-- The web app on `@bigfatfile/client`; the CLI on `BigFatFile.Client`.
-- ClamAV scanning built as an `IBffModule` compiled into the core, to prove the module
-  seam before a licensed module depends on it.
-- The `BigFatFile` activity source and meter in `Abstractions`; spans and metrics added as
-  each feature is built (upload sessions, downloads, garbage collection), not afterwards.
-- Done when: the web app and the CLI reach v1 feature parity using only the published
-  API and SDKs.
+- Seven parts, in order, each ending with its own check.
+- Every part brings, for what it builds:
+    - the endpoints, in the spec first;
+    - the SDK calls, in `@bigfatfile/client` and `BigFatFile.Client`;
+    - the web app screens, on `@bigfatfile/client`;
+    - the CLI commands, on `BigFatFile.Client`;
+    - the spans and metrics (`Architecture.Observability.md`, section 2), not
+      afterwards.
+- M1 is done when M1.7 is.
+
+#### M1.1. Accounts and tenants
+
+- Accounts:
+    - sign-up with email and password, email verification and password reset, through
+      MailKit;
+    - Google and Microsoft sign-in;
+    - the operator's one OpenID Connect provider.
+- Tenants:
+    - members, roles and invitations (`members.*` endpoints);
+    - the tenant a token is scoped to, chosen at sign-in;
+    - the one unlimited plan behind `IPlanPolicy`.
+- Tenant isolation:
+    - the application connects as a role that does not own the tables;
+    - row-level security on every tenant-owned table;
+    - the isolation test set.
+- The audit log, starting with sign-ins.
+- The web app skeleton: the Svelte 5 stack, sign-up, sign-in and the members page.
+- CSRF protection for writes made with the session cookie.
+- The reference deployment behind TLS:
+    - the `proxy` compose profile (Caddy);
+    - forwarded headers from the proxy;
+    - connection pool sizes that fit PostgreSQL's `max_connections`.
+- The `BigFatFile` activity source and meter in `Abstractions`.
+- Done when:
+    - an invited person signs up from the email and lands in the tenant;
+    - every endpoint, called with another tenant's IDs, answers 404;
+    - an Origin behind the `proxy` profile signs users in over HTTPS.
+
+#### M1.2. The file tree
+
+- Drives, each with its root and trash.
+- Nodes:
+    - create a folder, rename, move, trash and restore, with `If-Match`;
+    - cursor-paged listings, the path and lookup by path;
+    - `Idempotency-Key` on every create.
+- The change log, one row per tree change in the same transaction, and the tenant's
+  sequence counter.
+- The web app's folder browser.
+- Done when:
+    - a user builds and rearranges a folder tree in the web app;
+    - every change has its change-log row and its audit entry;
+    - a stale `If-Match` gets 412.
+
+#### M1.3. Files
+
+- Warehouses (`local`, `s3`) from the operator's file, behind `IWarehouseRegistry`, with
+  the startup probes.
+- The chunk store behind `IChunkStore`.
+- Manifests in the database and in the warehouse, in the commit order of
+  `Architecture.FileStorage.md`.
+- File-level upload with inline chunking and offset resume.
+- Downloads with `Range`, for previews and playback.
+- Versions: list and restore.
+- The first CLI commands: sign in (PKCE, device code), `ls`, upload and download.
+- Done when:
+    - a file uploaded from the web app and one from the CLI download byte for byte;
+    - an interrupted upload resumes from its offset;
+    - an earlier version is restored.
+
+#### M1.4. Chunk-level transfer
+
+- Upload sessions: the missing chunks, presigned URLs on S3, a hash check on every
+  chunk, completion with `If-Match`.
+- Manifest downloads with chunk grants.
+- `POST /transfer/chunks/exists`.
+- The chunker and hasher in WebAssembly, built from the reference crates, passing the
+  shared test vectors.
+- The transfer engines in both SDKs: parallel chunks over several connections, the
+  adaptive in-flight count, per-chunk retry and resume, delta against the last version.
+- The SDKs choose between file-level and chunk-level transfer.
+- Garbage collection: mark and sweep per tenant, session pins, the 24-hour rule.
+- Done when:
+    - a file the tenant already has uploads without sending a chunk, from the web app
+      and from the CLI;
+    - an edit to a large file uploads only its changed chunks;
+    - garbage collection deletes unreferenced chunks and keeps those of uploads in
+      progress.
+
+#### M1.5. Change feed
+
+- `GET /changes` from a cursor, for a tenant or a subtree.
+- Retention, and the full resync for a cursor older than it.
+- The real-time hub with `ChangesAvailable`, behind `IChangeNotifier`:
+    - the in-process bus on one node;
+    - PostgreSQL `NOTIFY` in cluster mode, with the two-node compose file in the
+      integration tests.
+- The SDK subscription.
+- Live updates in the web app.
+- Done when:
+    - a change made in one browser shows in another within a second, on one node and
+      across two;
+    - a client whose cursor is older than the retention period resyncs;
+    - the feed is the one the desktop client (M2) reads.
+
+#### M1.6. Sharing
+
+- Permission rules on nodes (viewer, editor, owner) and the effective permission.
+- Groups, behind `IGroupDirectory`.
+- Guest memberships.
+- Share links: password, expiry, the public endpoints, multi-file links as a streamed
+  zip.
+- Audit entries for permission changes, share-link visits and downloads.
+- Done when:
+    - a group with editor rights on a folder works in it, and nobody else sees it;
+    - an outsider opens a password-protected share link, and the visit is in the audit
+      log.
+
+#### M1.7. Sends, file requests and scanning
+
+- Sends as whole objects:
+    - presigned multipart upload on S3, `PUT` on `local`;
+    - passwords, expiry and the expiry job;
+    - the public download pages and the "report abuse" link.
+- File requests: password, expiry and required fields stored as metadata.
+- Notification emails.
+- ClamAV scanning built as an `IBffModule` compiled into the core, behind
+  `IMalwareScanner`, to prove the module seam before a licensed module depends on it.
+- Done when:
+    - every upload path is scanned;
+    - the web app and the CLI reach v1 feature parity using only the published API and
+      SDKs, except billing and abuse moderation, which are licensed modules (M5).
 
 ### M2. Desktop
 
