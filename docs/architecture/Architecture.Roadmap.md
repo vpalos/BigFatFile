@@ -29,16 +29,19 @@ Milestones for v2, in order, each with what it contains and when it counts as do
     - manifest format;
     - name normalisation;
     - the shared test vectors (started).
+- `BigFatFile.Migrator`:
+    - the `core_` migration files;
 - The Origin skeleton:
     - PostgreSQL;
     - Dapper;
-    - `BigFatFile.Migrator` and the `core_` migration files;
     - Identity and OpenIddict;
     - Hangfire;
     - the module loader with no modules;
     - the feature gate with reserved keys;
-    - built-in OpenTelemetry instrumentation, OTLP through environment variables, the
-      Prometheus endpoint and the Aspire dashboard in the development compose.
+    - OpenTelemetry instrumentation:
+        - OTLP via environment variables;
+        - Prometheus endpoint;
+        - Aspire dashboard in the development.
 - Commands:
     - `bff dev up` (start locally)
 - Endpoints:
