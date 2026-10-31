@@ -71,6 +71,15 @@ Apps authenticate.
     - JWTs signed with an asymmetric key (ES256); public keys published at the JWKS
       endpoint;
     - this is what lets the Replica verify tokens offline; symmetric signing is not used.
+    - access tokens are signed and not encrypted, for the same reason;
+    - authorization codes and refresh tokens, which only the Origin reads, are signed
+      and encrypted (AES);
+    - the signing key and the encryption key are created at first start and kept in the
+      `server_keys` table, so every node uses the same pair;
+        - they are stored unencrypted, like the Data Protection keys: whoever can read
+          the database can sign tokens.
+- The sign-in form at `/account/sign-in` is plain HTML served by the Origin, so the
+  authorization endpoint works without the web app.
 - On first sign-in the Origin finds or creates the user, links the external account, and
   provisions tenant membership from invitations or the tenant's domain rules.
 - Data Protection keys (cookies, anti-forgery) are stored in the database so every node
@@ -81,5 +90,9 @@ Apps authenticate.
       those two libraries; all BigFatFile tables stay on Dapper;
     - the SQL for those tables is generated once from EF and committed as ordinary
       `core_` migration files; EF's own migrations never run;
+        - the Server's `print-auth-schema` command prints what the current packages
+          expect;
+        - a test selects every column the EF model maps, so a package update that
+          changes the model fails until a new `core_` file follows it;
     - row-level security does not apply to these tables; users are global and tenant
       membership is ours.

@@ -36,6 +36,7 @@ sdk/        components used to build clients & Apps:
             @bigfatfile/client
             @bigfatfile/ui
             the shared design system
+            test-vectors (the JSON fixtures every implementation runs)
 
 api/        public API specification:
             openapi.json

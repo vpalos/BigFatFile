@@ -1,0 +1,282 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "BigFatFile API",
+    "description": "The one public API of a BigFatFile Origin.",
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/v1/meta": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "What a client needs to know about this server: versions, chunker parameters and enabled features.",
+        "operationId": "getMeta",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "tags": [
+          "tenant"
+        ],
+        "summary": "The signed-in user, their tenants and their role in each.",
+        "operationId": "getMe",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": [
+              "openid"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Me": {
+        "required": [
+          "id",
+          "email",
+          "tenants"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "tenants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeWithinTenant"
+            }
+          }
+        }
+      },
+      "Meta": {
+        "required": [
+          "apiVersion",
+          "serverVersion",
+          "chunker",
+          "nameKeyUnicodeVersion",
+          "features"
+        ],
+        "type": "object",
+        "properties": {
+          "apiVersion": {
+            "type": "string"
+          },
+          "serverVersion": {
+            "type": "string"
+          },
+          "chunker": {
+            "$ref": "#/components/schemas/MetaChunker"
+          },
+          "nameKeyUnicodeVersion": {
+            "type": "string"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "MetaChunker": {
+        "required": [
+          "algorithm",
+          "minSize",
+          "averageSize",
+          "maxSize",
+          "normalizationLevel"
+        ],
+        "type": "object",
+        "properties": {
+          "algorithm": {
+            "type": "string"
+          },
+          "minSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "averageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "normalizationLevel": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MeWithinTenant": {
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "oauth2": {
+        "type": "oauth2",
+        "description": "Tokens from this server's OpenID Connect endpoints. The web app on the same origin uses its session cookie instead.",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "/connect/token",
+            "scopes": {
+              "openid": "Sign in as a user.",
+              "profile": "The user's name.",
+              "email": "The user's email address.",
+              "offline_access": "Refresh tokens, to keep access after the access token expires.",
+              "files.read": "List folders, read file metadata, download files, read manifests and chunk grants.",
+              "files.write": "Create, upload, rename, move, trash and restore files; upload sessions.",
+              "shares.manage": "Create and revoke share links on nodes the App may read.",
+              "sends.manage": "Create sends.",
+              "requests.manage": "Create and manage file requests.",
+              "members.read": "List members and groups.",
+              "members.manage": "Invite and remove members, change roles, manage groups.",
+              "metadata.read": "Read the App's own metadata namespace.",
+              "metadata.write": "Write the App's own metadata namespace.",
+              "permissions.manage": "Change permission rules on nodes.",
+              "events.read": "The change feed and the real-time hub.",
+              "webhooks.manage": "Webhook subscriptions for the App.",
+              "apps.manage": "The developer role: create Apps, rotate keys, see deliveries and usage.",
+              "tenant.admin": "Tenant settings, warehouses, Replicas, audit and usage.",
+              "tenant.mirror": "Every chunk and the whole change feed of the tenant, for mirroring and backup Apps."
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "/connect/authorize",
+            "tokenUrl": "/connect/token",
+            "refreshUrl": "/connect/token",
+            "scopes": {
+              "openid": "Sign in as a user.",
+              "profile": "The user's name.",
+              "email": "The user's email address.",
+              "offline_access": "Refresh tokens, to keep access after the access token expires.",
+              "files.read": "List folders, read file metadata, download files, read manifests and chunk grants.",
+              "files.write": "Create, upload, rename, move, trash and restore files; upload sessions.",
+              "shares.manage": "Create and revoke share links on nodes the App may read.",
+              "sends.manage": "Create sends.",
+              "requests.manage": "Create and manage file requests.",
+              "members.read": "List members and groups.",
+              "members.manage": "Invite and remove members, change roles, manage groups.",
+              "metadata.read": "Read the App's own metadata namespace.",
+              "metadata.write": "Write the App's own metadata namespace.",
+              "permissions.manage": "Change permission rules on nodes.",
+              "events.read": "The change feed and the real-time hub.",
+              "webhooks.manage": "Webhook subscriptions for the App.",
+              "apps.manage": "The developer role: create Apps, rotate keys, see deliveries and usage.",
+              "tenant.admin": "Tenant settings, warehouses, Replicas, audit and usage.",
+              "tenant.mirror": "Every chunk and the whole change feed of the tenant, for mirroring and backup Apps."
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "meta"
+    },
+    {
+      "name": "tenant"
+    }
+  ]
+}

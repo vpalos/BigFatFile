@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="xunit.v3" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+        <PackageReference Include="Testcontainers.PostgreSql" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\BigFatFile.Server\BigFatFile.Server.csproj" />
+        <ProjectReference Include="..\BigFatFile.Server.Tests.SampleModule\BigFatFile.Server.Tests.SampleModule.csproj"
+                          ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit" />
+    </ItemGroup>
+
+    <!-- The module tests load the sample module from modules/sample/, as the Origin would. -->
+    <Target Name="CopySampleModule" AfterTargets="Build">
+        <ItemGroup>
+            <SampleModuleFiles Include="..\BigFatFile.Server.Tests.SampleModule\bin\$(Configuration)\$(TargetFramework)\*" />
+        </ItemGroup>
+        <Copy SourceFiles="@(SampleModuleFiles)" DestinationFolder="$(OutDir)modules\sample" SkipUnchangedFiles="true" />
+    </Target>
+</Project>

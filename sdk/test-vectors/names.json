@@ -1,0 +1,102 @@
+{
+  "description": "Expected name keys. The key is the name in NFC, folded with the Unicode 17.0 simple case folding (CaseFolding.txt, statuses C and S), then in NFC again.",
+  "unicodeVersion": "17.0.0",
+  "vectors": [
+    {
+      "name": "ascii",
+      "description": "ASCII letters fold to lowercase.",
+      "input": "Report.PDF",
+      "key": "report.pdf"
+    },
+    {
+      "name": "composed",
+      "description": "A precomposed letter.",
+      "input": "Caf\u00e9",
+      "key": "caf\u00e9"
+    },
+    {
+      "name": "decomposed",
+      "description": "A letter plus a combining accent composes to the same key as the precomposed form.",
+      "input": "CAFE\u0301",
+      "key": "caf\u00e9"
+    },
+    {
+      "name": "sharp-s",
+      "description": "Simple folding keeps the sharp s; it does not become 'ss'.",
+      "input": "Stra\u00dfe",
+      "key": "stra\u00dfe"
+    },
+    {
+      "name": "capital-sharp-s",
+      "description": "The capital sharp s folds to the small sharp s.",
+      "input": "STRA\u1e9eE",
+      "key": "stra\u00dfe"
+    },
+    {
+      "name": "greek-final-sigma",
+      "description": "The final sigma folds to the ordinary sigma.",
+      "input": "\u03a3\u03af\u03c3\u03c5\u03c6\u03bf\u03c2",
+      "key": "\u03c3\u03af\u03c3\u03c5\u03c6\u03bf\u03c3"
+    },
+    {
+      "name": "greek-capitals",
+      "description": "Capital Greek gives the same key as the mixed-case name above.",
+      "input": "\u03a3\u038a\u03a3\u03a5\u03a6\u039f\u03a3",
+      "key": "\u03c3\u03af\u03c3\u03c5\u03c6\u03bf\u03c3"
+    },
+    {
+      "name": "dotted-capital-i",
+      "description": "The dotted capital I has only Turkish and full foldings, so simple folding leaves it unchanged.",
+      "input": "\u0130stanbul",
+      "key": "\u0130stanbul"
+    },
+    {
+      "name": "kelvin-sign",
+      "description": "The Kelvin sign folds to a plain k.",
+      "input": "\u212a",
+      "key": "k"
+    },
+    {
+      "name": "angstrom-sign",
+      "description": "The Angstrom sign becomes A with ring in NFC, then folds to a with ring.",
+      "input": "\u212b",
+      "key": "\u00e5"
+    },
+    {
+      "name": "cherokee",
+      "description": "Cherokee small letters fold to the capital letters.",
+      "input": "\uab70\uab71",
+      "key": "\u13a0\u13a1"
+    },
+    {
+      "name": "supplementary-plane",
+      "description": "Deseret capitals outside the Basic Multilingual Plane fold to their small letters.",
+      "input": "\ud801\udc00\ud801\udc01",
+      "key": "\ud801\udc28\ud801\udc29"
+    },
+    {
+      "name": "emoji",
+      "description": "An emoji is left as it is.",
+      "input": "\ud83d\udcc1 Photos",
+      "key": "\ud83d\udcc1 photos"
+    },
+    {
+      "name": "fullwidth",
+      "description": "Fullwidth capitals fold to fullwidth small letters.",
+      "input": "\uff21\uff22\uff23",
+      "key": "\uff41\uff42\uff43"
+    },
+    {
+      "name": "hangul-jamo",
+      "description": "Decomposed Hangul jamo compose to one syllable.",
+      "input": "\u1112\u1161\u11ab",
+      "key": "\ud55c"
+    },
+    {
+      "name": "spaces-and-dots",
+      "description": "Spaces and dots are kept; name validation decides whether they are allowed.",
+      "input": " Notes . ",
+      "key": " notes . "
+    }
+  ]
+}

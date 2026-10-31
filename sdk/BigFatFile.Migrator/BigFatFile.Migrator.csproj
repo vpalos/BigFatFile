@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>BigFatFile.Migrator</RootNamespace>
+        <IsPackable>true</IsPackable>
+        <Description>Runs SQL schema migrations embedded in assemblies, on PostgreSQL or SQLite.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Dapper" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    </ItemGroup>
+</Project>

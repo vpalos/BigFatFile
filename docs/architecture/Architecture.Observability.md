@@ -24,6 +24,9 @@ measures about itself, and where the data goes.
     - ASP.NET Core: one span per request with route, status and duration; `/health`
       excluded;
     - Npgsql: one child span per SQL statement;
+        - only inside a recorded request or job span: queue polls, health probes and
+          the pool opening connections are not traced, because they would bury the
+          useful traces;
     - `HttpClient` and the AWS SDK: outgoing calls, including every S3 request;
     - Hangfire: one span per job run;
     - SignalR: connection and message counters;

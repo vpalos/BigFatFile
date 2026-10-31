@@ -50,6 +50,19 @@ encryption.
   Contracts. The C# and WebAssembly chunkers must cut identically, which the shared test
   vectors check: a different cut means no deduplication between web and desktop
   uploads of the same file.
+    - the definition is the `v2020` chunker of the Rust crate `fastcdc` 5.0.0:
+        - its GEAR table, no seed;
+        - normalisation level 1, which selects the 8 MiB mask below the average size
+          and the 2 MiB mask above it;
+    - the test vectors are generated with that crate, so the WebAssembly build of the
+      same crate matches by construction;
+    - on 64 MiB of random bytes the chunks average about 6 MiB, and 3 of the 11 stop at
+      the 8 MiB maximum; a chunk cut at the maximum ends at an offset, not at content.
+- Every manifest, whoever produced it, follows these rules:
+    - each chunk has 1 byte to 8 MiB;
+    - only the last chunk may be smaller than 1 MiB;
+    - the chunk sizes add up to the file size;
+    - an empty file has no chunks.
 - Performance:
     - chunking runs where files are produced (desktop, CLI, Replica, browser) through
       the SDKs, and on the Origin, inline, for uploads through the file-level

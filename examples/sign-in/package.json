@@ -1,0 +1,12 @@
+{
+  "name": "@bigfatfile/example-sign-in",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node sign-in.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bigfatfile/client": "workspace:*"
+  }
+}

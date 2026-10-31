@@ -17,7 +17,9 @@ and updated on each platform.
       keeps its own;
     - the host must have the `tcp_bbr` kernel module loaded; the docs give the one
       command, and the Origin Server logs a warning at startup when it runs on another
-      algorithm.
+      algorithm;
+    - the development override does not set it, because not every development host has
+      the module.
 
 ## 2. Server
 
@@ -62,6 +64,12 @@ and updated on each platform.
     - the same path migrates v1 data.
 - The server validates its configuration at startup and names the variable that is
   wrong.
+- Server environment variables:
+    - `BFF_DATABASE`: the PostgreSQL connection string; required;
+    - `BFF_MODULES_PATH`: the modules folder; default `/app/modules`;
+    - `BFF_DEV_SEED`: `true` creates the demo tenant, user and clients; refused unless
+      `ASPNETCORE_ENVIRONMENT` is `Development`;
+    - `OTEL_*`: the standard OpenTelemetry variables (`Architecture.Observability.md`).
 - The cloud and paying dedicated instances run the licensed image with a licence key;
   self-hosters run the public image. A dedicated client instance is the reference
   deployment on its own VPS.

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <!-- A module for the loader tests. It is built like a third-party module: against
+         Abstractions, which the Origin provides at run time. -->
+    <PropertyGroup>
+        <AssemblyName>sample</AssemblyName>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <ProjectReference Include="..\BigFatFile.Abstractions\BigFatFile.Abstractions.csproj">
+            <Private>false</Private>
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </ProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Migrations\*.sql" />
+    </ItemGroup>
+</Project>

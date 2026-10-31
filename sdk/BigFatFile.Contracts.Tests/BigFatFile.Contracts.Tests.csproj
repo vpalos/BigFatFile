@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="xunit.v3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\BigFatFile.Contracts\BigFatFile.Contracts.csproj" />
+        <!-- The vectors build their inputs with BLAKE3 extended output. -->
+        <PackageReference Include="Blake3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\test-vectors\*.json" Link="vectors\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit" />
+    </ItemGroup>
+</Project>

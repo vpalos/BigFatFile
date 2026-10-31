@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Commands for working on this repository. Needs Docker with the Compose plugin.
+#
+#   ./bff dev up      build and start the Origin, PostgreSQL and the Aspire dashboard
+#   ./bff dev down    stop them and keep the data
+#   ./bff dev reset   stop them and delete the data
+#   ./bff dev logs    follow the Origin's log
+
+set -euo pipefail
+cd "$(dirname "$0")"
+
+# The development database password; the reference deployment takes it from .env instead.
+export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-bigfatfile-dev}"
+
+compose() {
+    docker compose --file docker-compose.yml --file docker-compose.dev.yml "$@"
+}
+
+usage() {
+    sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+    exit 1
+}
+
+[[ "${1:-}" == "dev" ]] || usage
+
+case "${2:-}" in
+    up)
+        compose up --build --detach --wait
+        cat <<INFO
+
+The Origin is running.
+  Sign in        http://localhost:${BFF_PORT:-8080}/account/sign-in
+  API reference  http://localhost:${BFF_PORT:-8080}/api/docs
+  Job dashboard  http://localhost:${BFF_PORT:-8080}/admin/jobs
+  Telemetry      http://localhost:${BFF_ASPIRE_PORT:-18888}
+  PostgreSQL     localhost:${BFF_DB_PORT:-5432}, user bigfatfile, password ${POSTGRES_PASSWORD}
+
+Demo user: demo@bigfatfile.local / bigfatfile-demo
+INFO
+        ;;
+    down) compose down ;;
+    reset) compose down --volumes ;;
+    logs) compose logs --follow origin ;;
+    *) usage ;;
+esac

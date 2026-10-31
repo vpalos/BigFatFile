@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/sdk/">
+    <Project Path="sdk/BigFatFile.Contracts.Tests/BigFatFile.Contracts.Tests.csproj" />
+    <Project Path="sdk/BigFatFile.Contracts/BigFatFile.Contracts.csproj" />
+    <Project Path="sdk/BigFatFile.Migrator.Tests/BigFatFile.Migrator.Tests.csproj" />
+    <Project Path="sdk/BigFatFile.Migrator/BigFatFile.Migrator.csproj" />
+  </Folder>
+  <Folder Name="/server/">
+    <Project Path="server/BigFatFile.Abstractions/BigFatFile.Abstractions.csproj" />
+    <Project Path="server/BigFatFile.Server.Tests.SampleModule/BigFatFile.Server.Tests.SampleModule.csproj" />
+    <Project Path="server/BigFatFile.Server.Tests/BigFatFile.Server.Tests.csproj" />
+    <Project Path="server/BigFatFile.Server/BigFatFile.Server.csproj" />
+  </Folder>
+</Solution>

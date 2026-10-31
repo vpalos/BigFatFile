@@ -1,0 +1,38 @@
+# The reference deployment: the Origin and a pinned PostgreSQL.
+# Copy .env.example to .env and set POSTGRES_PASSWORD before the first start.
+
+name: bigfatfile
+
+services:
+  origin:
+    image: ghcr.io/vpalos/bigfatfile:${BFF_IMAGE_TAG:-edge}
+    restart: unless-stopped
+    environment:
+      BFF_DATABASE: Host=db;Database=bigfatfile;Username=bigfatfile;Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    ports:
+      - "${BFF_PORT:-8080}:8080"
+    # BBR needs the tcp_bbr kernel module on the host (Architecture.Deployment.md, section 1).
+    sysctls:
+      net.ipv4.tcp_congestion_control: bbr
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    command: ["postgres", "-c", "shared_buffers=128MB", "-c", "max_connections=50"]
+    environment:
+      POSTGRES_DB: bigfatfile
+      POSTGRES_USER: bigfatfile
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --username bigfatfile --dbname bigfatfile"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db:

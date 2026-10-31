@@ -18,6 +18,14 @@ the audit log.
       `manifest_id`, `size`, `deleted_at`.
 - `name_key`:
     - the name casefolded and Unicode-normalised (NFC);
+        - in order: NFC, then simple case folding, then NFC again;
+        - the folding table is Unicode 17.0 `CaseFolding.txt`, statuses C and S,
+          generated into Contracts and `@bigfatfile/client` by
+          `sdk/unicode/generate-case-folding.mjs`, so no platform's own casing rules
+          are involved;
+        - simple folding maps one character to one character: `ẞ` becomes `ß`, but `ß`
+          does not become `ss`, and the Turkish dotted `İ` stays as it is;
+        - a name with an unpaired surrogate has no key and is refused;
     - sibling names are unique on `name_key`, because Windows and macOS are
       case-insensitive and clients must detect collisions offline.
 - Limits:

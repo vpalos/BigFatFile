@@ -12,7 +12,12 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
   a prefix or a second specification.
 - The committed `openapi.json` is the contract:
     - designed and reviewed as a diff before a feature is implemented;
+        - every build of the Server writes `api/openapi.json` from the code, so an
+          endpoint stub is enough to produce the diff;
+        - CI fails when the committed file differs from what the build writes;
     - the source of the SDK types;
+        - the TypeScript types in `@bigfatfile/client` are generated from it, with the
+          same CI check;
     - served by every instance at `/api/docs` with "try it" against that instance.
 - Tags group the endpoints: `auth`, `tenant`, `drives`, `nodes`, `files`, `transfer`,
   `changes`, `permissions`, `shares`, `sends`, `requests`, `metadata`, `apps`,
@@ -184,8 +189,11 @@ permissions apply on top.
 - Meta (no scope):
     - `GET /meta`: API version, server version, chunker parameters, limits, enabled
       features;
-    - `GET /api/docs`, `GET /openapi.json`;
-    - `GET /health` (outside `/api/v1`).
+    - `GET /openapi.json`;
+    - `GET /api/docs` (outside `/api/v1`);
+    - `GET /health` (outside `/api/v1`): `status` (`healthy`, `degraded` or `unhealthy`)
+      and `timestamp`, in JSON; 503 when a check fails, with the failing check named
+      only in the log.
 
 ## 6. What the SDKs add on top
 

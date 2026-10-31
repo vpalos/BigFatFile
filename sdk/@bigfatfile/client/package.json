@@ -1,0 +1,32 @@
+{
+  "name": "@bigfatfile/client",
+  "version": "0.1.0",
+  "description": "The BigFatFile API client for browsers and Node: typed from the public OpenAPI specification.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "generate": "openapi-typescript ../../../api/openapi.json --output src/generated/api.ts",
+    "build": "tsc --project tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vpalos/BigFatFile",
+    "directory": "sdk/@bigfatfile/client"
+  }
+}

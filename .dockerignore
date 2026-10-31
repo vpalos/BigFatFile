@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+.git/
+.github/
+archive/
+artwork/
+bench/
+docs/
+examples/
+**/*.Tests/
+**/*.Tests.*/

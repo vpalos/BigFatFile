@@ -1,0 +1,97 @@
+# A tag such as v1.4.2 builds every artifact with that one version number: the signed
+# Origin image, the NuGet and npm packages, and the API specification attached to the
+# GitHub release. Publishing to NuGet and npm needs the NUGET_API_KEY and NPM_TOKEN
+# secrets; without them the packages are only attached to the release.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: version
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - run: dotnet build BigFatFile.slnx --configuration Release -p:Version=${{ steps.version.outputs.value }}
+      - run: git diff --exit-code -- api/openapi.json
+      - run: dotnet test --solution BigFatFile.slnx --configuration Release --no-build
+      - name: Pack the NuGet packages
+        run: |
+          for project in sdk/BigFatFile.Contracts sdk/BigFatFile.Migrator server/BigFatFile.Abstractions; do
+            dotnet pack "$project" --configuration Release --no-build --output artifacts -p:Version=${{ steps.version.outputs.value }}
+          done
+      - name: Publish to NuGet
+        if: env.NUGET_API_KEY != ''
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build && pnpm test
+      - name: Pack @bigfatfile/client
+        working-directory: sdk/@bigfatfile/client
+        run: |
+          pnpm version ${{ steps.version.outputs.value }} --no-git-tag-version
+          pnpm pack --pack-destination ../../../artifacts
+      - name: Publish to npm
+        if: env.NPM_TOKEN != ''
+        working-directory: sdk/@bigfatfile/client
+        run: pnpm publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/bigfatfile
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix=sha-
+      - id: image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: server/BigFatFile.Server/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: VERSION=${{ steps.version.outputs.value }}
+          sbom: true
+          provenance: mode=max
+      - uses: sigstore/cosign-installer@v4
+      - name: Sign the image (keyless, through GitHub's OIDC token)
+        run: cosign sign --yes "ghcr.io/${{ github.repository_owner }}/bigfatfile@${{ steps.image.outputs.digest }}"
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            api/openapi.json
+            artifacts/*

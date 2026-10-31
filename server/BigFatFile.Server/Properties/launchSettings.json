@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "Development": {
+      "commandName": "Project",
+      "applicationUrl": "http://localhost:5080",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "BFF_DATABASE": "Host=localhost;Port=5432;Database=bigfatfile;Username=bigfatfile;Password=bigfatfile-dev",
+        "BFF_DEV_SEED": "true",
+        "BFF_MODULES_PATH": "modules"
+      }
+    }
+  }
+}

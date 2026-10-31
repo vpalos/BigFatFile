@@ -1,0 +1,31 @@
+# The development override, used by `./bff dev up`: builds the Origin from this checkout,
+# seeds a demo tenant, user and clients, and adds the Aspire dashboard for traces, metrics
+# and logs.
+
+services:
+  origin:
+    image: bigfatfile:dev
+    build:
+      context: .
+      dockerfile: server/BigFatFile.Server/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      BFF_DEV_SEED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire:18889
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+    # Development needs no BBR, and not every development host has the module.
+    sysctls: !reset {}
+    depends_on:
+      aspire:
+        condition: service_started
+
+  db:
+    ports:
+      - "${BFF_DB_PORT:-5432}:5432"
+
+  aspire:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:13
+    environment:
+      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+    ports:
+      - "${BFF_ASPIRE_PORT:-18888}:18888"

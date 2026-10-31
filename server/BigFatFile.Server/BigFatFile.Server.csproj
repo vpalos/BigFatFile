@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <RootNamespace>BigFatFile.Server</RootNamespace>
+        <UserSecretsId>bigfatfile-server</UserSecretsId>
+
+        <!-- Writes api/openapi.json on every build; CI fails when the committed file differs. -->
+        <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
+        <OpenApiDocumentsDirectory>$(MSBuildThisFileDirectory)../../api</OpenApiDocumentsDirectory>
+        <OpenApiGenerateDocumentsOptions>--file-name openapi</OpenApiGenerateDocumentsOptions>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="BigFatFile.Server.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\BigFatFile.Abstractions\BigFatFile.Abstractions.csproj" />
+        <ProjectReference Include="..\..\sdk\BigFatFile.Contracts\BigFatFile.Contracts.csproj" />
+        <ProjectReference Include="..\..\sdk\BigFatFile.Migrator\BigFatFile.Migrator.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Dapper" />
+        <PackageReference Include="Npgsql" />
+
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+        <PackageReference Include="EFCore.NamingConventions" />
+        <PackageReference Include="OpenIddict.AspNetCore" />
+        <PackageReference Include="OpenIddict.EntityFrameworkCore" />
+
+        <PackageReference Include="Hangfire.AspNetCore" />
+        <PackageReference Include="Hangfire.Core" />
+        <PackageReference Include="Hangfire.PostgreSql" />
+
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+        <PackageReference Include="Microsoft.Extensions.ApiDescription.Server">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Scalar.AspNetCore" />
+
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+        <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Hangfire" />
+        <PackageReference Include="Npgsql.OpenTelemetry" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Database\Migrations\*.sql" />
+    </ItemGroup>
+</Project>

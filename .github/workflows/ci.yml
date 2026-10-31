@@ -1,0 +1,81 @@
+# Every push and pull request: build and test the .NET solution and the TypeScript
+# workspace, check that the committed spec and the types generated from it are current,
+# and build the Origin image. Pushes to main also publish the image as "edge".
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - run: dotnet restore BigFatFile.slnx
+      - name: Build (also writes api/openapi.json)
+        run: dotnet build BigFatFile.slnx --configuration Release --no-restore
+      - name: The committed spec matches the code
+        run: git diff --exit-code -- api/openapi.json
+      - name: Test (PostgreSQL runs in Testcontainers)
+        run: dotnet test --solution BigFatFile.slnx --configuration Release --no-build
+
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: The generated types match the committed spec
+        run: pnpm generate && git diff --exit-code -- sdk/@bigfatfile/client/src/generated
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  image:
+    needs: [dotnet, typescript]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      PUSH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        if: env.PUSH == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/bigfatfile
+          tags: |
+            type=edge,branch=main
+            type=sha,prefix=sha-
+      # The SDK stage cross-compiles, so the arm64 image builds without emulation.
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: server/BigFatFile.Server/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ env.PUSH == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: VERSION=0.0.0-edge.${{ github.run_number }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

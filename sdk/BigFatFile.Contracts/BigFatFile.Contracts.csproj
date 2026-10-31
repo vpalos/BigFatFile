@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>BigFatFile.Contracts</RootNamespace>
+        <IsPackable>true</IsPackable>
+        <Description>What the BigFatFile Origin, the Replica and every client must agree on exactly: the chunker, the hash, the manifest format and name normalisation.</Description>
+        <IsAotCompatible>true</IsAotCompatible>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Blake3" />
+    </ItemGroup>
+</Project>
