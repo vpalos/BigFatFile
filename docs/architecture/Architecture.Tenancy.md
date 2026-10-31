@@ -1,7 +1,7 @@
 # BigFatFile Architecture: Tenancy
 
 Tenants, how their data is kept apart, permissions inside a tenant, and how users and
-Apps authenticate. Referenced from `Architecture.md`.
+Apps authenticate.
 
 ## 1. Tenants
 

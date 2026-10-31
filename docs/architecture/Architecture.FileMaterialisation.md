@@ -1,8 +1,7 @@
-# BigFatFile Architecture: Materialisation
+# BigFatFile Architecture: File materialisation
 
 How the desktop client shows a remote drive as a local folder on each operating system,
-how content is cached, and how changes travel in both directions. Referenced from
-`Architecture.md`.
+how content is cached, and how changes travel in both directions.
 
 ## 1. Requirements
 

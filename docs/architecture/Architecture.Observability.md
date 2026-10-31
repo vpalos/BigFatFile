@@ -30,7 +30,7 @@ measures about itself, and where the data goes.
     - .NET runtime: GC, thread pool, exceptions;
     - logging: `ILogger` lines exported with trace and span IDs.
 - BFF's own signals come from one `ActivitySource("BigFatFile")` and one
-  `Meter("BigFatFile")`, both defined in Abstractions so licensed modules report
+  `Meter("BigFatFile")`, both defined in `Abstractions` so licensed modules report
   into the same stream.
 - Spans:
     - upload session: one parent span from create to complete, with chunk count, bytes

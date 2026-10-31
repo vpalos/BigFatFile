@@ -1,8 +1,7 @@
-# BigFatFile Architecture: Platform
+# BigFatFile Architecture: Platform topology
 
 The platform as a whole: the topology, the projects and the repository, how Apps and
-licensed modules plug in, the SDKs, and the developer experience. Referenced from
-`Architecture.md`.
+licensed modules plug in, the SDKs, and the developer experience.
 
 ## 1. Core topology
 
@@ -110,7 +109,7 @@ Licensed modules are (by exception) kept in a separate repository.
       background, prioritising chunks LAN clients ask for;
     - a verification job compares every manifest against the chunks on disk, re-fetches
       anything missing, and reports status to the Origin ("Replica complete as of
-      <time>" in the web UI).
+      `<time>`" in the web UI).
 - Backup semantics:
     - version retention is configured independently of the Origin's plan and may be
       longer;
@@ -217,7 +216,9 @@ Licensed modules are (by exception) kept in a separate repository.
     - platform-neutral; used by Desktop, Replica and Cli.
 - **Licensed modules** (private repository):
     - the modules listed in section 7, one project each;
-    - compile against Abstractions; loaded at startup; enabled by a licence key.
+    - compile against `Abstractions`;
+    - loaded at startup;
+    - enabled by a licence key.
 
 ### Dependency graph
 
@@ -333,7 +334,7 @@ Designed for Apps rather than discovered by them. Our own clients use these.
 ### Core vs. platform modules
 
 - Open core (AGPL):
-    - all projects in [section 2](#2-projects) except the licensed modules;
+    - all projects in [section 2](#_2-projects) except the licensed modules;
     - it is a complete product for a team, including:
         - cluster mode;
         - the PostgreSQL notifier;
@@ -351,7 +352,7 @@ Designed for Apps rather than discovered by them. Our own clients use these.
 
 ### How a module plugs in
 
-- A module is one assembly that compiles against Abstractions;
+- A module is one assembly that compiles against `Abstractions`;
     - implements `IBffModule`:
         - `Name`, `RequiredCoreVersion`;
         - `ConfigureServices`: registers its services and the core interfaces it implements;
@@ -364,7 +365,7 @@ Designed for Apps rather than discovered by them. Our own clients use these.
 - Modules reach core data only through the core service (not directly);
 - Loading:
     - at startup the Origin scans `/app/modules/` (mountable path);
-    - loads each assembly in its own `AssemblyLoadContext` with Abstractions shared;
+    - loads each assembly in its own `AssemblyLoadContext` with `Abstractions` shared;
     - checks `RequiredCoreVersion`;
     - calls `ConfigureServices`;
     - runs the module's DB migrations;
@@ -382,7 +383,7 @@ Designed for Apps rather than discovered by them. Our own clients use these.
     - the licensed web build includes the modules' UI packages from the private part of
       the workspace; pages appear only when the manifest enables them.
 - Versioning:
-    - Abstractions uses semantic versioning;
+    - `Abstractions` uses semantic versioning;
     - a module declares the core major version it targets;
     - the Origin refuses to load the module if versions don't match.
 
@@ -474,5 +475,5 @@ Platform (needed to host BFF as a service):
       embedding the file browser, a file-request portal.
 - For module authors (section 7):
     - `dotnet new bff-module`;
-    - contract tests against Abstractions;
+    - contract tests against `Abstractions`;
     - hot reload in the development loop.

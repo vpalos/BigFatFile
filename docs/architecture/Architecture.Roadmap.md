@@ -1,7 +1,6 @@
 # BigFatFile Architecture: Roadmap
 
 Milestones for v2, in order, each with what it contains and when it counts as done.
-Referenced from `Architecture.md`.
 
 ## 1. Principles
 
@@ -59,7 +58,7 @@ Referenced from `Architecture.md`.
 - The web app on `@bigfatfile/client`; the CLI on `BigFatFile.Client`.
 - ClamAV scanning built as an `IBffModule` compiled into the core, to prove the module
   seam before a licensed module depends on it.
-- The `BigFatFile` activity source and meter in Abstractions; spans and metrics added as
+- The `BigFatFile` activity source and meter in `Abstractions`; spans and metrics added as
   each feature is built (upload sessions, downloads, garbage collection), not afterwards.
 - Done when: the web app and the CLI reach v1 feature parity using only the published
   API and SDKs.

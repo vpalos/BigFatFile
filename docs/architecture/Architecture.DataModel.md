@@ -1,7 +1,7 @@
 # BigFatFile Architecture: Data model
 
 The tables that describe a tenant's files: the tree, file versions, the change log and
-the audit log. Referenced from `Architecture.md`.
+the audit log.
 
 ## 1. File tree
 

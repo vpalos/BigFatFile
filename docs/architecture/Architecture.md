@@ -67,32 +67,32 @@ docs/       architecture documents, developer docs
 - These live in a private repository, separately;
 - They compile against the `Abstractions` project from NuGet.
 
-## 3. Platform architecture
+## 3. Chapters
 
-- [Architecture.PlatformTopology.md](Architecture.PlatformTopology.md):
+- [Platform topology](Architecture.PlatformTopology.md):
     - the platform topology (Origin, Replica, Apps), the projects and their dependencies,
       jobs, SDKs, licensed modules and the developer experience.
-- [Architecture.API.md](Architecture.API.md):
+- [API](Architecture.API.md):
     - the one public API, `/api/v1`: conventions, authentication, scopes and the
       endpoint list; the chunk-level endpoints are part of it under an "advanced" tag.
-- [Architecture.DataModel.md](Architecture.DataModel.md):
+- [Data Model](Architecture.DataModel.md):
     - the file tree, file versioning, the change log and the audit log.
-- [Architecture.FileStorage.md](Architecture.FileStorage.md):
+- [File storage](Architecture.FileStorage.md):
     - how drive files are stored using CDC, in warehouses.
-- [Architecture.FileTransfer.md](Architecture.FileTransfer.md):
+- [File transfer](Architecture.FileTransfer.md):
     - how files are transferred through the API, the API scopes and throughput optimization.
-- [Architecture.FileMaterialisation.md](Architecture.FileMaterialisation.md):
+- [File materialisation](Architecture.FileMaterialisation.md):
     - how a desktop client shows the whole remote drive as a local folder with
       explorer (OS) integration, and how file changes are detected on each platform.
-- [Architecture.RealtimeSync.md](Architecture.RealtimeSync.md):
-    - how clients learn about changes, the desktop sync loop and conflict handling.
-- [Architecture.Tenancy.md](Architecture.Tenancy.md):
+- [Client synchronization](Architecture.ClientSynchronization.md):
+    - how clients learn about changes, the client sync loop and conflict handling.
+- [Tenancy](Architecture.Tenancy.md):
     - tenants, tenant isolation (scoping and row-level security), permissions and
       authentication.
-- [Architecture.Deployment.md](Architecture.Deployment.md):
+- [Deployment](Architecture.Deployment.md):
     - how the Origin, the Replica, the desktop client and the CLI are packaged, installed
       and updated on each platform, and how images are signed.
-- [Architecture.Observability.md](Architecture.Observability.md):
+- [Observability](Architecture.Observability.md):
     - traces, metrics and logs with OpenTelemetry; what BFF measures and where the data goes.
-- [Architecture.Roadmap.md](Architecture.Roadmap.md):
+- [Roadmap](Architecture.Roadmap.md):
     - milestones for v2 in order, with contents and definition of done.

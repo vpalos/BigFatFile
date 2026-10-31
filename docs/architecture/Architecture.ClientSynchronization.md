@@ -1,7 +1,7 @@
-# BigFatFile Architecture: Real-time sync
+# BigFatFile Architecture: Client synchronization
 
 How clients learn that something changed, how the desktop client keeps its local view
-in step with the server, and how conflicts are handled. Referenced from `Architecture.md`.
+in step with the server, and how conflicts are handled.
 
 ## 1. Notifications
 
