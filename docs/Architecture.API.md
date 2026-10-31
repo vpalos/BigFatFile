@@ -2,7 +2,6 @@
 
 The one public API of the Origin: conventions, authentication, scopes and endpoints.
 Everything our own Apps and the Replica use is here; there are no private endpoints.
-Referenced from `Architecture.md`.
 
 ## 1. One API
 

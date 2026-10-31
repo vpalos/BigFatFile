@@ -43,7 +43,7 @@ how content is cached, and how changes travel in both directions. Referenced fro
     - Projection suits read-mostly, never-edited data (a virtual view of a repository, an
       archive). That is not this product.
 - Linux has no materialisation API, so the Linux adapter is a FUSE projection that
-  emulates the model with a local cache (section 6.3).
+  emulates the model with a local cache (the Linux adapter in section 6).
 
 ## 3. One engine, several adapters
 
@@ -163,7 +163,7 @@ enum AdapterCapabilities
 
 ## 6. Platform adapters
 
-### 6.1 Windows: Cloud Files API
+### Windows: Cloud Files API
 
 - Support:
     - Windows 10 version 1709 and later; the client targets 1903 and later to use the
@@ -234,7 +234,7 @@ enum AdapterCapabilities
 - References: Microsoft's CloudMirror sample (C++) for the callback flow; Nextcloud's
   Windows virtual-files plugin as a complete open-source implementation.
 
-### 6.2 macOS: File Provider
+### macOS: File Provider
 
 - The system owns the local copy under `~/Library/CloudStorage/`:
     - shows it in Finder; keeps its own item database, pending-upload queue and sync
@@ -264,7 +264,7 @@ enum AdapterCapabilities
       system keeps the user's version as a conflict copy.
 - Distribution: Developer ID signing plus notarization; the App Store is not required.
 
-### 6.3 Linux: FUSE with a write-back cache
+### Linux: FUSE with a write-back cache
 
 - A FUSE filesystem (libfuse3, bound directly from .NET with unmanaged function
   pointers) that emulates the materialised model:
@@ -293,7 +293,7 @@ enum AdapterCapabilities
       manager badges on Linux.
 - Reference: rclone's VFS in full cache mode.
 
-### 6.4 Replica adapter
+### Replica adapter
 
 - No filesystem at all; reports `None` for capabilities.
 - Applies the whole change feed without filtering.
@@ -316,20 +316,3 @@ enum AdapterCapabilities
 | Conflict copies made by         | engine                            | system                             | engine                                      |
 | Status shown to the user        | Explorer icons and column         | Finder icons                       | `bff status`, extended attributes           |
 | Language                        | C# engine and adapter             | Swift adapter over the C# engine   | C# engine and adapter                       |
-
-## 8. Effort and order
-
-|         | Prototype                          | Customer-ready | Main risk                                           |
-| ------- | ---------------------------------- | -------------- | --------------------------------------------------- |
-| Windows | 2 to 4 weeks                       | 2 to 3 months  | thin documentation; behaviour discovered by testing |
-| Linux   | 3 to 5 weeks                       | 6 to 8 weeks   | filesystem semantics and write-back correctness     |
-| macOS   | 2 to 3 weeks with Swift experience | 1 to 2 months  | toolchain, signing, opaque system behaviour         |
-
-- Order:
-    1. the engine with the in-memory adapter and the contract tests;
-    2. the Linux adapter: it exercises the whole engine on the development machine with
-       the simplest setup;
-    3. Windows, where the customers are;
-    4. macOS when there is demand or a Swift developer.
-- The Replica adapter takes about a week once the engine exists and can land at any
-  point after it.

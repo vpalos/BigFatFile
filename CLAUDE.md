@@ -47,6 +47,25 @@
   `bff-ops/docs/research/`, never in `architecture/`. No override notes, no amendment parentheticals, no decision
   archaeology. Dates appear only as operational data (baselines, cutoffs, last-run
   records). Small declined ideas stay in chat; ROADMAP records big decisions.
+- **Documentation**:
+    - **Merge, don't restate.** A subject is described in one place. When a subject
+      already has a summary somewhere (the Replica entry under Projects, the Jobs bullet
+      under the Origin), new detail goes there and replaces the summary. Never add a
+      second section elsewhere that says the same thing shorter. A reference to the one
+      place is a link, not a recap.
+    - **One idea per bullet.** A bullet that lists several things ("a, b, c and d") or
+      joins two clauses with a semicolon becomes a parent bullet with one sub-bullet per
+      item. The structure of the thing is the structure of the list: an attribute and
+      its values become a bullet and its sub-bullets.
+    - **Section titles are plain nouns.** "Repository structure", "Binaries",
+      "Bootstrapping". Not "Layout", "Executables", "Foundations", and no verbs or
+      sentences in a title.
+    - **Top-level sections are numbered; subheadings are not.** `## 2. Projects` then
+      `### Binaries`. Subheadings move too often for numbers to stay right. A reference
+      names the file and the section number, or the subheading by name.
+    - **First person is fine for a decision the founder made.** "I avoid hidden
+      behaviours (like EF Core generators)" states who decided and that it is a choice,
+      which an impersonal sentence hides.
 - **Settings keys are coupled to the deployed bundle**: remove a key only after the
   code reading it is gone from production (rolling deploys run old bundles briefly).
   A missing settings section crashes the app at boot.

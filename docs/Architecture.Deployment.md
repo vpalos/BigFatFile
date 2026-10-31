@@ -1,7 +1,7 @@
 # BigFatFile Architecture: Deployment
 
 How the Origin Server, the Replica Server, the desktop client and the CLI are packaged, installed
-and updated on each platform. Referenced from `Architecture.md`.
+and updated on each platform.
 
 ## 1. Rules for every artifact
 
@@ -11,7 +11,7 @@ and updated on each platform. Referenced from `Architecture.md`.
   clients.
 - Every .NET artifact is self-contained: no runtime to install on the target machine.
 - Origin Server and Replica Server containers use BBR congestion control
-  (`Architecture.Transfer.md`, section 5):
+  (`Architecture.FileTransfer.md`, section 5):
     - the compose files set `sysctls: net.ipv4.tcp_congestion_control: bbr` on the
       Origin Server and Replica Server services; the setting is per container network, so the host
       keeps its own;

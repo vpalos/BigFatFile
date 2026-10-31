@@ -1,7 +1,7 @@
 # BigFatFile Architecture: Observability
 
 How the Origin, the Replica and the clients report traces, metrics and logs, what BFF
-measures about itself, and where the data goes. Referenced from `Architecture.md`.
+measures about itself, and where the data goes.
 
 ## 1. Briefing
 
@@ -30,7 +30,7 @@ measures about itself, and where the data goes. Referenced from `Architecture.md
     - .NET runtime: GC, thread pool, exceptions;
     - logging: `ILogger` lines exported with trace and span IDs.
 - BFF's own signals come from one `ActivitySource("BigFatFile")` and one
-  `Meter("BigFatFile")`, both defined in Server.Abstractions so licensed modules report
+  `Meter("BigFatFile")`, both defined in Abstractions so licensed modules report
   into the same stream.
 - Spans:
     - upload session: one parent span from create to complete, with chunk count, bytes
@@ -115,13 +115,3 @@ measures about itself, and where the data goes. Referenced from `Architecture.md
     - Hangfire failed jobs;
     - `/health` failing.
 - Alerts live in the backend, not in the app.
-
-## 8. Order
-
-1. Built-in instrumentation, OTLP through environment variables, the Prometheus
-   endpoint and the Aspire dashboard in the development compose. About a day.
-2. The `BigFatFile` source and meter in Server.Abstractions; spans and metrics added as
-   each feature is built (upload sessions, downloads, garbage collection, Replica
-   reconcile), not afterwards. About a week in total.
-3. The `observability` compose profile and the alert list.
-4. Desktop local diagnostics and the opt-in switch, when the desktop client exists.

@@ -1,11 +1,11 @@
 # BigFatFile Architecture: Content Storage
 
 How file content is stored: chunking and manifests, warehouses, garbage collection,
-encryption. Referenced from `Architecture.md`.
+encryption.
 
 ## 1. Chunking and manifests
 
-- Plain sends (transfers) are stored as whole objects (`Architecture.Transfer.md`).
+- Plain sends (transfers) are stored as whole objects (`Architecture.FileTransfer.md`).
 - Drive files are stored in chunks:
     - a chunk is a variable-size piece of the file;
     - chunks are isolated (cut) by content-defined chunking (FastCDC);
@@ -53,7 +53,7 @@ encryption. Referenced from `Architecture.md`.
 - Performance:
     - chunking runs where files are produced (desktop, CLI, Replica, browser) through
       the SDKs, and on the Origin, inline, for uploads through the file-level
-      endpoints (`Architecture.Transfer.md`); it and hashing are one streaming pass over the
+      endpoints (`Architecture.FileTransfer.md`); it and hashing are one streaming pass over the
       file;
     - about 0.7 to 1 GB/s per core natively and 150 to 300 MB/s in WebAssembly,
       far above any uplink;

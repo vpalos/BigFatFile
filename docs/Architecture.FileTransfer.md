@@ -3,7 +3,7 @@
 How bytes move between Apps, the Origin and storage: the file-level endpoints, the
 chunk-level endpoints, the tenant-wide scope that mirroring Apps such as the Replica
 use, sends, and the transport layer. All of it is one API (`Architecture.API.md`); there
-are no private endpoints. Referenced from `Architecture.md`.
+are no private endpoints.
 
 ## 1. File-level transfer (`files` tag)
 
