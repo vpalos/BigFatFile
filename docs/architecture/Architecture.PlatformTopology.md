@@ -499,7 +499,7 @@ Platform (needed to host BFF as a service):
     - few minutes from clone to first upload;
     - `./bff` is a script at the repository root and needs only Docker;
     - command starts (via a compose file):
-        - an Origin with PostgreSQL, built from the checkout;
+        - an Origin with PostgreSQL, run from the checkout with Hot Reload;
         - a seeded demo tenant and demo user;
         - a ready-made App with keys;
         - the Aspire dashboard for traces and logs.

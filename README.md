@@ -1,8 +1,7 @@
 # BigFatFile
 
-File storage and sync for teams: an Origin server, an optional Replica in the office, and
-Apps (web, desktop, CLI and third-party) built on one public API. The design is in
-[docs/architecture](docs/architecture/Architecture.md).
+A platform that runs file storage and sync apps for teams.
+The design is explained in detail in `docs/architecture`.
 
 ## 1. Requirements
 
@@ -13,51 +12,85 @@ Apps (web, desktop, CLI and third-party) built on one public API. The design is 
 
 ## 2. Running locally
 
-- `./bff dev up` builds the Origin from this checkout and starts it with PostgreSQL and
-  the Aspire dashboard:
-    - sign-in page: http://localhost:8080/account/sign-in
-    - API reference: http://localhost:8080/api/docs
-    - job dashboard: http://localhost:8080/admin/jobs
-    - traces, metrics and logs: http://localhost:18888
-- The development seed creates:
-    - the user `demo@bigfatfile.local` with the password `bigfatfile-demo`, admin of the
-      tenant "Demo";
-    - the client `bff-dev-cli`: public, authorization code with PKCE, redirect
-      `http://127.0.0.1:53682/callback`;
-    - the client `bff-dev-app`: confidential, secret `bff-dev-app-secret`, client
-      credentials.
-- `./bff dev down` stops everything and keeps the data; `./bff dev reset` also deletes
-  the data.
-- Sign in from a script and call the API through the generated TypeScript types:
+- `./bff dev up` starts the Origin server (hot-reload mode);
+- `./bff dev logs` follows logs;
+- `./bff dev down` stops everything and keeps the data;
+- `./bff dev reset` stops everything and also deletes the data and the build cache.
+
+**Notes:**
+
+- Runs using `dotnet watch` and hot-reload;
+    - the first start takes longer (restores packages, builds artifacts).
+
+- Published URLs:
+    - Sign-in page:
+      http://localhost:8080/account/sign-in
+    - API reference:
+      http://localhost:8080/api/docs
+    - Hangfire dashboard:
+      http://localhost:8080/admin/jobs
+    - Aspire dashboard:
+      http://localhost:18888
+
+- Seeded data:
+    - tenant "Demo";
+    - user `demo@bigfatfile.local` (password `bigfatfile-demo`, admin of tenant "Demo");
+    - two clients:
+        - `bff-dev-cli`:
+            - public client;
+            - authorization code is obtained via PKCE;
+            - redirected to `http://127.0.0.1:53682/callback`;
+        - `bff-dev-app`:
+            - confidential client;
+            - secret is `bff-dev-app-secret`.
+
+## 3. Debugging
+
+Run a separate Origin server at the command line, for active debugging.
+Requires the dev Docker Compose infrastructure to be up.
 
 ```sh
-pnpm install && pnpm build
+dotnet run --project server/BigFatFile.Server
+```
+
+- published at: http://localhost:5080
+
+## 4. Running examples
+
+Signs in from a script and calls the API through the generated TypeScript types:
+
+```sh
+pnpm install
+pnpm build
 pnpm --filter @bigfatfile/example-sign-in start
 ```
 
-- `dotnet run --project server/BigFatFile.Server` runs a second Origin on
-  http://localhost:5080 against the same development database, for debugging.
-
-## 3. Building and testing
+## 5. Building and testing
 
 - .NET:
-    - `dotnet build BigFatFile.slnx` and `dotnet test --solution BigFatFile.slnx`;
+    - `dotnet build BigFatFile.slnx`, then...
+    - `dotnet test --solution BigFatFile.slnx`;
     - the tests start PostgreSQL in Docker through Testcontainers;
-    - every build of the Server rewrites `api/openapi.json`; commit it with the change
-      that caused it.
+    - every build of the Server rewrites `api/openapi.json`.
 - TypeScript:
-    - `pnpm install`, then `pnpm generate` (types from `api/openapi.json`), `pnpm build`,
-      `pnpm typecheck` and `pnpm test`.
+    - `pnpm install`
+    - `pnpm generate` (generates types from `api/openapi.json`)
+    - `pnpm build`
+    - `pnpm typecheck`
+    - `pnpm test`
 - CI runs all of the above and fails when `api/openapi.json` or the generated types
   differ from what the build produces.
 
-## 4. Releases
+## 6. Releases
 
 - A tag `vX.Y.Z` builds every artifact with that version:
     - the Origin image on GHCR, for linux/amd64 and linux/arm64, signed with cosign;
-    - the NuGet packages `BigFatFile.Contracts`, `BigFatFile.Migrator` and
-      `BigFatFile.Abstractions`;
-    - the npm package `@bigfatfile/client`;
+    - the NuGet packages:
+        - `BigFatFile.Contracts`
+        - `BigFatFile.Migrator`
+        - `BigFatFile.Abstractions`
+    - the npm package:
+        - `@bigfatfile/client`
     - `api/openapi.json`, attached to the GitHub release.
 - Publishing to NuGet and npm needs the repository secrets `NUGET_API_KEY` and
   `NPM_TOKEN`; without them the packages are only attached to the release.

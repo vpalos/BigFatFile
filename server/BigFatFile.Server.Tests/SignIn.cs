@@ -14,17 +14,21 @@ internal static partial class SignIn
 {
     public static async Task SignInWithPasswordAsync(HttpClient browser, string email, string password)
     {
-        var form = await browser.GetStringAsync("/account/sign-in");
-        var token = AntiforgeryField().Match(form).Groups[1].Value;
-
         var response = await browser.PostAsync("/account/sign-in", new FormUrlEncodedContent(new Dictionary<string, string>
         {
-            ["__RequestVerificationToken"] = WebUtility.HtmlDecode(token),
+            ["__RequestVerificationToken"] = await CsrfTokenAsync(browser),
             ["email"] = email,
             ["password"] = password,
             ["returnUrl"] = "/",
         }));
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+    }
+
+    /// <summary>The request token of the browser's antiforgery cookie, as the sign-in form carries it.</summary>
+    public static async Task<string> CsrfTokenAsync(HttpClient browser)
+    {
+        var form = await browser.GetStringAsync("/account/sign-in");
+        return WebUtility.HtmlDecode(AntiforgeryField().Match(form).Groups[1].Value);
     }
 
     public static async Task<JsonElement> AuthorizationCodeAsync(HttpClient browser, string scope)

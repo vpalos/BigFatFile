@@ -29,15 +29,11 @@ internal static class MeEndpoints
             : null;
         if (user is null)
         {
-            return TypedResults.Problem(
-                statusCode: StatusCodes.Status403Forbidden,
-                title: "This endpoint needs a signed-in user.",
-                type: "https://bigfatfile.com/problems/user-required",
-                extensions: new Dictionary<string, object?> { ["code"] = "user_required" });
+            return Problems.Of(StatusCodes.Status403Forbidden, ErrorCodes.UserRequired, "This endpoint needs a signed-in user.");
         }
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        var tenants = await connection.QueryAsync<MeWithinTenant>(new CommandDefinition(
+        var tenants = await connection.QueryAsync<(Guid Id, string Name, string Role)>(new CommandDefinition(
             """
             SELECT t.id, t.name, m.role
             FROM tenant_members m
@@ -48,6 +44,11 @@ internal static class MeEndpoints
             new { UserId = user.Id },
             cancellationToken: cancellationToken));
 
-        return TypedResults.Ok(new Me(user.Id, user.Email!, [.. tenants]));
+        return TypedResults.Ok(new Me(
+            user.Id,
+            user.Email!,
+            user.UserName!,
+            null,
+            [.. tenants.Select(t => new MeWithinTenant(t.Id, t.Name, Enum.Parse<TenantRole>(t.Role, ignoreCase: true)))]));
     }
 }

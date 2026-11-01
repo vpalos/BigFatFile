@@ -1,6 +1,7 @@
 using System.Reflection;
 using BigFatFile.Abstractions.Features;
 using BigFatFile.Abstractions.Modules;
+using BigFatFile.Server.Account;
 using BigFatFile.Server.Api;
 using BigFatFile.Server.Auth;
 using BigFatFile.Server.Configuration;
@@ -89,6 +90,7 @@ internal static class OriginHost
         app.MapApiDocs();
         app.MapConnectEndpoints();
         app.MapAccountEndpoints();
+        app.MapAccountApi();
         app.MapApiV1();
         app.MapJobDashboard();
         foreach (var loaded in modules)

@@ -45,6 +45,8 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 
 - Bearer JWT (ES256, keys at the JWKS endpoint) issued by the Origin's OpenIddict
   server; the web app on the same origin uses a session cookie instead.
+- A write made with the session cookie sends the `X-CSRF-Token` header, with the token
+  from `GET /account/csrf`; bearer requests do not need it.
 - A token carries: the user (if any), the App, the tenant it is scoped to, the granted
   scopes.
 - Flows:
@@ -95,11 +97,27 @@ permissions apply on top.
     - `GET /connect/authorize`, `POST /connect/token` (all grant types above),
       `POST /connect/revoke`, `POST /connect/introspect`;
     - `GET /connect/userinfo`.
+- Account (outside `/api/v1`, `auth` tag): the JSON endpoints behind the web app's
+  account screens; same origin and session cookie only, no scope:
+    - `GET /account/options`: the sign-up policy and the external providers;
+    - `GET /account/csrf`: the token for the `X-CSRF-Token` header;
+    - `POST /account/sign-in`, `POST /account/sign-out`;
+    - `PUT /account/tenant`: scopes the session to another of the user's tenants;
+    - `POST /account/sign-up`, `POST /account/confirm-email`,
+      `POST /account/resend-confirmation`;
+    - `POST /account/forgot-password`, `POST /account/reset-password`;
+    - `POST /account/invitations/lookup`, `POST /account/invitations/accept`;
+    - `GET /account/external/{provider}`: starts a Google, Microsoft or OpenID Connect
+      sign-in;
+    - codes and tokens from emails travel in the request body, never in the path.
 - Me and tenants:
-    - `GET /me` (`openid`): the user, their tenants and roles;
+    - `GET /me` (`openid`): the user, the tenant the caller is scoped to, all their
+      tenants and roles;
     - `GET /tenants/{id}` (`members.read`): name, plan, settings visible to members;
-    - `GET /tenants/{id}/members`, `POST .../members/invite`,
-      `PATCH .../members/{userId}`, `DELETE .../members/{userId}` (`members.*`);
+    - `GET /tenants/{id}/members` (`members.read`), `PATCH .../members/{userId}`,
+      `DELETE .../members/{userId}` (`members.manage`);
+    - `GET|POST /tenants/{id}/invitations`, `DELETE .../invitations/{invitationId}`
+      (`members.manage`); inviting the same address again resends the email;
     - `GET|POST /tenants/{id}/groups`, `PATCH|DELETE .../groups/{groupId}`,
       `PUT .../groups/{groupId}/members` (`members.manage`).
 - Drives:

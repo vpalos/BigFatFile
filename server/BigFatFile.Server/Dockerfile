@@ -22,8 +22,8 @@ RUN dotnet publish server/BigFatFile.Server/BigFatFile.Server.csproj \
     --arch $TARGETARCH --configuration Release --no-restore --output /app \
     -p:Version=$VERSION -p:OpenApiGenerateDocuments=false
 
-# Chiseled: no shell, no package manager, runs as a non-root user. The "extra" variant
-# carries ICU, which name keys need for Unicode normalisation.
+# Chiseled: no shell, no package manager, runs as a non-root user.
+# The "extra" variant carries ICU, needed by name keys for Unicode normalisation.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra
 ARG VERSION=0.1.0-dev
 LABEL org.opencontainers.image.title="BigFatFile" \

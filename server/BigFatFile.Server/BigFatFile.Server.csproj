@@ -1,5 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
         <RootNamespace>BigFatFile.Server</RootNamespace>
         <UserSecretsId>bigfatfile-server</UserSecretsId>
 

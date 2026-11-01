@@ -31,21 +31,32 @@ internal static class ApiServices
                 document.Components ??= new OpenApiComponents();
                 document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
                 document.Components.SecuritySchemes["oauth2"] = OAuthScheme();
+                document.Components.SecuritySchemes["session"] = SessionScheme();
                 return Task.CompletedTask;
             });
             options.AddOperationTransformer((operation, context, _) =>
             {
-                var scopes = context.Description.ActionDescriptor.EndpointMetadata
+                var policies = context.Description.ActionDescriptor.EndpointMetadata
                     .OfType<IAuthorizeData>()
-                    .Select(data => ScopeAuthorization.ScopeOf(data.Policy))
-                    .OfType<string>()
+                    .Select(data => data.Policy)
                     .ToList();
+                var scopes = policies.Select(ScopeAuthorization.ScopeOf).OfType<string>().ToList();
                 if (scopes.Count > 0)
                 {
                     operation.Security ??= [];
                     operation.Security.Add(new OpenApiSecurityRequirement
                     {
                         [new OpenApiSecuritySchemeReference("oauth2", context.Document)] = scopes,
+                    });
+                }
+
+                // The scope handler lets the session cookie through, so every scoped endpoint also accepts it.
+                if (scopes.Count > 0 || policies.Contains(AuthServices.SessionPolicy))
+                {
+                    operation.Security ??= [];
+                    operation.Security.Add(new OpenApiSecurityRequirement
+                    {
+                        [new OpenApiSecuritySchemeReference("session", context.Document)] = [],
                     });
                 }
 
@@ -62,6 +73,14 @@ internal static class ApiServices
             .WithTitle("BigFatFile API")
             .WithOpenApiRoutePattern(DocumentPath));
     }
+
+    private static OpenApiSecurityScheme SessionScheme() => new()
+    {
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Cookie,
+        Name = "bff_session",
+        Description = "The web app's session, on the same origin only. A write made with it also sends the X-CSRF-Token header, with the token from GET /account/csrf; without it, the write gets 400 with the code csrf_token_invalid.",
+    };
 
     private static OpenApiSecurityScheme OAuthScheme()
     {

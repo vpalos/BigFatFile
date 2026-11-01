@@ -9,9 +9,10 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 namespace BigFatFile.Server.Development;
 
 /// <summary>
-/// With <c>BFF_DEV_SEED=true</c>: a demo tenant, a demo user and two ready-made clients, so a
-/// fresh checkout can sign in at once. The values are published in the README, which is why
-/// the settings refuse this outside Development.
+/// This data is seeded when <c>BFF_DEV_SEED=true</c> (only during development):
+/// - a demo tenant;
+/// - a demo user;
+/// - two ready-made clients.
 /// </summary>
 internal sealed class DevSeed(
     UserManager<BffUser> users,
@@ -24,11 +25,18 @@ internal sealed class DevSeed(
     public const string UserPassword = "bigfatfile-demo";
     public const string TenantName = "Demo";
 
-    /// <summary>A public client for scripts and the CLI: authorization code with PKCE and a loopback redirect.</summary>
+    /// <summary>
+    /// A public client for scripts and the CLI:
+    /// - authorization code with PKCE;
+    /// - a loopback redirect.
+    /// </summary>
     public const string CliClientId = "bff-dev-cli";
     public const string CliRedirectUri = "http://127.0.0.1:53682/callback";
 
-    /// <summary>A confidential client for an App acting as itself: client credentials.</summary>
+    /// <summary>
+    /// A confidential client for an App acting as itself:
+    /// - client credentials.
+    /// </summary>
     public const string AppClientId = "bff-dev-app";
     public const string AppClientSecret = "bff-dev-app-secret";
 

@@ -37,7 +37,7 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
 
         Assert.Equal(DevSeed.UserEmail, me!.Email);
         var tenant = Assert.Single(me.Tenants);
-        Assert.Equal((DevSeed.TenantName, "admin"), (tenant.Name, tenant.Role));
+        Assert.Equal((DevSeed.TenantName, TenantRole.Admin), (tenant.Name, tenant.Role));
     }
 
     [Fact]
@@ -76,15 +76,29 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
     }
 
     [Fact]
-    public async Task SigningOutNeedsTheFormToken()
+    public async Task SigningOutNeedsTheCsrfToken()
     {
         using var browser = origin.CreateClient();
         await SignIn.SignInWithPasswordAsync(browser, DevSeed.UserEmail, DevSeed.UserPassword);
 
-        var response = await browser.PostAsync("/account/sign-out", new FormUrlEncodedContent([]), TestContext.Current.CancellationToken);
+        var response = await browser.PostAsync("/account/sign-out", null, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await browser.GetAsync("/api/v1/me", TestContext.Current.CancellationToken)).StatusCode);
+    }
+
+    [Fact]
+    public async Task SigningOutEndsTheSession()
+    {
+        using var browser = origin.CreateClient();
+        await SignIn.SignInWithPasswordAsync(browser, DevSeed.UserEmail, DevSeed.UserPassword);
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/account/sign-out");
+        request.Headers.Add("X-CSRF-Token", await SignIn.CsrfTokenAsync(browser));
+        var response = await browser.SendAsync(request, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await browser.GetAsync("/api/v1/me", TestContext.Current.CancellationToken)).StatusCode);
     }
 
     [Fact]

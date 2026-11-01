@@ -10,6 +10,9 @@ internal static class BffScopes
     public const string Email = OpenIddictConstants.Scopes.Email;
     public const string OfflineAccess = OpenIddictConstants.Scopes.OfflineAccess;
 
+    public const string MembersRead = "members.read";
+    public const string MembersManage = "members.manage";
+
     public static IReadOnlyList<string> Standard { get; } = [OpenId, Profile, Email, OfflineAccess];
 
     public static IReadOnlyDictionary<string, string> Descriptions { get; } = new Dictionary<string, string>
@@ -23,8 +26,8 @@ internal static class BffScopes
         ["shares.manage"] = "Create and revoke share links on nodes the App may read.",
         ["sends.manage"] = "Create sends.",
         ["requests.manage"] = "Create and manage file requests.",
-        ["members.read"] = "List members and groups.",
-        ["members.manage"] = "Invite and remove members, change roles, manage groups.",
+        [MembersRead] = "List members and groups.",
+        [MembersManage] = "Invite and remove members, change roles, manage groups.",
         ["metadata.read"] = "Read the App's own metadata namespace.",
         ["metadata.write"] = "Write the App's own metadata namespace.",
         ["permissions.manage"] = "Change permission rules on nodes.",

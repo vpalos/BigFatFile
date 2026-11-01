@@ -1,4 +1,4 @@
-# The reference deployment: the Origin and a pinned PostgreSQL.
+# The reference deployment: the Origin and PostgreSQL (fixed version).
 # Copy .env.example to .env and set POSTGRES_PASSWORD before the first start.
 
 name: bigfatfile

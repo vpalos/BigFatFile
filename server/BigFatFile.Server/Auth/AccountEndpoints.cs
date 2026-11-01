@@ -17,17 +17,6 @@ internal static class AccountEndpoints
         account.MapGet("/sign-in", (HttpContext context, IAntiforgery antiforgery, string? returnUrl) =>
             Page(context, antiforgery, SafeReturnUrl(returnUrl), email: "", error: null));
         account.MapPost("/sign-in", SignInAsync);
-        account.MapPost("/sign-out", async (HttpContext context, IAntiforgery antiforgery, SignInManager<BffUser> signIn) =>
-        {
-            // Checked here: the antiforgery middleware only refuses requests to endpoints that bind form fields.
-            if (!await antiforgery.IsRequestValidAsync(context))
-            {
-                return Results.BadRequest();
-            }
-
-            await signIn.SignOutAsync();
-            return Results.Redirect("/account/sign-in");
-        });
     }
 
     private static async Task<IResult> SignInAsync(

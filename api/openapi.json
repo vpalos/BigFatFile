@@ -6,11 +6,446 @@
     "version": "1.0"
   },
   "paths": {
+    "/account/options": {
+      "get": {
+        "tags": ["auth"],
+        "description": "www",
+        "summary": "Whether this server accepts sign-ups without an invitation, and the external accounts it accepts.",
+        "operationId": "getAccountOptions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountOptions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/csrf": {
+      "get": {
+        "tags": ["auth"],
+        "summary": "The token that writes made with the session cookie send in the X-CSRF-Token header.",
+        "operationId": "getCsrfToken",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsrfToken"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/sign-in": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Starts a session with an email and a password.",
+        "operationId": "signIn",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignInRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/sign-out": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Ends the session.",
+        "operationId": "signOut",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/account/tenant": {
+      "put": {
+        "tags": ["auth"],
+        "summary": "Scopes the session to another of the user's tenants.",
+        "operationId": "switchTenant",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchTenantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/account/sign-up": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Creates an account. Without an invitation token, a confirmation email is sent first.",
+        "operationId": "signUp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignUpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignUpResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/confirm-email": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Confirms the address with the code from the confirmation email, and starts a session.",
+        "operationId": "confirmEmail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmEmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/resend-confirmation": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Sends the confirmation email again. The answer is the same whether or not the address has an account.",
+        "operationId": "resendConfirmation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          }
+        }
+      }
+    },
+    "/account/forgot-password": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Sends a password reset email. The answer is the same whether or not the address has an account.",
+        "operationId": "forgotPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          }
+        }
+      }
+    },
+    "/account/reset-password": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Sets a new password with the code from the password reset email.",
+        "operationId": "resetPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/external/{provider}": {
+      "get": {
+        "tags": ["auth"],
+        "summary": "Sends the browser to the provider's sign-in page. After it, the browser returns to returnUrl, which must be a path on this server.",
+        "operationId": "signInExternally",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Found"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/invitations/lookup": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "What an invitation is for, before the person accepts it.",
+        "operationId": "lookUpInvitation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationPreview"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/invitations/accept": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Joins the tenant and scopes the session to it. The session's user must have the invited address.",
+        "operationId": "acceptInvitation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/meta": {
       "get": {
-        "tags": [
-          "meta"
-        ],
+        "tags": ["meta"],
         "summary": "What a client needs to know about this server: versions, chunker parameters and enabled features.",
         "operationId": "getMeta",
         "responses": {
@@ -29,9 +464,7 @@
     },
     "/api/v1/me": {
       "get": {
-        "tags": [
-          "tenant"
-        ],
+        "tags": ["tenant"],
         "summary": "The signed-in user, their tenants and their role in each.",
         "operationId": "getMe",
         "responses": {
@@ -61,9 +494,544 @@
         },
         "security": [
           {
-            "oauth2": [
-              "openid"
-            ]
+            "oauth2": ["openid"]
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tenants/{id}": {
+      "get": {
+        "tags": ["tenant"],
+        "summary": "The tenant's name and plan.",
+        "operationId": "getTenant",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": ["members.read"]
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tenants/{id}/members": {
+      "get": {
+        "tags": ["tenant"],
+        "summary": "The tenant's members, ordered by name.",
+        "operationId": "listMembers",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "The nextCursor of the previous page. Leave it out for the first page.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The most items to return. The default is 100.",
+            "schema": {
+              "maximum": 500,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageOfMember"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": ["members.read"]
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tenants/{id}/members/{userId}": {
+      "patch": {
+        "tags": ["tenant"],
+        "summary": "Changes a member's role. The tenant always keeps at least one admin.",
+        "operationId": "updateMember",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMemberRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": ["members.manage"]
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["tenant"],
+        "summary": "Removes a member from the tenant. The tenant always keeps at least one admin.",
+        "operationId": "removeMember",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": ["members.manage"]
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tenants/{id}/invitations": {
+      "get": {
+        "tags": ["tenant"],
+        "summary": "The invitations nobody has accepted yet, newest first.",
+        "operationId": "listInvitations",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "The nextCursor of the previous page. Leave it out for the first page.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The most items to return. The default is 100.",
+            "schema": {
+              "maximum": 500,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageOfInvitation"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": ["members.manage"]
+          },
+          {
+            "session": []
+          }
+        ]
+      },
+      "post": {
+        "tags": ["tenant"],
+        "summary": "Invites an email address and sends the invitation email. Inviting the same address again replaces the earlier invitation and sends a new email.",
+        "operationId": "createInvitation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvitationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invitation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": ["members.manage"]
+          },
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tenants/{id}/invitations/{invitationId}": {
+      "delete": {
+        "tags": ["tenant"],
+        "summary": "Revokes an invitation, so its email link stops working.",
+        "operationId": "revokeInvitation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "invitationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": ["members.manage"]
+          },
+          {
+            "session": []
           }
         ]
       }
@@ -71,11 +1039,108 @@
   },
   "components": {
     "schemas": {
-      "Me": {
+      "AccountOptions": {
+        "required": ["signUp", "providers"],
+        "type": "object",
+        "properties": {
+          "signUp": {
+            "$ref": "#/components/schemas/SignUpPolicy"
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SignInProvider"
+            },
+            "description": "The external accounts a person can sign in with, in display order."
+          }
+        },
+        "description": "What the sign-in and sign-up screens offer on this server."
+      },
+      "ConfirmEmailRequest": {
+        "required": ["userId", "code"],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "description": "The code from the confirmation email."
+          }
+        }
+      },
+      "CreateInvitationRequest": {
+        "required": ["email", "role"],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "description": "Admin or member. Guests are invited through sharing.",
+            "$ref": "#/components/schemas/TenantRole"
+          }
+        }
+      },
+      "CsrfToken": {
+        "required": ["token"],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "description": "A write made with the session cookie carries this token in the `X-CSRF-Token` header."
+      },
+      "EmailRequest": {
+        "required": ["email"],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        },
+        "description": "An email address, for requests that send an email to it."
+      },
+      "HttpValidationProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": ["null", "string"]
+          },
+          "title": {
+            "type": ["null", "string"]
+          },
+          "status": {
+            "type": ["null", "integer"],
+            "format": "int32"
+          },
+          "detail": {
+            "type": ["null", "string"]
+          },
+          "instance": {
+            "type": ["null", "string"]
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Invitation": {
         "required": [
           "id",
           "email",
-          "tenants"
+          "role",
+          "invitedBy",
+          "createdAt",
+          "expiresAt"
         ],
         "type": "object",
         "properties": {
@@ -86,11 +1151,111 @@
           "email": {
             "type": "string"
           },
+          "role": {
+            "$ref": "#/components/schemas/TenantRole"
+          },
+          "invitedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "An email address invited to join a tenant, until the person accepts or the invitation expires."
+      },
+      "InvitationPreview": {
+        "required": [
+          "tenantName",
+          "invitedBy",
+          "email",
+          "role",
+          "accountExists"
+        ],
+        "type": "object",
+        "properties": {
+          "tenantName": {
+            "type": "string"
+          },
+          "invitedBy": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/TenantRole"
+          },
+          "accountExists": {
+            "type": "boolean",
+            "description": "True when the invited address already has an account, so the screen asks the person to sign in rather than sign up."
+          }
+        },
+        "description": "What the invitation screen shows before the person accepts."
+      },
+      "InvitationTokenRequest": {
+        "required": ["token"],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The token from the invitation email."
+          }
+        }
+      },
+      "Me": {
+        "required": ["id", "email", "name", "tenantId", "tenants"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": ["null", "string"],
+            "description": "The tenant this token or session is scoped to; null when it is scoped to none.",
+            "format": "uuid"
+          },
           "tenants": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/MeWithinTenant"
             }
+          }
+        },
+        "description": "The signed-in user and the tenants they belong to."
+      },
+      "Member": {
+        "required": ["userId", "email", "name", "role", "joinedAt"],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/TenantRole"
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -120,9 +1285,11 @@
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "The licensed features that are on."
           }
-        }
+        },
+        "description": "What a client needs to know about a server before it talks to it."
       },
       "MetaChunker": {
         "required": [
@@ -156,11 +1323,7 @@
         }
       },
       "MeWithinTenant": {
-        "required": [
-          "id",
-          "name",
-          "role"
-        ],
+        "required": ["id", "name", "role"],
         "type": "object",
         "properties": {
           "id": {
@@ -171,43 +1334,190 @@
             "type": "string"
           },
           "role": {
-            "type": "string"
+            "$ref": "#/components/schemas/TenantRole"
           }
         }
+      },
+      "PageOfInvitation": {
+        "required": ["items", "nextCursor"],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Invitation"
+            }
+          },
+          "nextCursor": {
+            "type": ["null", "string"],
+            "description": "Pass it as `cursor` to get the next page; null on the last page."
+          }
+        },
+        "description": "One page of a listing."
+      },
+      "PageOfMember": {
+        "required": ["items", "nextCursor"],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Member"
+            }
+          },
+          "nextCursor": {
+            "type": ["null", "string"],
+            "description": "Pass it as `cursor` to get the next page; null on the last page."
+          }
+        },
+        "description": "One page of a listing."
       },
       "ProblemDetails": {
         "type": "object",
         "properties": {
           "type": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "title": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "status": {
-            "type": [
-              "null",
-              "integer"
-            ],
+            "type": ["null", "integer"],
             "format": "int32"
           },
           "detail": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "instance": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
+          }
+        }
+      },
+      "ResetPasswordRequest": {
+        "required": ["userId", "code", "password"],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "description": "The code from the password reset email."
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "SignInProvider": {
+        "required": ["key", "name"],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The provider's path segment in `/account/external/{provider}`."
+          },
+          "name": {
+            "type": "string",
+            "description": "The name to show on the button."
+          }
+        }
+      },
+      "SignInRequest": {
+        "required": ["email", "password"],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": ["null", "string"],
+            "description": "The tenant to scope the session to. Without it, the session gets the tenant the user signed in to last.",
+            "format": "uuid"
+          }
+        }
+      },
+      "SignUpOutcome": {
+        "enum": ["confirmation_sent", "signed_in"],
+        "description": "`confirmation_sent`: a confirmation email is on its way. It is also the answer when the address already has an account, so the response does not reveal which addresses do. `signed_in`: the invitation proved the address, the account exists and its session has started."
+      },
+      "SignUpPolicy": {
+        "enum": ["invitation", "open"],
+        "description": "`invitation`: only people with an invitation can create an account. `open`: anyone can create an account, and gets a new tenant of their own."
+      },
+      "SignUpRequest": {
+        "required": ["name", "email", "password"],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "invitationToken": {
+            "type": ["null", "string"],
+            "description": "The token from an invitation email. It proves the address, so no confirmation email is sent."
+          }
+        }
+      },
+      "SignUpResult": {
+        "required": ["outcome"],
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "$ref": "#/components/schemas/SignUpOutcome"
+          }
+        }
+      },
+      "SwitchTenantRequest": {
+        "required": ["tenantId"],
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "Tenant": {
+        "required": ["id", "name", "plan", "createdAt"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "string",
+            "description": "The plan's key. The open core has one plan, `unlimited`."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TenantRole": {
+        "enum": ["admin", "member", "guest"],
+        "description": "What a member may do in a tenant; node permissions apply on top. `admin` manages members, invitations and the tenant's settings. `guest` is an outside person who sees only what is shared with them."
+      },
+      "UpdateMemberRequest": {
+        "required": ["role"],
+        "type": "object",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/TenantRole"
           }
         }
       }
@@ -268,10 +1578,19 @@
             }
           }
         }
+      },
+      "session": {
+        "type": "apiKey",
+        "description": "The web app's session, on the same origin only. A write made with it also sends the X-CSRF-Token header, with the token from GET /account/csrf; without it, the write gets 400 with the code csrf_token_invalid.",
+        "name": "bff_session",
+        "in": "cookie"
       }
     }
   },
   "tags": [
+    {
+      "name": "auth"
+    },
     {
       "name": "meta"
     },

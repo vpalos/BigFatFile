@@ -16,6 +16,18 @@
       requests run at once", never "own the wire", "buys a guarantee", "the payoff".
     - Concrete nouns and real numbers: "six requests at a time", not "capacity" or "pressure".
     - Short sentences. One idea each. Everyday words.
+    - A sentence must read in one pass, front to back. The reader should never have to jump
+      back to find which noun a verb belongs to.
+        - Keep each verb close to its subject. A long qualifying phrase goes at the end of the
+          sentence, not between the two.
+        - A word that can be a noun or a verb ("writes", "sends", "chunks", "reads") must
+          read as only one of them: "write operations", not "writes"; "splits the file into
+          chunks", not "chunks the file".
+        - Write a clause that describes a noun in full, with "that" and its verb: "the token
+          that is sent", not "the token sent".
+        - Bad: "The token that writes made with the session cookie send in the X-CSRF-Token
+          header." Good: "The token that is sent in the X-CSRF-Token header by write
+          operations made with the session cookie."
     - No build-up and no drum rolls. Drop "here is where it gets interesting", "the elegant
       part is", "and that is the whole point".
     - Never dress a limitation as a virtue, and never restate a point in bigger words to make

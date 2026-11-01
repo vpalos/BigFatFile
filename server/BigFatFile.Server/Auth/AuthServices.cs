@@ -15,6 +15,11 @@ internal static class AuthServices
     /// <summary>The default scheme: bearer tokens when the request has one, the session cookie otherwise.</summary>
     public const string Scheme = "bff";
 
+    /// <summary>For the account endpoints that act on the browser's session, which a bearer token cannot start or end.</summary>
+    public const string SessionPolicy = "session";
+
+    public const string CsrfHeader = "X-CSRF-Token";
+
     /// <param name="persistKeys">False only while the build writes the OpenAPI document, when there is no database.</param>
     public static IServiceCollection AddAuth(this IServiceCollection services, bool persistKeys)
     {
@@ -70,8 +75,12 @@ internal static class AuthServices
                         ? OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme
                         : IdentityConstants.ApplicationScheme);
 
-        services.AddAntiforgery();
-        services.AddAuthorizationBuilder().AddScopePolicies();
+        services.AddAntiforgery(options => options.HeaderName = CsrfHeader);
+        services.AddAuthorizationBuilder()
+            .AddScopePolicies()
+            .AddPolicy(SessionPolicy, policy => policy
+                .AddAuthenticationSchemes(IdentityConstants.ApplicationScheme)
+                .RequireAuthenticatedUser());
         services.AddSingleton<IAuthorizationHandler, ScopeRequirementHandler>();
 
         // Plain HTTP is accepted only in Development, where the server runs on localhost.

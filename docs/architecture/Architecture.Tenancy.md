@@ -51,6 +51,13 @@ Apps authenticate.
       GitHub) through standard OAuth;
     - the operator can point the Origin at one OpenID Connect provider (Keycloak,
       Authentik, Entra ID);
+    - who may sign up, set by `BFF_SIGN_UP`:
+        - `invitation`, the default: only invited addresses can create an account;
+        - `open`: anyone can, and gets a new tenant of their own; the cloud runs this;
+    - the operator (job dashboard, tenant creation) is the account whose address is
+      `BFF_OPERATOR_EMAIL`, once the address is confirmed:
+        - that address may sign up under either policy;
+        - it gets a tenant of its own, so a fresh install has its first tenant;
     - per-tenant identity providers, SAML, SCIM, group sync and LDAP are licensed modules
       behind `IAuthProvider` (`Architecture.PlatformTopology.md`, section 7).
 - Libraries:
@@ -63,6 +70,7 @@ Apps authenticate.
     - MailKit for email.
 - Flows:
     - web UI: session cookie, same origin, no tokens in the browser;
+        - a write made with the cookie carries the `X-CSRF-Token` header;
     - desktop, Replica, CLI: authorization code with PKCE through the system browser and
       a loopback redirect, or device code for headless installs;
     - refresh tokens live in the platform's secure store (DPAPI, keychain, protected
@@ -78,8 +86,17 @@ Apps authenticate.
       `server_keys` table, so every node uses the same pair;
         - they are stored unencrypted, like the Data Protection keys: whoever can read
           the database can sign tokens.
-- The sign-in form at `/account/sign-in` is plain HTML served by the Origin, so the
-  authorization endpoint works without the web app.
+- Tenant scope:
+    - a session and a token are each scoped to one tenant, chosen at sign-in;
+    - a user with several tenants picks one; the web app switches tenant by asking for a
+      new session cookie, so every open tab switches with it;
+    - every request finds its tenant in the same place, the signed-in principal.
+- The account screens (sign-in, sign-up, email confirmation, password reset, invitations)
+  are pages of the web app, which every Origin image serves:
+    - the authorization endpoint sends a browser there, and the pages call the
+      `/account` endpoints (`Architecture.API.md`, section 5);
+    - links in emails carry their code after `#`, which browsers never send to a server,
+      so the codes stay out of request logs.
 - On first sign-in the Origin finds or creates the user, links the external account, and
   provisions tenant membership from invitations or the tenant's domain rules.
 - Data Protection keys (cookies, anti-forgery) are stored in the database so every node
