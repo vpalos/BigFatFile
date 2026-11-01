@@ -47,7 +47,20 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Starts a session with an email and a password. */
+        /**
+         * Sign in with a password
+         * @description Checks the email address and the password, and starts a session. The response sets the session cookie.
+         *
+         *     The session works in one tenant. It is the tenant in `tenantId` when the request has one. Otherwise it is the tenant that the user signed in to last.
+         *
+         *     Errors:
+         *
+         *     - 401 with the code `wrong_credentials`: the address or the password is wrong.
+         *     - 403 with the code `email_not_confirmed`: the address is not confirmed yet.
+         *     - 403 with the code `locked_out`: the account is locked for 5 minutes, because of 10 wrong passwords in a row. During the lock, even the right password gets this answer.
+         *     - 404: the user is not a member of the tenant in `tenantId`.
+         *     - 429 with the code `too_many_requests`: this IP address made more than 20 sign-in attempts in one minute, for any accounts. The `Retry-After` header says how many seconds to wait. All the addresses of one IPv6 /64 block count as one address.
+         */
         post: operations["signIn"];
         delete?: never;
         options?: never;
@@ -632,6 +645,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

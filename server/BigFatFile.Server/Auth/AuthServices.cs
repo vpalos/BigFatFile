@@ -20,6 +20,10 @@ internal static class AuthServices
 
     public const string CsrfHeader = "X-CSRF-Token";
 
+    /// <summary>This many wrong passwords in a row lock the account for <see cref="LockoutMinutes"/>.</summary>
+    public const int LockoutAttempts = 10;
+    public const int LockoutMinutes = 5;
+
     /// <param name="persistKeys">False only while the build writes the OpenAPI document, when there is no database.</param>
     public static IServiceCollection AddAuth(this IServiceCollection services, bool persistKeys)
     {
@@ -46,6 +50,8 @@ internal static class AuthServices
                 options.Password.RequireLowercase = false;
                 options.Password.RequireUppercase = false;
                 options.Password.RequireNonAlphanumeric = false;
+                options.Lockout.MaxFailedAccessAttempts = LockoutAttempts;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(LockoutMinutes);
                 options.ClaimsIdentity.UserIdClaimType = Claims.Subject;
                 options.ClaimsIdentity.UserNameClaimType = Claims.Name;
                 options.ClaimsIdentity.RoleClaimType = Claims.Role;

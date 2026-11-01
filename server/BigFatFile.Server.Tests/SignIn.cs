@@ -14,15 +14,19 @@ internal static partial class SignIn
 {
     public static async Task SignInWithPasswordAsync(HttpClient browser, string email, string password)
     {
-        var response = await browser.PostAsync("/account/sign-in", new FormUrlEncodedContent(new Dictionary<string, string>
+        var response = await PostSignInFormAsync(browser, email, password);
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+    }
+
+    /// <summary>Sends the sign-in form. A redirect means signed in; the form again means refused.</summary>
+    public static async Task<HttpResponseMessage> PostSignInFormAsync(HttpClient browser, string email, string password) =>
+        await browser.PostAsync("/account/sign-in", new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["__RequestVerificationToken"] = await CsrfTokenAsync(browser),
             ["email"] = email,
             ["password"] = password,
             ["returnUrl"] = "/",
         }));
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-    }
 
     /// <summary>The request token of the browser's antiforgery cookie, as the sign-in form carries it.</summary>
     public static async Task<string> CsrfTokenAsync(HttpClient browser)

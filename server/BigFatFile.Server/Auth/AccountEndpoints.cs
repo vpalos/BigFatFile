@@ -16,7 +16,7 @@ internal static class AccountEndpoints
         var account = endpoints.MapGroup("/account").ExcludeFromDescription();
         account.MapGet("/sign-in", (HttpContext context, IAntiforgery antiforgery, string? returnUrl) =>
             Page(context, antiforgery, SafeReturnUrl(returnUrl), email: "", error: null));
-        account.MapPost("/sign-in", SignInAsync);
+        account.MapPost("/sign-in", SignInAsync).RequireRateLimiting(SignInRateLimit.Policy);
     }
 
     private static async Task<IResult> SignInAsync(

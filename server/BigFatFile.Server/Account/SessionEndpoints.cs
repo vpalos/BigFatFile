@@ -24,10 +24,25 @@ internal static class SessionEndpoints
 
         account.MapPost("/sign-in", SignInAsync)
             .WithName("signIn")
-            .WithSummary("Starts a session with an email and a password.")
+            .WithSummary("Sign in with a password")
+            .WithDescription($"""
+                Checks the email address and the password, and starts a session. The response sets the session cookie.
+
+                The session works in one tenant. It is the tenant in `tenantId` when the request has one. Otherwise it is the tenant that the user signed in to last.
+
+                Errors:
+
+                - 401 with the code `wrong_credentials`: the address or the password is wrong.
+                - 403 with the code `email_not_confirmed`: the address is not confirmed yet.
+                - 403 with the code `locked_out`: the account is locked for {AuthServices.LockoutMinutes} minutes, because of {AuthServices.LockoutAttempts} wrong passwords in a row. During the lock, even the right password gets this answer.
+                - 404: the user is not a member of the tenant in `tenantId`.
+                - 429 with the code `too_many_requests`: this IP address made more than {SignInRateLimit.AttemptsPerMinute} sign-in attempts in one minute, for any accounts. The `Retry-After` header says how many seconds to wait. All the addresses of one IPv6 /64 block count as one address.
+                """)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .RequireRateLimiting(SignInRateLimit.Policy)
             .AllowAnonymous();
 
         account.MapPost("/sign-out", SignOutAsync)

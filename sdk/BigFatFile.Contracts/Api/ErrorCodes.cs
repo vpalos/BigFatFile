@@ -11,6 +11,7 @@ public static class ErrorCodes
     public const string AdminRequired = "admin_required";
     public const string LastAdmin = "last_admin";
     public const string AlreadyMember = "already_member";
+    public const string TooManyRequests = "too_many_requests";
 
     public const string SignUpClosed = "sign_up_closed";
     public const string WrongCredentials = "wrong_credentials";

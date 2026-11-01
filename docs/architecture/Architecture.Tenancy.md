@@ -61,6 +61,21 @@ Apps authenticate.
         - it gets a tenant of its own, so a fresh install has its first tenant;
     - per-tenant identity providers, SAML, SCIM, group sync and LDAP are licensed modules
       behind `IAuthProvider` (`Architecture.PlatformTopology.md`, section 7).
+- Sign-in limits:
+    - the account lock (`AuthServices.cs`):
+        - 10 wrong passwords in a row lock the account for 5 minutes;
+        - during the lock, even the right password is refused;
+        - a successful sign-in sets the count back to 0;
+        - the count has no time window, so wrong passwords a month apart count the same;
+        - known issue: anyone who knows an address can keep its account locked,
+          by sending 10 wrong passwords every 5 minutes;
+    - the limit per IP address (`SignInRateLimit.cs`):
+        - one address may make 20 sign-in attempts per minute, for any accounts;
+        - more attempts get 429, with a `Retry-After` header;
+        - all the addresses of one IPv6 /64 block count as one address;
+        - each node counts on its own, so in cluster mode the limit applies per node;
+        - behind a reverse proxy, the Origin sees only the proxy's address, so all
+          clients share one limit.
 - Libraries:
     - ASP.NET Core Identity for accounts (password hashing, email confirmation, lockout,
       two-factor, passkeys);

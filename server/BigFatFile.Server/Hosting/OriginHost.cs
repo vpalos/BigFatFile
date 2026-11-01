@@ -52,6 +52,7 @@ internal static class OriginHost
         builder.Services
             .AddDatabase()
             .AddAuth(persistKeys: !IsGeneratingOpenApiDocument)
+            .AddSignInRateLimit()
             .AddJobs(runServer: !IsGeneratingOpenApiDocument)
             .AddApi()
             .AddHealth()
@@ -81,6 +82,7 @@ internal static class OriginHost
             StatusCodeSelector = exception => exception is BadHttpRequestException bad ? bad.StatusCode : StatusCodes.Status500InternalServerError,
         });
         app.UseStatusCodePages();
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseAntiforgery();
