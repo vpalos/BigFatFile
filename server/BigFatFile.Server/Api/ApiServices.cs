@@ -11,6 +11,24 @@ internal static class ApiServices
 {
     public const string DocumentPath = "/api/v1/openapi.json";
 
+    private static readonly Dictionary<string, string> TagDescriptions = new()
+    {
+        ["auth"] = """
+            The endpoints behind the web app's account screens: sign-up, sign-in, passwords and invitations.
+
+            - Only the web app calls them, from the same origin as the server.
+            - They work with the session cookie, not with tokens.
+            - Apps get their tokens from the OpenID Connect endpoints under `/connect` instead.
+            """,
+        ["meta"] = "Information about the server itself.",
+        ["tenant"] = """
+            The signed-in user, the tenant, its members and its invitations.
+
+            - A token or a session works in one tenant. A request with any other tenant's ID gets 404, the same answer as for a tenant that does not exist.
+            - The endpoints that need the `members.manage` scope are for admins only. A user who is not an admin of the tenant gets 403 with the code `admin_required`.
+            """,
+    };
+
     public static IServiceCollection AddApi(this IServiceCollection services)
     {
         services.AddProblemDetails();
@@ -28,6 +46,10 @@ internal static class ApiServices
                     Version = ApiVersion.Current,
                     Description = "The one public API of a BigFatFile Origin.",
                 };
+                foreach (var tag in document.Tags ?? Enumerable.Empty<OpenApiTag>())
+                {
+                    tag.Description = TagDescriptions.GetValueOrDefault(tag.Name ?? "");
+                }
                 document.Components ??= new OpenApiComponents();
                 document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
                 document.Components.SecuritySchemes["oauth2"] = OAuthScheme();

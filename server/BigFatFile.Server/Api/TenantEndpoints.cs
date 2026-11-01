@@ -9,7 +9,10 @@ internal static class TenantEndpoints
     public static void MapTenantEndpoints(this IEndpointRouteBuilder tenant) =>
         tenant.MapGet("", GetTenantAsync)
             .WithName("getTenant")
-            .WithSummary("The tenant's name and plan.")
+            .WithSummary("Get the tenant")
+            .WithDescription("""
+                Returns the tenant's name, its plan and when it was created.
+                """)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersRead));
 

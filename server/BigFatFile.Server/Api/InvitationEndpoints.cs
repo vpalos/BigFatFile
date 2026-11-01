@@ -12,13 +12,28 @@ internal static class InvitationEndpoints
 
         invitations.MapGet("", ListInvitationsAsync)
             .WithName("listInvitations")
-            .WithSummary("The invitations nobody has accepted yet, newest first.")
+            .WithSummary("List invitations")
+            .WithDescription("""
+                Returns the invitations that nobody has accepted yet, newest first, one page at a time.
+
+                It needs the `members.manage` scope, because the invited addresses belong to people who are not members yet.
+                """)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersManage));
 
         invitations.MapPost("", CreateInvitationAsync)
             .WithName("createInvitation")
-            .WithSummary("Invites an email address and sends the invitation email. Inviting the same address again replaces the earlier invitation and sends a new email.")
+            .WithSummary("Invite someone")
+            .WithDescription("""
+                Invites an email address to the tenant with a role, and sends the invitation email. The link in the email works until `expiresAt`.
+
+                Inviting the same address again replaces the earlier invitation and sends a new email.
+
+                Errors:
+
+                - 400 with field errors: the address or the role is not valid.
+                - 409 with the code `already_member`: the address belongs to a member of the tenant.
+                """)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict)
@@ -26,7 +41,12 @@ internal static class InvitationEndpoints
 
         invitations.MapDelete("/{invitationId:guid}", RevokeInvitationAsync)
             .WithName("revokeInvitation")
-            .WithSummary("Revokes an invitation, so its email link stops working.")
+            .WithSummary("Revoke an invitation")
+            .WithDescription("""
+                Revokes an invitation. The link in its email stops working.
+
+                Answers 404 when the invitation does not exist or was already accepted.
+                """)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersManage));
     }

@@ -15,7 +15,15 @@ internal static class MeEndpoints
         api.MapGet("/me", GetMeAsync)
             .WithTags("tenant")
             .WithName("getMe")
-            .WithSummary("The signed-in user, their tenants and their role in each.")
+            .WithSummary("Get the signed-in user")
+            .WithDescription("""
+                Returns the user that the token or session belongs to, and:
+
+                - `tenantId`: the tenant that the token or session works in;
+                - `tenants`: every tenant the user is a member of, with the user's role in each.
+
+                Answers 403 with the code `user_required` when the token has no user. An App that got a token for itself, with client credentials, has no user.
+                """)
             .Produces(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.OpenId));

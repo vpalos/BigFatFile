@@ -11,7 +11,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Whether this server accepts sign-ups without an invitation, and the external accounts it accepts. */
+        /**
+         * Get account options
+         * @description Returns what the sign-in and sign-up screens offer on this server.
+         *
+         *     - `signUp` says whether anyone can create an account, or only people with an invitation.
+         *     - `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.
+         */
         get: operations["getAccountOptions"];
         put?: never;
         post?: never;
@@ -28,7 +34,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The token that is sent in the X-CSRF-Token header by write operations made with the session cookie. */
+        /**
+         * Get a CSRF token
+         * @description Returns a token that protects against cross-site request forgery (CSRF). In that attack, another website makes the browser send a request, and the browser adds the session cookie to it.
+         *
+         *     - Send the token in the `X-CSRF-Token` header of every POST, PUT, PATCH and DELETE request that uses the session cookie.
+         *     - Get a new token after signing in or out, because each token belongs to one user.
+         *     - Requests with a bearer token do not need it.
+         */
         get: operations["getCsrfToken"];
         put?: never;
         post?: never;
@@ -77,7 +90,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Ends the session. */
+        /**
+         * Sign out
+         * @description Ends the session and removes the session cookie.
+         *
+         *     The request must send the `X-CSRF-Token` header. Without it, the answer is 400 with the code `csrf_token_invalid`.
+         */
         post: operations["signOut"];
         delete?: never;
         options?: never;
@@ -93,7 +111,12 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Scopes the session to another of the user's tenants. */
+        /**
+         * Switch tenant
+         * @description Moves the session to another tenant that the user is a member of. The response sets a new session cookie, so every open tab of the web app switches too.
+         *
+         *     Answers 404 when the user is not a member of that tenant.
+         */
         put: operations["switchTenant"];
         post?: never;
         delete?: never;
@@ -111,7 +134,19 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Creates an account. Without an invitation token, a confirmation email is sent first. */
+        /**
+         * Sign up
+         * @description Creates an account with a name, an email address and a password.
+         *
+         *     - With `invitationToken`, the invitation email proves that the person receives mail at the address. The account is created at once, joins the invited tenant, and its session starts. The outcome is `signed_in`.
+         *     - Without it, a confirmation email is sent. The account can sign in once the address is confirmed. The outcome is `confirmation_sent`.
+         *     - When the address already has an account, the outcome is also `confirmation_sent`, and that account gets an email saying so. This way the response does not reveal which addresses have accounts.
+         *
+         *     Errors:
+         *
+         *     - 400 with field errors: a field is not valid, for example a password shorter than 12 characters.
+         *     - 403 with the code `sign_up_closed`: this server accepts sign-ups only with an invitation, and the request has none. The one exception is the operator's address, set in `BFF_OPERATOR_EMAIL`.
+         */
         post: operations["signUp"];
         delete?: never;
         options?: never;
@@ -128,7 +163,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Confirms the address with the code from the confirmation email, and starts a session. */
+        /**
+         * Confirm an email address
+         * @description Confirms the address with the user ID and the code from the confirmation email, and starts a session. The link in the email opens the web app, which reads both values from it.
+         *
+         *     On a server with open sign-up, this is also when the person's new tenant is created.
+         *
+         *     Answers 400 with the code `invalid_code` when the code is wrong or has expired.
+         */
         post: operations["confirmEmail"];
         delete?: never;
         options?: never;
@@ -145,7 +187,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Sends the confirmation email again. The answer is the same whether or not the address has an account. */
+        /**
+         * Resend the confirmation email
+         * @description Sends the confirmation email again, to an address that is not confirmed yet.
+         *
+         *     The answer is always 202, whether or not the address has an account. This way the response does not reveal which addresses have accounts.
+         */
         post: operations["resendConfirmation"];
         delete?: never;
         options?: never;
@@ -162,7 +209,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Sends a password reset email. The answer is the same whether or not the address has an account. */
+        /**
+         * Request a password reset
+         * @description Sends an email with a link to reset the password.
+         *
+         *     The answer is always 202, whether or not the address has an account. This way the response does not reveal which addresses have accounts.
+         */
         post: operations["forgotPassword"];
         delete?: never;
         options?: never;
@@ -179,7 +231,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Sets a new password with the code from the password reset email. */
+        /**
+         * Reset the password
+         * @description Sets a new password, with the user ID and the code from the password reset email. The link in the email opens the web app, which reads both values from it.
+         *
+         *     Errors:
+         *
+         *     - 400 with the code `invalid_code`: the code is wrong or has expired.
+         *     - 400 with field errors: the new password is not valid, for example shorter than 12 characters.
+         */
         post: operations["resetPassword"];
         delete?: never;
         options?: never;
@@ -194,7 +254,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Sends the browser to the provider's sign-in page. After the person signs in there, the browser returns to returnUrl, which must be a path on this server. */
+        /**
+         * Sign in with an external account
+         * @description Sends the browser to the sign-in page of another service, such as Google or Microsoft. When the person has signed in there, the browser comes back to `returnUrl`, which must be a path on this server.
+         *
+         *     - `provider` is a `key` from `GET /account/options`.
+         *     - The web app opens this address as a page in the browser, not with a fetch call, because the browser must follow the redirects.
+         *
+         *     Answers 404 when this server has no provider with that key.
+         */
         get: operations["signInExternally"];
         put?: never;
         post?: never;
@@ -213,7 +281,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** What an invitation is for, before the person accepts it. */
+        /**
+         * Look up an invitation
+         * @description Returns what an invitation is for, so that the invitation screen can show it before the person accepts: the tenant, who sent it, the invited address and the role.
+         *
+         *     - `accountExists` tells the screen whether to ask the person to sign in or to sign up.
+         *     - The token is sent in the request body, so it stays out of request logs.
+         *
+         *     Answers 404 when the token is unknown, has expired, was revoked or was already accepted.
+         */
         post: operations["lookUpInvitation"];
         delete?: never;
         options?: never;
@@ -230,7 +306,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Joins the tenant and scopes the session to it. The session's user must have the invited address. */
+        /**
+         * Accept an invitation
+         * @description Adds the signed-in user to the invited tenant, with the invited role. The session then works in that tenant.
+         *
+         *     Errors:
+         *
+         *     - 404: the token is unknown, has expired, was revoked or was already accepted.
+         *     - 409 with the code `wrong_account`: the user's email address is not the one the invitation was sent to.
+         */
         post: operations["acceptInvitation"];
         delete?: never;
         options?: never;
@@ -245,7 +329,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** What a client needs to know about this server: versions, chunker parameters and enabled features. */
+        /**
+         * Get server information
+         * @description Returns what a client needs to know about this server before it uses the API:
+         *
+         *     - the API version and the server version;
+         *     - the parameters of the chunker, which splits files into chunks for transfer;
+         *     - the Unicode version used to normalise file names before they are compared;
+         *     - the licensed features that are turned on.
+         *
+         *     It needs no token.
+         */
         get: operations["getMeta"];
         put?: never;
         post?: never;
@@ -262,7 +356,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The signed-in user, their tenants and their role in each. */
+        /**
+         * Get the signed-in user
+         * @description Returns the user that the token or session belongs to, and:
+         *
+         *     - `tenantId`: the tenant that the token or session works in;
+         *     - `tenants`: every tenant the user is a member of, with the user's role in each.
+         *
+         *     Answers 403 with the code `user_required` when the token has no user. An App that got a token for itself, with client credentials, has no user.
+         */
         get: operations["getMe"];
         put?: never;
         post?: never;
@@ -279,7 +381,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The tenant's name and plan. */
+        /**
+         * Get the tenant
+         * @description Returns the tenant's name, its plan and when it was created.
+         */
         get: operations["getTenant"];
         put?: never;
         post?: never;
@@ -296,7 +401,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The tenant's members, ordered by name. */
+        /**
+         * List members
+         * @description Returns the tenant's members, ordered by name, one page at a time.
+         */
         get: operations["listMembers"];
         put?: never;
         post?: never;
@@ -316,11 +424,27 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Removes a member from the tenant. The tenant always keeps at least one admin. */
+        /**
+         * Remove a member
+         * @description Removes a user from the tenant. The user loses access at once, also through tokens issued earlier.
+         *
+         *     Errors:
+         *
+         *     - 404: the user is not a member of the tenant.
+         *     - 409 with the code `last_admin`: the user is the tenant's last admin.
+         */
         delete: operations["removeMember"];
         options?: never;
         head?: never;
-        /** Changes a member's role. The tenant always keeps at least one admin. */
+        /**
+         * Change a member's role
+         * @description Changes the role of one member of the tenant.
+         *
+         *     Errors:
+         *
+         *     - 404: the user is not a member of the tenant.
+         *     - 409 with the code `last_admin`: the change would leave the tenant without an admin.
+         */
         patch: operations["updateMember"];
         trace?: never;
     };
@@ -331,10 +455,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The invitations nobody has accepted yet, newest first. */
+        /**
+         * List invitations
+         * @description Returns the invitations that nobody has accepted yet, newest first, one page at a time.
+         *
+         *     It needs the `members.manage` scope, because the invited addresses belong to people who are not members yet.
+         */
         get: operations["listInvitations"];
         put?: never;
-        /** Invites an email address and sends the invitation email. Inviting the same address again replaces the earlier invitation and sends a new email. */
+        /**
+         * Invite someone
+         * @description Invites an email address to the tenant with a role, and sends the invitation email. The link in the email works until `expiresAt`.
+         *
+         *     Inviting the same address again replaces the earlier invitation and sends a new email.
+         *
+         *     Errors:
+         *
+         *     - 400 with field errors: the address or the role is not valid.
+         *     - 409 with the code `already_member`: the address belongs to a member of the tenant.
+         */
         post: operations["createInvitation"];
         delete?: never;
         options?: never;
@@ -352,7 +491,12 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Revokes an invitation, so its email link stops working. */
+        /**
+         * Revoke an invitation
+         * @description Revokes an invitation. The link in its email stops working.
+         *
+         *     Answers 404 when the invitation does not exist or was already accepted.
+         */
         delete: operations["revokeInvitation"];
         options?: never;
         head?: never;

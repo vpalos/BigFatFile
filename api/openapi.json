@@ -11,7 +11,8 @@
         "tags": [
           "auth"
         ],
-        "summary": "Whether this server accepts sign-ups without an invitation, and the external accounts it accepts.",
+        "summary": "Get account options",
+        "description": "Returns what the sign-in and sign-up screens offer on this server.\n\n- `signUp` says whether anyone can create an account, or only people with an invitation.\n- `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.",
         "operationId": "getAccountOptions",
         "responses": {
           "200": {
@@ -32,7 +33,8 @@
         "tags": [
           "auth"
         ],
-        "summary": "The token that is sent in the X-CSRF-Token header by write operations made with the session cookie.",
+        "summary": "Get a CSRF token",
+        "description": "Returns a token that protects against cross-site request forgery (CSRF). In that attack, another website makes the browser send a request, and the browser adds the session cookie to it.\n\n- Send the token in the `X-CSRF-Token` header of every POST, PUT, PATCH and DELETE request that uses the session cookie.\n- Get a new token after signing in or out, because each token belongs to one user.\n- Requests with a bearer token do not need it.",
         "operationId": "getCsrfToken",
         "responses": {
           "200": {
@@ -118,7 +120,8 @@
         "tags": [
           "auth"
         ],
-        "summary": "Ends the session.",
+        "summary": "Sign out",
+        "description": "Ends the session and removes the session cookie.\n\nThe request must send the `X-CSRF-Token` header. Without it, the answer is 400 with the code `csrf_token_invalid`.",
         "operationId": "signOut",
         "responses": {
           "204": {
@@ -147,7 +150,8 @@
         "tags": [
           "auth"
         ],
-        "summary": "Scopes the session to another of the user's tenants.",
+        "summary": "Switch tenant",
+        "description": "Moves the session to another tenant that the user is a member of. The response sets a new session cookie, so every open tab of the web app switches too.\n\nAnswers 404 when the user is not a member of that tenant.",
         "operationId": "switchTenant",
         "requestBody": {
           "content": {
@@ -186,7 +190,8 @@
         "tags": [
           "auth"
         ],
-        "summary": "Creates an account. Without an invitation token, a confirmation email is sent first.",
+        "summary": "Sign up",
+        "description": "Creates an account with a name, an email address and a password.\n\n- With `invitationToken`, the invitation email proves that the person receives mail at the address. The account is created at once, joins the invited tenant, and its session starts. The outcome is `signed_in`.\n- Without it, a confirmation email is sent. The account can sign in once the address is confirmed. The outcome is `confirmation_sent`.\n- When the address already has an account, the outcome is also `confirmation_sent`, and that account gets an email saying so. This way the response does not reveal which addresses have accounts.\n\nErrors:\n\n- 400 with field errors: a field is not valid, for example a password shorter than 12 characters.\n- 403 with the code `sign_up_closed`: this server accepts sign-ups only with an invitation, and the request has none. The one exception is the operator's address, set in `BFF_OPERATOR_EMAIL`.",
         "operationId": "signUp",
         "requestBody": {
           "content": {
@@ -237,7 +242,8 @@
         "tags": [
           "auth"
         ],
-        "summary": "Confirms the address with the code from the confirmation email, and starts a session.",
+        "summary": "Confirm an email address",
+        "description": "Confirms the address with the user ID and the code from the confirmation email, and starts a session. The link in the email opens the web app, which reads both values from it.\n\nOn a server with open sign-up, this is also when the person's new tenant is created.\n\nAnswers 400 with the code `invalid_code` when the code is wrong or has expired.",
         "operationId": "confirmEmail",
         "requestBody": {
           "content": {
@@ -271,7 +277,8 @@
         "tags": [
           "auth"
         ],
-        "summary": "Sends the confirmation email again. The answer is the same whether or not the address has an account.",
+        "summary": "Resend the confirmation email",
+        "description": "Sends the confirmation email again, to an address that is not confirmed yet.\n\nThe answer is always 202, whether or not the address has an account. This way the response does not reveal which addresses have accounts.",
         "operationId": "resendConfirmation",
         "requestBody": {
           "content": {
@@ -295,7 +302,8 @@
         "tags": [
           "auth"
         ],
-        "summary": "Sends a password reset email. The answer is the same whether or not the address has an account.",
+        "summary": "Request a password reset",
+        "description": "Sends an email with a link to reset the password.\n\nThe answer is always 202, whether or not the address has an account. This way the response does not reveal which addresses have accounts.",
         "operationId": "forgotPassword",
         "requestBody": {
           "content": {
@@ -319,7 +327,8 @@
         "tags": [
           "auth"
         ],
-        "summary": "Sets a new password with the code from the password reset email.",
+        "summary": "Reset the password",
+        "description": "Sets a new password, with the user ID and the code from the password reset email. The link in the email opens the web app, which reads both values from it.\n\nErrors:\n\n- 400 with the code `invalid_code`: the code is wrong or has expired.\n- 400 with field errors: the new password is not valid, for example shorter than 12 characters.",
         "operationId": "resetPassword",
         "requestBody": {
           "content": {
@@ -353,7 +362,8 @@
         "tags": [
           "auth"
         ],
-        "summary": "Sends the browser to the provider's sign-in page. After the person signs in there, the browser returns to returnUrl, which must be a path on this server.",
+        "summary": "Sign in with an external account",
+        "description": "Sends the browser to the sign-in page of another service, such as Google or Microsoft. When the person has signed in there, the browser comes back to `returnUrl`, which must be a path on this server.\n\n- `provider` is a `key` from `GET /account/options`.\n- The web app opens this address as a page in the browser, not with a fetch call, because the browser must follow the redirects.\n\nAnswers 404 when this server has no provider with that key.",
         "operationId": "signInExternally",
         "parameters": [
           {
@@ -394,7 +404,8 @@
         "tags": [
           "auth"
         ],
-        "summary": "What an invitation is for, before the person accepts it.",
+        "summary": "Look up an invitation",
+        "description": "Returns what an invitation is for, so that the invitation screen can show it before the person accepts: the tenant, who sent it, the invited address and the role.\n\n- `accountExists` tells the screen whether to ask the person to sign in or to sign up.\n- The token is sent in the request body, so it stays out of request logs.\n\nAnswers 404 when the token is unknown, has expired, was revoked or was already accepted.",
         "operationId": "lookUpInvitation",
         "requestBody": {
           "content": {
@@ -435,7 +446,8 @@
         "tags": [
           "auth"
         ],
-        "summary": "Joins the tenant and scopes the session to it. The session's user must have the invited address.",
+        "summary": "Accept an invitation",
+        "description": "Adds the signed-in user to the invited tenant, with the invited role. The session then works in that tenant.\n\nErrors:\n\n- 404: the token is unknown, has expired, was revoked or was already accepted.\n- 409 with the code `wrong_account`: the user's email address is not the one the invitation was sent to.",
         "operationId": "acceptInvitation",
         "requestBody": {
           "content": {
@@ -484,7 +496,8 @@
         "tags": [
           "meta"
         ],
-        "summary": "What a client needs to know about this server: versions, chunker parameters and enabled features.",
+        "summary": "Get server information",
+        "description": "Returns what a client needs to know about this server before it uses the API:\n\n- the API version and the server version;\n- the parameters of the chunker, which splits files into chunks for transfer;\n- the Unicode version used to normalise file names before they are compared;\n- the licensed features that are turned on.\n\nIt needs no token.",
         "operationId": "getMeta",
         "responses": {
           "200": {
@@ -505,7 +518,8 @@
         "tags": [
           "tenant"
         ],
-        "summary": "The signed-in user, their tenants and their role in each.",
+        "summary": "Get the signed-in user",
+        "description": "Returns the user that the token or session belongs to, and:\n\n- `tenantId`: the tenant that the token or session works in;\n- `tenants`: every tenant the user is a member of, with the user's role in each.\n\nAnswers 403 with the code `user_required` when the token has no user. An App that got a token for itself, with client credentials, has no user.",
         "operationId": "getMe",
         "responses": {
           "200": {
@@ -549,7 +563,8 @@
         "tags": [
           "tenant"
         ],
-        "summary": "The tenant's name and plan.",
+        "summary": "Get the tenant",
+        "description": "Returns the tenant's name, its plan and when it was created.",
         "operationId": "getTenant",
         "parameters": [
           {
@@ -614,7 +629,8 @@
         "tags": [
           "tenant"
         ],
-        "summary": "The tenant's members, ordered by name.",
+        "summary": "List members",
+        "description": "Returns the tenant's members, ordered by name, one page at a time.",
         "operationId": "listMembers",
         "parameters": [
           {
@@ -698,7 +714,8 @@
         "tags": [
           "tenant"
         ],
-        "summary": "Changes a member's role. The tenant always keeps at least one admin.",
+        "summary": "Change a member's role",
+        "description": "Changes the role of one member of the tenant.\n\nErrors:\n\n- 404: the user is not a member of the tenant.\n- 409 with the code `last_admin`: the change would leave the tenant without an admin.",
         "operationId": "updateMember",
         "parameters": [
           {
@@ -790,7 +807,8 @@
         "tags": [
           "tenant"
         ],
-        "summary": "Removes a member from the tenant. The tenant always keeps at least one admin.",
+        "summary": "Remove a member",
+        "description": "Removes a user from the tenant. The user loses access at once, also through tokens issued earlier.\n\nErrors:\n\n- 404: the user is not a member of the tenant.\n- 409 with the code `last_admin`: the user is the tenant's last admin.",
         "operationId": "removeMember",
         "parameters": [
           {
@@ -867,7 +885,8 @@
         "tags": [
           "tenant"
         ],
-        "summary": "The invitations nobody has accepted yet, newest first.",
+        "summary": "List invitations",
+        "description": "Returns the invitations that nobody has accepted yet, newest first, one page at a time.\n\nIt needs the `members.manage` scope, because the invited addresses belong to people who are not members yet.",
         "operationId": "listInvitations",
         "parameters": [
           {
@@ -949,7 +968,8 @@
         "tags": [
           "tenant"
         ],
-        "summary": "Invites an email address and sends the invitation email. Inviting the same address again replaces the earlier invitation and sends a new email.",
+        "summary": "Invite someone",
+        "description": "Invites an email address to the tenant with a role, and sends the invitation email. The link in the email works until `expiresAt`.\n\nInviting the same address again replaces the earlier invitation and sends a new email.\n\nErrors:\n\n- 400 with field errors: the address or the role is not valid.\n- 409 with the code `already_member`: the address belongs to a member of the tenant.",
         "operationId": "createInvitation",
         "parameters": [
           {
@@ -1044,7 +1064,8 @@
         "tags": [
           "tenant"
         ],
-        "summary": "Revokes an invitation, so its email link stops working.",
+        "summary": "Revoke an invitation",
+        "description": "Revokes an invitation. The link in its email stops working.\n\nAnswers 404 when the invitation does not exist or was already accepted.",
         "operationId": "revokeInvitation",
         "parameters": [
           {
@@ -1776,13 +1797,16 @@
   },
   "tags": [
     {
-      "name": "auth"
+      "name": "auth",
+      "description": "The endpoints behind the web app's account screens: sign-up, sign-in, passwords and invitations.\n\n- Only the web app calls them, from the same origin as the server.\n- They work with the session cookie, not with tokens.\n- Apps get their tokens from the OpenID Connect endpoints under `/connect` instead."
     },
     {
-      "name": "meta"
+      "name": "meta",
+      "description": "Information about the server itself."
     },
     {
-      "name": "tenant"
+      "name": "tenant",
+      "description": "The signed-in user, the tenant, its members and its invitations.\n\n- A token or a session works in one tenant. A request with any other tenant's ID gets 404, the same answer as for a tenant that does not exist.\n- The endpoints that need the `members.manage` scope are for admins only. A user who is not an admin of the tenant gets 403 with the code `admin_required`."
     }
   ]
 }

@@ -14,12 +14,25 @@ internal static class SessionEndpoints
     {
         account.MapGet("/options", GetOptions)
             .WithName("getAccountOptions")
-            .WithSummary("Whether this server accepts sign-ups without an invitation, and the external accounts it accepts.")
+            .WithSummary("Get account options")
+            .WithDescription("""
+                Returns what the sign-in and sign-up screens offer on this server.
+
+                - `signUp` says whether anyone can create an account, or only people with an invitation.
+                - `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.
+                """)
             .AllowAnonymous();
 
         account.MapGet("/csrf", GetCsrfToken)
             .WithName("getCsrfToken")
-            .WithSummary("The token that is sent in the X-CSRF-Token header by write operations made with the session cookie.")
+            .WithSummary("Get a CSRF token")
+            .WithDescription("""
+                Returns a token that protects against cross-site request forgery (CSRF). In that attack, another website makes the browser send a request, and the browser adds the session cookie to it.
+
+                - Send the token in the `X-CSRF-Token` header of every POST, PUT, PATCH and DELETE request that uses the session cookie.
+                - Get a new token after signing in or out, because each token belongs to one user.
+                - Requests with a bearer token do not need it.
+                """)
             .AllowAnonymous();
 
         account.MapPost("/sign-in", SignInAsync)
@@ -47,13 +60,23 @@ internal static class SessionEndpoints
 
         account.MapPost("/sign-out", SignOutAsync)
             .WithName("signOut")
-            .WithSummary("Ends the session.")
+            .WithSummary("Sign out")
+            .WithDescription("""
+                Ends the session and removes the session cookie.
+
+                The request must send the `X-CSRF-Token` header. Without it, the answer is 400 with the code `csrf_token_invalid`.
+                """)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .RequireAuthorization(AuthServices.SessionPolicy);
 
         account.MapPut("/tenant", SwitchTenantAsync)
             .WithName("switchTenant")
-            .WithSummary("Scopes the session to another of the user's tenants.")
+            .WithSummary("Switch tenant")
+            .WithDescription("""
+                Moves the session to another tenant that the user is a member of. The response sets a new session cookie, so every open tab of the web app switches too.
+
+                Answers 404 when the user is not a member of that tenant.
+                """)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .RequireAuthorization(AuthServices.SessionPolicy);
     }

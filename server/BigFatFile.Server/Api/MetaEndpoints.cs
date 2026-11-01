@@ -22,6 +22,16 @@ internal static class MetaEndpoints
                 features.EnabledKeys))
             .WithTags("meta")
             .WithName("getMeta")
-            .WithSummary("What a client needs to know about this server: versions, chunker parameters and enabled features.")
+            .WithSummary("Get server information")
+            .WithDescription("""
+                Returns what a client needs to know about this server before it uses the API:
+
+                - the API version and the server version;
+                - the parameters of the chunker, which splits files into chunks for transfer;
+                - the Unicode version used to normalise file names before they are compared;
+                - the licensed features that are turned on.
+
+                It needs no token.
+                """)
             .AllowAnonymous();
 }

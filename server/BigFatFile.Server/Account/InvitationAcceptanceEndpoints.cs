@@ -12,13 +12,29 @@ internal static class InvitationAcceptanceEndpoints
 
         invitations.MapPost("/lookup", LookUpAsync)
             .WithName("lookUpInvitation")
-            .WithSummary("What an invitation is for, before the person accepts it.")
+            .WithSummary("Look up an invitation")
+            .WithDescription("""
+                Returns what an invitation is for, so that the invitation screen can show it before the person accepts: the tenant, who sent it, the invited address and the role.
+
+                - `accountExists` tells the screen whether to ask the person to sign in or to sign up.
+                - The token is sent in the request body, so it stays out of request logs.
+
+                Answers 404 when the token is unknown, has expired, was revoked or was already accepted.
+                """)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .AllowAnonymous();
 
         invitations.MapPost("/accept", AcceptAsync)
             .WithName("acceptInvitation")
-            .WithSummary("Joins the tenant and scopes the session to it. The session's user must have the invited address.")
+            .WithSummary("Accept an invitation")
+            .WithDescription("""
+                Adds the signed-in user to the invited tenant, with the invited role. The session then works in that tenant.
+
+                Errors:
+
+                - 404: the token is unknown, has expired, was revoked or was already accepted.
+                - 409 with the code `wrong_account`: the user's email address is not the one the invitation was sent to.
+                """)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .RequireAuthorization(AuthServices.SessionPolicy);

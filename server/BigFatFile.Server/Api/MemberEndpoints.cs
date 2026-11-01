@@ -12,20 +12,39 @@ internal static class MemberEndpoints
 
         members.MapGet("", ListMembersAsync)
             .WithName("listMembers")
-            .WithSummary("The tenant's members, ordered by name.")
+            .WithSummary("List members")
+            .WithDescription("""
+                Returns the tenant's members, ordered by name, one page at a time.
+                """)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersRead));
 
         members.MapPatch("/{userId:guid}", UpdateMemberAsync)
             .WithName("updateMember")
-            .WithSummary("Changes a member's role. The tenant always keeps at least one admin.")
+            .WithSummary("Change a member's role")
+            .WithDescription("""
+                Changes the role of one member of the tenant.
+
+                Errors:
+
+                - 404: the user is not a member of the tenant.
+                - 409 with the code `last_admin`: the change would leave the tenant without an admin.
+                """)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersManage));
 
         members.MapDelete("/{userId:guid}", RemoveMemberAsync)
             .WithName("removeMember")
-            .WithSummary("Removes a member from the tenant. The tenant always keeps at least one admin.")
+            .WithSummary("Remove a member")
+            .WithDescription("""
+                Removes a user from the tenant. The user loses access at once, also through tokens issued earlier.
+
+                Errors:
+
+                - 404: the user is not a member of the tenant.
+                - 409 with the code `last_admin`: the user is the tenant's last admin.
+                """)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersManage));
