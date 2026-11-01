@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "BigFatFile API",
-    "description": "The one public API of a BigFatFile Origin.",
+    "description": "The one public API of a BigFatFile Origin.\n\n## Errors\n\nEvery error response has a JSON body in the problem details format (RFC 9457), with the content type `application/problem+json`. The `ProblemDetails` schema describes its fields. A client branches on `code`, never on `title`.\n\n### Errors that any endpoint can return\n\n- `bad_request`, 400: The request is not valid. The server could not read the request, for example because its JSON body is malformed or a required parameter is missing. Fix the request before sending it again.\n- `invalid_fields`, 400: Some fields are not valid. The `errors` field lists what is wrong with each field.\n- `authentication_required`, 401: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again.\n- `forbidden`, 403: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.\n- `not_found`, 404: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists.\n- `method_not_allowed`, 405: This address does not accept this HTTP method. The endpoint exists, but not with this HTTP method. The `Allow` header lists the methods that it accepts.\n- `request_too_large`, 413: The request body is too large. Send a smaller body.\n- `unsupported_media_type`, 415: This endpoint does not accept the content type of the request body. Send the body with a content type that the endpoint accepts, usually `application/json`.\n- `server_error`, 500: The server failed to handle the request. Try again later. If the error does not go away, give the `traceId` to the server's operator.\n\n### Errors of specific endpoints\n\nEach endpoint lists its own errors under its responses, with an example body for each code. For example, see the responses of [Accept an invitation](#tag/auth/POST/account/invitations/accept).",
     "version": "1.0"
   },
   "paths": {
@@ -56,7 +56,7 @@
           "auth"
         ],
         "summary": "Sign in with a password",
-        "description": "Checks the email address and the password, and starts a session. The response sets the session cookie.\n\nThe session works in one tenant. It is the tenant in `tenantId` when the request has one. Otherwise it is the tenant that the user signed in to last.\n\nErrors:\n\n- 401 with the code `wrong_credentials`: the address or the password is wrong.\n- 403 with the code `email_not_confirmed`: the address is not confirmed yet.\n- 403 with the code `locked_out`: the account is locked for 5 minutes, because of 10 wrong passwords in a row. During the lock, even the right password gets this answer.\n- 404: the user is not a member of the tenant in `tenantId`.\n- 429 with the code `too_many_requests`: this IP address made more than 20 sign-in attempts in one minute, for any accounts. The `Retry-After` header says how many seconds to wait. All the addresses of one IPv6 /64 block count as one address.",
+        "description": "Checks the email address and the password, and starts a session. The response sets the session cookie.\n\nThe session works in one tenant. It is the tenant in `tenantId` when the request has one. Otherwise it is the tenant that the user signed in to last.",
         "operationId": "signIn",
         "requestBody": {
           "content": {
@@ -73,41 +73,94 @@
             "description": "No Content"
           },
           "401": {
-            "description": "Unauthorized",
+            "description": "`wrong_credentials`: The email address or the password is wrong. The answer does not say which one is wrong, so that it does not reveal which addresses have accounts.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "wrong_credentials": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:wrong_credentials",
+                      "title": "The email address or the password is wrong.",
+                      "status": 401,
+                      "code": "wrong_credentials",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
           },
           "403": {
-            "description": "Forbidden",
+            "description": "- `email_not_confirmed`: The email address is not confirmed yet. Open the link in the confirmation email first. `POST /account/resend-confirmation` sends the email again.\n- `locked_out`: The account is locked for 5 minutes, because of too many wrong passwords. The lock starts after 10 wrong passwords in a row. During the lock, even the right password gets this answer. Try again when the lock ends.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "email_not_confirmed": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:email_not_confirmed",
+                      "title": "The email address is not confirmed yet.",
+                      "status": 403,
+                      "code": "email_not_confirmed",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
+                  "locked_out": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:locked_out",
+                      "title": "The account is locked for 5 minutes, because of too many wrong passwords.",
+                      "status": 403,
+                      "code": "locked_out",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
           },
           "404": {
-            "description": "Not Found",
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of the tenant in `tenantId`.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
           },
           "429": {
-            "description": "Too Many Requests",
+            "description": "`too_many_requests`: Too many requests from this address. Wait for the number of seconds in the Retry-After header. This IP address sent more requests than the endpoint allows in a period of time. Here, the limit is 20 sign-in attempts per minute from one IP address, for any accounts. All the addresses of one IPv6 /64 block count as one address.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "too_many_requests": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:too_many_requests",
+                      "title": "Too many requests from this address. Wait for the number of seconds in the Retry-After header.",
+                      "status": 429,
+                      "code": "too_many_requests",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -121,18 +174,29 @@
           "auth"
         ],
         "summary": "Sign out",
-        "description": "Ends the session and removes the session cookie.\n\nThe request must send the `X-CSRF-Token` header. Without it, the answer is 400 with the code `csrf_token_invalid`.",
+        "description": "Ends the session and removes the session cookie. The request must send the `X-CSRF-Token` header.",
         "operationId": "signOut",
         "responses": {
           "204": {
             "description": "No Content"
           },
           "400": {
-            "description": "Bad Request",
+            "description": "`csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /account/csrf`. Get a new token after signing in or out, because each token belongs to one user.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -151,7 +215,7 @@
           "auth"
         ],
         "summary": "Switch tenant",
-        "description": "Moves the session to another tenant that the user is a member of. The response sets a new session cookie, so every open tab of the web app switches too.\n\nAnswers 404 when the user is not a member of that tenant.",
+        "description": "Moves the session to another tenant that the user is a member of. The response sets a new session cookie, so every open tab of the web app switches too.",
         "operationId": "switchTenant",
         "requestBody": {
           "content": {
@@ -168,11 +232,22 @@
             "description": "No Content"
           },
           "404": {
-            "description": "Not Found",
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of that tenant.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -191,7 +266,7 @@
           "auth"
         ],
         "summary": "Sign up",
-        "description": "Creates an account with a name, an email address and a password.\n\n- With `invitationToken`, the invitation email proves that the person receives mail at the address. The account is created at once, joins the invited tenant, and its session starts. The outcome is `signed_in`.\n- Without it, a confirmation email is sent. The account can sign in once the address is confirmed. The outcome is `confirmation_sent`.\n- When the address already has an account, the outcome is also `confirmation_sent`, and that account gets an email saying so. This way the response does not reveal which addresses have accounts.\n\nErrors:\n\n- 400 with field errors: a field is not valid, for example a password shorter than 12 characters.\n- 403 with the code `sign_up_closed`: this server accepts sign-ups only with an invitation, and the request has none. The one exception is the operator's address, set in `BFF_OPERATOR_EMAIL`.",
+        "description": "Creates an account with a name, an email address and a password.\n\n- With `invitationToken`, the invitation email proves that the person receives mail at the address. The account is created at once, joins the invited tenant, and its session starts. The outcome is `signed_in`.\n- Without it, a confirmation email is sent. The account can sign in once the address is confirmed. The outcome is `confirmation_sent`.\n- When the address already has an account, the outcome is also `confirmation_sent`, and that account gets an email saying so. This way the response does not reveal which addresses have accounts.",
         "operationId": "signUp",
         "requestBody": {
           "content": {
@@ -215,21 +290,48 @@
             }
           },
           "400": {
-            "description": "Bad Request",
+            "description": "`invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field. For example, a password shorter than 12 characters.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "examples": {
+                  "invalid_fields": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:invalid_fields",
+                      "title": "Some fields are not valid.",
+                      "status": 400,
+                      "code": "invalid_fields",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+                      "errors": {
+                        "<field>": [
+                          "<what is wrong with the field>"
+                        ]
+                      }
+                    }
+                  }
                 }
               }
             }
           },
           "403": {
-            "description": "Forbidden",
+            "description": "`sign_up_closed`: This server accepts sign-ups only with an invitation. Ask an admin of a tenant to invite you. The operator's address, set in `BFF_OPERATOR_EMAIL`, can always sign up.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "sign_up_closed": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:sign_up_closed",
+                      "title": "This server accepts sign-ups only with an invitation.",
+                      "status": 403,
+                      "code": "sign_up_closed",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -243,7 +345,7 @@
           "auth"
         ],
         "summary": "Confirm an email address",
-        "description": "Confirms the address with the user ID and the code from the confirmation email, and starts a session. The link in the email opens the web app, which reads both values from it.\n\nOn a server with open sign-up, this is also when the person's new tenant is created.\n\nAnswers 400 with the code `invalid_code` when the code is wrong or has expired.",
+        "description": "Confirms the address with the user ID and the code from the confirmation email, and starts a session. The link in the email opens the web app, which reads both values from it.\n\nOn a server with open sign-up, this is also when the person's new tenant is created.\n\nOnly the first confirmation of an address starts a session. So nobody can sign in later with a link that was forwarded or saved.",
         "operationId": "confirmEmail",
         "requestBody": {
           "content": {
@@ -260,11 +362,43 @@
             "description": "No Content"
           },
           "400": {
-            "description": "Bad Request",
+            "description": "`invalid_code`: The code is wrong or has expired. Ask for a new email: a new confirmation email, or a new password reset email. It is also the answer when the user ID is unknown.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "invalid_code": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:invalid_code",
+                      "title": "The code is wrong or has expired.",
+                      "status": 400,
+                      "code": "invalid_code",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`already_confirmed`: This email address is already confirmed. Sign in instead. The confirmation link was used before. Only the first confirmation starts a session, so nobody can sign in with a link that was forwarded or saved. Sign in with the password. Only a request with a valid code gets this answer, so it does not reveal which addresses are confirmed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "already_confirmed": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:already_confirmed",
+                      "title": "This email address is already confirmed. Sign in instead.",
+                      "status": 409,
+                      "code": "already_confirmed",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -328,7 +462,7 @@
           "auth"
         ],
         "summary": "Reset the password",
-        "description": "Sets a new password, with the user ID and the code from the password reset email. The link in the email opens the web app, which reads both values from it.\n\nErrors:\n\n- 400 with the code `invalid_code`: the code is wrong or has expired.\n- 400 with field errors: the new password is not valid, for example shorter than 12 characters.",
+        "description": "Sets a new password, with the user ID and the code from the password reset email. The link in the email opens the web app, which reads both values from it.",
         "operationId": "resetPassword",
         "requestBody": {
           "content": {
@@ -345,11 +479,36 @@
             "description": "No Content"
           },
           "400": {
-            "description": "Bad Request",
+            "description": "- `invalid_code`: The code is wrong or has expired. Ask for a new email: a new confirmation email, or a new password reset email.\n- `invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field. For example, a new password shorter than 12 characters.",
             "content": {
               "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "examples": {
+                  "invalid_code": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:invalid_code",
+                      "title": "The code is wrong or has expired.",
+                      "status": 400,
+                      "code": "invalid_code",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
+                  "invalid_fields": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:invalid_fields",
+                      "title": "Some fields are not valid.",
+                      "status": 400,
+                      "code": "invalid_fields",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+                      "errors": {
+                        "<field>": [
+                          "<what is wrong with the field>"
+                        ]
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -363,7 +522,7 @@
           "auth"
         ],
         "summary": "Sign in with an external account",
-        "description": "Sends the browser to the sign-in page of another service, such as Google or Microsoft. When the person has signed in there, the browser comes back to `returnUrl`, which must be a path on this server.\n\n- `provider` is a `key` from `GET /account/options`.\n- The web app opens this address as a page in the browser, not with a fetch call, because the browser must follow the redirects.\n\nAnswers 404 when this server has no provider with that key.",
+        "description": "Sends the browser to the sign-in page of another service, such as Google or Microsoft. When the person has signed in there, the browser comes back to `returnUrl`, which must be a path on this server.\n\n- `provider` is a `key` from `GET /account/options`.\n- The web app opens this address as a page in the browser, not with a fetch call, because the browser must follow the redirects.",
         "operationId": "signInExternally",
         "parameters": [
           {
@@ -387,11 +546,22 @@
             "description": "Found"
           },
           "404": {
-            "description": "Not Found",
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, this server has no provider with that key.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -405,7 +575,7 @@
           "auth"
         ],
         "summary": "Look up an invitation",
-        "description": "Returns what an invitation is for, so that the invitation screen can show it before the person accepts: the tenant, who sent it, the invited address and the role.\n\n- `accountExists` tells the screen whether to ask the person to sign in or to sign up.\n- The token is sent in the request body, so it stays out of request logs.\n\nAnswers 404 when the token is unknown, has expired, was revoked or was already accepted.",
+        "description": "Returns what an invitation is for, so that the invitation screen can show it before the person accepts: the tenant, who sent it, the invited address and the role.\n\n- `accountExists` tells the screen whether to ask the person to sign in or to sign up.\n- The token is sent in the request body, so it stays out of request logs.",
         "operationId": "lookUpInvitation",
         "requestBody": {
           "content": {
@@ -429,11 +599,22 @@
             }
           },
           "404": {
-            "description": "Not Found",
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the token is unknown, has expired, was revoked or was already accepted.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -447,7 +628,7 @@
           "auth"
         ],
         "summary": "Accept an invitation",
-        "description": "Adds the signed-in user to the invited tenant, with the invited role. The session then works in that tenant.\n\nErrors:\n\n- 404: the token is unknown, has expired, was revoked or was already accepted.\n- 409 with the code `wrong_account`: the user's email address is not the one the invitation was sent to.",
+        "description": "Adds the signed-in user to the invited tenant, with the invited role. The session then works in that tenant.",
         "operationId": "acceptInvitation",
         "requestBody": {
           "content": {
@@ -464,21 +645,43 @@
             "description": "No Content"
           },
           "404": {
-            "description": "Not Found",
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the token is unknown, has expired, was revoked or was already accepted.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
           },
           "409": {
-            "description": "Conflict",
+            "description": "`wrong_account`: This invitation was sent to another email address. Sign in with the invited address instead, or ask for an invitation to the address of the signed-in user.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "wrong_account": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:wrong_account",
+                      "title": "This invitation was sent to another email address.",
+                      "status": 409,
+                      "code": "wrong_account",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -519,7 +722,7 @@
           "tenant"
         ],
         "summary": "Get the signed-in user",
-        "description": "Returns the user that the token or session belongs to, and:\n\n- `tenantId`: the tenant that the token or session works in;\n- `tenants`: every tenant the user is a member of, with the user's role in each.\n\nAnswers 403 with the code `user_required` when the token has no user. An App that got a token for itself, with client credentials, has no user.",
+        "description": "Returns the user that the token or session belongs to, and:\n\n- `tenantId`: the tenant that the token or session works in;\n- `tenants`: every tenant the user is a member of, with the user's role in each.",
         "operationId": "getMe",
         "responses": {
           "200": {
@@ -533,14 +736,52 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden",
+            "description": "`authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "authentication_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:authentication_required",
+                      "title": "This endpoint needs a token or a session.",
+                      "status": 401,
+                      "code": "authentication_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.\n- `user_required`: This endpoint needs a signed-in user. The token belongs to an App, not to a user. An App gets such a token for itself, with client credentials. Use a token that a user signed in for.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:forbidden",
+                      "title": "The token or the session does not allow this.",
+                      "status": 403,
+                      "code": "forbidden",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
+                  "user_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:user_required",
+                      "title": "This endpoint needs a signed-in user.",
+                      "status": 403,
+                      "code": "user_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -578,19 +819,6 @@
           }
         ],
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -601,12 +829,65 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
+          "401": {
+            "description": "`authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "authentication_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:authentication_required",
+                      "title": "This endpoint needs a token or a session.",
+                      "status": 401,
+                      "code": "authentication_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:forbidden",
+                      "title": "The token or the session does not allow this.",
+                      "status": 403,
+                      "code": "forbidden",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -663,19 +944,6 @@
           }
         ],
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -686,12 +954,65 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
+          "401": {
+            "description": "`authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "authentication_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:authentication_required",
+                      "title": "This endpoint needs a token or a session.",
+                      "status": 401,
+                      "code": "authentication_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:forbidden",
+                      "title": "The token or the session does not allow this.",
+                      "status": 403,
+                      "code": "forbidden",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -715,7 +1036,7 @@
           "tenant"
         ],
         "summary": "Change a member's role",
-        "description": "Changes the role of one member of the tenant.\n\nErrors:\n\n- 404: the user is not a member of the tenant.\n- 409 with the code `last_admin`: the change would leave the tenant without an admin.",
+        "description": "Changes the role of one member of the tenant.",
         "operationId": "updateMember",
         "parameters": [
           {
@@ -748,19 +1069,6 @@
           "required": true
         },
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -771,22 +1079,95 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
+          "401": {
+            "description": "`authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "authentication_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:authentication_required",
+                      "title": "This endpoint needs a token or a session.",
+                      "status": 401,
+                      "code": "authentication_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.\n- `admin_required`: Only an admin of the tenant can do this. The user is not an admin of the tenant.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:forbidden",
+                      "title": "The token or the session does not allow this.",
+                      "status": 403,
+                      "code": "forbidden",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
+                  "admin_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:admin_required",
+                      "title": "Only an admin of the tenant can do this.",
+                      "status": 403,
+                      "code": "admin_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of the tenant.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
           },
           "409": {
-            "description": "Conflict",
+            "description": "`last_admin`: The tenant must keep at least one admin. The change would leave the tenant without an admin. Make another member an admin first.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "last_admin": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:last_admin",
+                      "title": "The tenant must keep at least one admin.",
+                      "status": 409,
+                      "code": "last_admin",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -808,7 +1189,7 @@
           "tenant"
         ],
         "summary": "Remove a member",
-        "description": "Removes a user from the tenant. The user loses access at once, also through tokens issued earlier.\n\nErrors:\n\n- 404: the user is not a member of the tenant.\n- 409 with the code `last_admin`: the user is the tenant's last admin.",
+        "description": "Removes a user from the tenant. The user loses access at once, also through tokens issued earlier.",
         "operationId": "removeMember",
         "parameters": [
           {
@@ -831,38 +1212,98 @@
           }
         ],
         "responses": {
-          "401": {
-            "description": "Unauthorized"
+          "204": {
+            "description": "No Content"
           },
-          "403": {
-            "description": "Forbidden",
+          "401": {
+            "description": "`authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "authentication_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:authentication_required",
+                      "title": "This endpoint needs a token or a session.",
+                      "status": 401,
+                      "code": "authentication_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
           },
-          "204": {
-            "description": "No Content"
-          },
-          "404": {
-            "description": "Not Found",
+          "403": {
+            "description": "- `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.\n- `admin_required`: Only an admin of the tenant can do this. The user is not an admin of the tenant.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:forbidden",
+                      "title": "The token or the session does not allow this.",
+                      "status": 403,
+                      "code": "forbidden",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
+                  "admin_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:admin_required",
+                      "title": "Only an admin of the tenant can do this.",
+                      "status": 403,
+                      "code": "admin_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of the tenant.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
           },
           "409": {
-            "description": "Conflict",
+            "description": "`last_admin`: The tenant must keep at least one admin. The change would leave the tenant without an admin. Make another member an admin first.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "last_admin": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:last_admin",
+                      "title": "The tenant must keep at least one admin.",
+                      "status": 409,
+                      "code": "last_admin",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -919,19 +1360,6 @@
           }
         ],
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -942,12 +1370,74 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
+          "401": {
+            "description": "`authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "authentication_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:authentication_required",
+                      "title": "This endpoint needs a token or a session.",
+                      "status": 401,
+                      "code": "authentication_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.\n- `admin_required`: Only an admin of the tenant can do this. The user is not an admin of the tenant.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:forbidden",
+                      "title": "The token or the session does not allow this.",
+                      "status": 403,
+                      "code": "forbidden",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
+                  "admin_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:admin_required",
+                      "title": "Only an admin of the tenant can do this.",
+                      "status": 403,
+                      "code": "admin_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -969,7 +1459,7 @@
           "tenant"
         ],
         "summary": "Invite someone",
-        "description": "Invites an email address to the tenant with a role, and sends the invitation email. The link in the email works until `expiresAt`.\n\nInviting the same address again replaces the earlier invitation and sends a new email.\n\nErrors:\n\n- 400 with field errors: the address or the role is not valid.\n- 409 with the code `already_member`: the address belongs to a member of the tenant.",
+        "description": "Invites an email address to the tenant with a role, and sends the invitation email. The link in the email works until `expiresAt`.\n\nInviting the same address again replaces the earlier invitation and sends a new email.",
         "operationId": "createInvitation",
         "parameters": [
           {
@@ -993,19 +1483,6 @@
           "required": true
         },
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
           "201": {
             "description": "Created",
             "content": {
@@ -1017,31 +1494,120 @@
             }
           },
           "400": {
-            "description": "Bad Request",
+            "description": "`invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "examples": {
+                  "invalid_fields": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:invalid_fields",
+                      "title": "Some fields are not valid.",
+                      "status": 400,
+                      "code": "invalid_fields",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+                      "errors": {
+                        "<field>": [
+                          "<what is wrong with the field>"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "authentication_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:authentication_required",
+                      "title": "This endpoint needs a token or a session.",
+                      "status": 401,
+                      "code": "authentication_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.\n- `admin_required`: Only an admin of the tenant can do this. The user is not an admin of the tenant.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:forbidden",
+                      "title": "The token or the session does not allow this.",
+                      "status": 403,
+                      "code": "forbidden",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
+                  "admin_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:admin_required",
+                      "title": "Only an admin of the tenant can do this.",
+                      "status": 403,
+                      "code": "admin_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
           },
           "404": {
-            "description": "Not Found",
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
           },
           "409": {
-            "description": "Conflict",
+            "description": "`already_member`: This address belongs to a member of the tenant. The invited address is already the address of a member, so there is nobody new to invite.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "already_member": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:already_member",
+                      "title": "This address belongs to a member of the tenant.",
+                      "status": 409,
+                      "code": "already_member",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -1065,7 +1631,7 @@
           "tenant"
         ],
         "summary": "Revoke an invitation",
-        "description": "Revokes an invitation. The link in its email stops working.\n\nAnswers 404 when the invitation does not exist or was already accepted.",
+        "description": "Revokes an invitation. The link in its email stops working.",
         "operationId": "revokeInvitation",
         "parameters": [
           {
@@ -1088,28 +1654,77 @@
           }
         ],
         "responses": {
-          "401": {
-            "description": "Unauthorized"
+          "204": {
+            "description": "No Content"
           },
-          "403": {
-            "description": "Forbidden",
+          "401": {
+            "description": "`authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "authentication_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:authentication_required",
+                      "title": "This endpoint needs a token or a session.",
+                      "status": 401,
+                      "code": "authentication_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
           },
-          "204": {
-            "description": "No Content"
-          },
-          "404": {
-            "description": "Not Found",
+          "403": {
+            "description": "- `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.\n- `admin_required`: Only an admin of the tenant can do this. The user is not an admin of the tenant.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:forbidden",
+                      "title": "The token or the session does not allow this.",
+                      "status": 403,
+                      "code": "forbidden",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
+                  "admin_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:admin_required",
+                      "title": "Only an admin of the tenant can do this.",
+                      "status": 403,
+                      "code": "admin_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the invitation does not exist or was already accepted.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
@@ -1208,25 +1823,25 @@
         "description": "An email address, for requests that send an email to it."
       },
       "HttpValidationProblemDetails": {
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code"
+        ],
         "type": "object",
         "properties": {
           "type": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": "string",
+            "description": "Identifies the error, as a URN: `urn:bigfatfile:problem:` followed by the code."
           },
           "title": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": "string",
+            "description": "A short text for people. It may change, so a client never compares it."
           },
           "status": {
-            "type": [
-              "null",
-              "integer"
-            ],
+            "type": "integer",
+            "description": "The HTTP status.",
             "format": "int32"
           },
           "detail": {
@@ -1248,7 +1863,40 @@
               "items": {
                 "type": "string"
               }
-            }
+            },
+            "description": "Only with `invalid_fields`: what is wrong with each field."
+          },
+          "code": {
+            "enum": [
+              "bad_request",
+              "invalid_fields",
+              "authentication_required",
+              "forbidden",
+              "not_found",
+              "method_not_allowed",
+              "request_too_large",
+              "unsupported_media_type",
+              "server_error",
+              "csrf_token_invalid",
+              "user_required",
+              "admin_required",
+              "last_admin",
+              "already_member",
+              "too_many_requests",
+              "sign_up_closed",
+              "wrong_credentials",
+              "email_not_confirmed",
+              "locked_out",
+              "invalid_code",
+              "already_confirmed",
+              "wrong_account"
+            ],
+            "type": "string",
+            "description": "Identifies the error. A client branches on it."
+          },
+          "traceId": {
+            "type": "string",
+            "description": "Identifies the request in the server's traces and logs. Give it to the server's operator when you report a problem."
           }
         }
       },
@@ -1525,25 +2173,25 @@
         "description": "One page of a listing."
       },
       "ProblemDetails": {
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code"
+        ],
         "type": "object",
         "properties": {
           "type": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": "string",
+            "description": "Identifies the error, as a URN: `urn:bigfatfile:problem:` followed by the code."
           },
           "title": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": "string",
+            "description": "A short text for people. It may change, so a client never compares it."
           },
           "status": {
-            "type": [
-              "null",
-              "integer"
-            ],
+            "type": "integer",
+            "description": "The HTTP status.",
             "format": "int32"
           },
           "detail": {
@@ -1557,6 +2205,38 @@
               "null",
               "string"
             ]
+          },
+          "code": {
+            "enum": [
+              "bad_request",
+              "invalid_fields",
+              "authentication_required",
+              "forbidden",
+              "not_found",
+              "method_not_allowed",
+              "request_too_large",
+              "unsupported_media_type",
+              "server_error",
+              "csrf_token_invalid",
+              "user_required",
+              "admin_required",
+              "last_admin",
+              "already_member",
+              "too_many_requests",
+              "sign_up_closed",
+              "wrong_credentials",
+              "email_not_confirmed",
+              "locked_out",
+              "invalid_code",
+              "already_confirmed",
+              "wrong_account"
+            ],
+            "type": "string",
+            "description": "Identifies the error. A client branches on it."
+          },
+          "traceId": {
+            "type": "string",
+            "description": "Identifies the request in the server's traces and logs. Give it to the server's operator when you report a problem."
           }
         }
       },

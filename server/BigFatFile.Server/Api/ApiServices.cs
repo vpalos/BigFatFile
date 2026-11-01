@@ -31,7 +31,7 @@ internal static class ApiServices
 
     public static IServiceCollection AddApi(this IServiceCollection services)
     {
-        services.AddProblemDetails();
+        services.AddProblemDetails(options => options.CustomizeProblemDetails = Problems.FillInCode);
 
         // Numbers must be JSON numbers. The web defaults also accept them as strings, and the
         // spec would then type every integer as "integer or string".
@@ -44,7 +44,7 @@ internal static class ApiServices
                 {
                     Title = "BigFatFile API",
                     Version = ApiVersion.Current,
-                    Description = "The one public API of a BigFatFile Origin.",
+                    Description = "The one public API of a BigFatFile Origin.\n\n" + ApiErrorsOpenApi.ErrorsSection(),
                 };
                 foreach (var tag in document.Tags ?? Enumerable.Empty<OpenApiTag>())
                 {
@@ -84,6 +84,7 @@ internal static class ApiServices
 
                 return Task.CompletedTask;
             });
+            options.AddApiErrors();
         });
         return services;
     }

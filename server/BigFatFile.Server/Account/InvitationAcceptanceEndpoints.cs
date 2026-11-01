@@ -1,4 +1,5 @@
 using BigFatFile.Contracts.Account;
+using BigFatFile.Server.Api;
 using BigFatFile.Server.Auth;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -18,10 +19,8 @@ internal static class InvitationAcceptanceEndpoints
 
                 - `accountExists` tells the screen whether to ask the person to sign in or to sign up.
                 - The token is sent in the request body, so it stays out of request logs.
-
-                Answers 404 when the token is unknown, has expired, was revoked or was already accepted.
                 """)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesError(ApiErrors.NotFound, "Here, the token is unknown, has expired, was revoked or was already accepted.")
             .AllowAnonymous();
 
         invitations.MapPost("/accept", AcceptAsync)
@@ -29,14 +28,9 @@ internal static class InvitationAcceptanceEndpoints
             .WithSummary("Accept an invitation")
             .WithDescription("""
                 Adds the signed-in user to the invited tenant, with the invited role. The session then works in that tenant.
-
-                Errors:
-
-                - 404: the token is unknown, has expired, was revoked or was already accepted.
-                - 409 with the code `wrong_account`: the user's email address is not the one the invitation was sent to.
                 """)
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesError(ApiErrors.NotFound, "Here, the token is unknown, has expired, was revoked or was already accepted.")
+            .ProducesError(ApiErrors.WrongAccount)
             .RequireAuthorization(AuthServices.SessionPolicy);
     }
 

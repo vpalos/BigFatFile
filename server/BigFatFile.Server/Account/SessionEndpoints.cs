@@ -1,5 +1,4 @@
 using BigFatFile.Contracts.Account;
-using BigFatFile.Contracts.Api;
 using BigFatFile.Server.Api;
 using BigFatFile.Server.Auth;
 using Microsoft.AspNetCore.Antiforgery;
@@ -38,23 +37,16 @@ internal static class SessionEndpoints
         account.MapPost("/sign-in", SignInAsync)
             .WithName("signIn")
             .WithSummary("Sign in with a password")
-            .WithDescription($"""
+            .WithDescription("""
                 Checks the email address and the password, and starts a session. The response sets the session cookie.
 
                 The session works in one tenant. It is the tenant in `tenantId` when the request has one. Otherwise it is the tenant that the user signed in to last.
-
-                Errors:
-
-                - 401 with the code `wrong_credentials`: the address or the password is wrong.
-                - 403 with the code `email_not_confirmed`: the address is not confirmed yet.
-                - 403 with the code `locked_out`: the account is locked for {AuthServices.LockoutMinutes} minutes, because of {AuthServices.LockoutAttempts} wrong passwords in a row. During the lock, even the right password gets this answer.
-                - 404: the user is not a member of the tenant in `tenantId`.
-                - 429 with the code `too_many_requests`: this IP address made more than {SignInRateLimit.AttemptsPerMinute} sign-in attempts in one minute, for any accounts. The `Retry-After` header says how many seconds to wait. All the addresses of one IPv6 /64 block count as one address.
                 """)
-            .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .ProducesError(ApiErrors.WrongCredentials)
+            .ProducesError(ApiErrors.EmailNotConfirmed)
+            .ProducesError(ApiErrors.LockedOut)
+            .ProducesError(ApiErrors.NotFound, "Here, the user is not a member of the tenant in `tenantId`.")
+            .ProducesError(ApiErrors.TooManyRequests, $"Here, the limit is {SignInRateLimit.AttemptsPerMinute} sign-in attempts per minute from one IP address, for any accounts. All the addresses of one IPv6 /64 block count as one address.")
             .RequireRateLimiting(SignInRateLimit.Policy)
             .AllowAnonymous();
 
@@ -62,11 +54,9 @@ internal static class SessionEndpoints
             .WithName("signOut")
             .WithSummary("Sign out")
             .WithDescription("""
-                Ends the session and removes the session cookie.
-
-                The request must send the `X-CSRF-Token` header. Without it, the answer is 400 with the code `csrf_token_invalid`.
+                Ends the session and removes the session cookie. The request must send the `X-CSRF-Token` header.
                 """)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesError(ApiErrors.CsrfTokenInvalid)
             .RequireAuthorization(AuthServices.SessionPolicy);
 
         account.MapPut("/tenant", SwitchTenantAsync)
@@ -74,10 +64,8 @@ internal static class SessionEndpoints
             .WithSummary("Switch tenant")
             .WithDescription("""
                 Moves the session to another tenant that the user is a member of. The response sets a new session cookie, so every open tab of the web app switches too.
-
-                Answers 404 when the user is not a member of that tenant.
                 """)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesError(ApiErrors.NotFound, "Here, the user is not a member of that tenant.")
             .RequireAuthorization(AuthServices.SessionPolicy);
     }
 
@@ -96,7 +84,7 @@ internal static class SessionEndpoints
         // The antiforgery middleware refuses only requests to endpoints that bind form fields.
         if (!await antiforgery.IsRequestValidAsync(context))
         {
-            return Problems.Of(StatusCodes.Status400BadRequest, ErrorCodes.CsrfTokenInvalid, $"The {AuthServices.CsrfHeader} header is missing or wrong.");
+            return Problems.Of(ApiErrors.CsrfTokenInvalid);
         }
 
         await signIn.SignOutAsync();

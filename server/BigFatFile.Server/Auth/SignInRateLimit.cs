@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.RateLimiting;
-using BigFatFile.Contracts.Api;
 using BigFatFile.Server.Api;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -25,9 +24,7 @@ internal static class SignInRateLimit
                     context.HttpContext.Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString(CultureInfo.InvariantCulture);
                 }
 
-                await Problems.Of(StatusCodes.Status429TooManyRequests, ErrorCodes.TooManyRequests,
-                    "Too many requests from this address. Wait for the number of seconds in the Retry-After header.")
-                    .ExecuteAsync(context.HttpContext);
+                await Problems.Of(ApiErrors.TooManyRequests).ExecuteAsync(context.HttpContext);
             };
             options.AddPolicy(Policy, context => RateLimitPartition.GetFixedWindowLimiter(
                 ClientKey(context.Connection.RemoteIpAddress),

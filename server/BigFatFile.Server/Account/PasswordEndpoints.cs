@@ -1,4 +1,5 @@
 using BigFatFile.Contracts.Account;
+using BigFatFile.Server.Api;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BigFatFile.Server.Account;
@@ -22,20 +23,15 @@ internal static class PasswordEndpoints
             .WithSummary("Reset the password")
             .WithDescription("""
                 Sets a new password, with the user ID and the code from the password reset email. The link in the email opens the web app, which reads both values from it.
-
-                Errors:
-
-                - 400 with the code `invalid_code`: the code is wrong or has expired.
-                - 400 with field errors: the new password is not valid, for example shorter than 12 characters.
                 """)
-            .ProducesValidationProblem()
-            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesError(ApiErrors.InvalidCode)
+            .ProducesError(ApiErrors.InvalidFields, "For example, a new password shorter than 12 characters.")
             .AllowAnonymous();
     }
 
     private static Task<Accepted> ForgotPasswordAsync(EmailRequest request, CancellationToken cancellationToken) =>
         throw new NotImplementedException();
 
-    private static Task<Results<NoContent, ValidationProblem, ProblemHttpResult>> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken) =>
+    private static Task<Results<NoContent, ProblemHttpResult>> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken) =>
         throw new NotImplementedException();
 }

@@ -18,7 +18,8 @@ internal static class InvitationEndpoints
 
                 It needs the `members.manage` scope, because the invited addresses belong to people who are not members yet.
                 """)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesError(ApiErrors.AdminRequired)
+            .ProducesError(ApiErrors.NotFound)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersManage));
 
         invitations.MapPost("", CreateInvitationAsync)
@@ -28,15 +29,11 @@ internal static class InvitationEndpoints
                 Invites an email address to the tenant with a role, and sends the invitation email. The link in the email works until `expiresAt`.
 
                 Inviting the same address again replaces the earlier invitation and sends a new email.
-
-                Errors:
-
-                - 400 with field errors: the address or the role is not valid.
-                - 409 with the code `already_member`: the address belongs to a member of the tenant.
                 """)
-            .ProducesValidationProblem()
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesError(ApiErrors.InvalidFields)
+            .ProducesError(ApiErrors.AdminRequired)
+            .ProducesError(ApiErrors.NotFound)
+            .ProducesError(ApiErrors.AlreadyMember)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersManage));
 
         invitations.MapDelete("/{invitationId:guid}", RevokeInvitationAsync)
@@ -44,10 +41,9 @@ internal static class InvitationEndpoints
             .WithSummary("Revoke an invitation")
             .WithDescription("""
                 Revokes an invitation. The link in its email stops working.
-
-                Answers 404 when the invitation does not exist or was already accepted.
                 """)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesError(ApiErrors.AdminRequired)
+            .ProducesError(ApiErrors.NotFound, "Here, the invitation does not exist or was already accepted.")
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersManage));
     }
 

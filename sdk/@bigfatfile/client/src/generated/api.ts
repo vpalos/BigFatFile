@@ -65,14 +65,6 @@ export interface paths {
          * @description Checks the email address and the password, and starts a session. The response sets the session cookie.
          *
          *     The session works in one tenant. It is the tenant in `tenantId` when the request has one. Otherwise it is the tenant that the user signed in to last.
-         *
-         *     Errors:
-         *
-         *     - 401 with the code `wrong_credentials`: the address or the password is wrong.
-         *     - 403 with the code `email_not_confirmed`: the address is not confirmed yet.
-         *     - 403 with the code `locked_out`: the account is locked for 5 minutes, because of 10 wrong passwords in a row. During the lock, even the right password gets this answer.
-         *     - 404: the user is not a member of the tenant in `tenantId`.
-         *     - 429 with the code `too_many_requests`: this IP address made more than 20 sign-in attempts in one minute, for any accounts. The `Retry-After` header says how many seconds to wait. All the addresses of one IPv6 /64 block count as one address.
          */
         post: operations["signIn"];
         delete?: never;
@@ -92,9 +84,7 @@ export interface paths {
         put?: never;
         /**
          * Sign out
-         * @description Ends the session and removes the session cookie.
-         *
-         *     The request must send the `X-CSRF-Token` header. Without it, the answer is 400 with the code `csrf_token_invalid`.
+         * @description Ends the session and removes the session cookie. The request must send the `X-CSRF-Token` header.
          */
         post: operations["signOut"];
         delete?: never;
@@ -114,8 +104,6 @@ export interface paths {
         /**
          * Switch tenant
          * @description Moves the session to another tenant that the user is a member of. The response sets a new session cookie, so every open tab of the web app switches too.
-         *
-         *     Answers 404 when the user is not a member of that tenant.
          */
         put: operations["switchTenant"];
         post?: never;
@@ -141,11 +129,6 @@ export interface paths {
          *     - With `invitationToken`, the invitation email proves that the person receives mail at the address. The account is created at once, joins the invited tenant, and its session starts. The outcome is `signed_in`.
          *     - Without it, a confirmation email is sent. The account can sign in once the address is confirmed. The outcome is `confirmation_sent`.
          *     - When the address already has an account, the outcome is also `confirmation_sent`, and that account gets an email saying so. This way the response does not reveal which addresses have accounts.
-         *
-         *     Errors:
-         *
-         *     - 400 with field errors: a field is not valid, for example a password shorter than 12 characters.
-         *     - 403 with the code `sign_up_closed`: this server accepts sign-ups only with an invitation, and the request has none. The one exception is the operator's address, set in `BFF_OPERATOR_EMAIL`.
          */
         post: operations["signUp"];
         delete?: never;
@@ -169,7 +152,7 @@ export interface paths {
          *
          *     On a server with open sign-up, this is also when the person's new tenant is created.
          *
-         *     Answers 400 with the code `invalid_code` when the code is wrong or has expired.
+         *     Only the first confirmation of an address starts a session. So nobody can sign in later with a link that was forwarded or saved.
          */
         post: operations["confirmEmail"];
         delete?: never;
@@ -234,11 +217,6 @@ export interface paths {
         /**
          * Reset the password
          * @description Sets a new password, with the user ID and the code from the password reset email. The link in the email opens the web app, which reads both values from it.
-         *
-         *     Errors:
-         *
-         *     - 400 with the code `invalid_code`: the code is wrong or has expired.
-         *     - 400 with field errors: the new password is not valid, for example shorter than 12 characters.
          */
         post: operations["resetPassword"];
         delete?: never;
@@ -260,8 +238,6 @@ export interface paths {
          *
          *     - `provider` is a `key` from `GET /account/options`.
          *     - The web app opens this address as a page in the browser, not with a fetch call, because the browser must follow the redirects.
-         *
-         *     Answers 404 when this server has no provider with that key.
          */
         get: operations["signInExternally"];
         put?: never;
@@ -287,8 +263,6 @@ export interface paths {
          *
          *     - `accountExists` tells the screen whether to ask the person to sign in or to sign up.
          *     - The token is sent in the request body, so it stays out of request logs.
-         *
-         *     Answers 404 when the token is unknown, has expired, was revoked or was already accepted.
          */
         post: operations["lookUpInvitation"];
         delete?: never;
@@ -309,11 +283,6 @@ export interface paths {
         /**
          * Accept an invitation
          * @description Adds the signed-in user to the invited tenant, with the invited role. The session then works in that tenant.
-         *
-         *     Errors:
-         *
-         *     - 404: the token is unknown, has expired, was revoked or was already accepted.
-         *     - 409 with the code `wrong_account`: the user's email address is not the one the invitation was sent to.
          */
         post: operations["acceptInvitation"];
         delete?: never;
@@ -362,8 +331,6 @@ export interface paths {
          *
          *     - `tenantId`: the tenant that the token or session works in;
          *     - `tenants`: every tenant the user is a member of, with the user's role in each.
-         *
-         *     Answers 403 with the code `user_required` when the token has no user. An App that got a token for itself, with client credentials, has no user.
          */
         get: operations["getMe"];
         put?: never;
@@ -427,11 +394,6 @@ export interface paths {
         /**
          * Remove a member
          * @description Removes a user from the tenant. The user loses access at once, also through tokens issued earlier.
-         *
-         *     Errors:
-         *
-         *     - 404: the user is not a member of the tenant.
-         *     - 409 with the code `last_admin`: the user is the tenant's last admin.
          */
         delete: operations["removeMember"];
         options?: never;
@@ -439,11 +401,6 @@ export interface paths {
         /**
          * Change a member's role
          * @description Changes the role of one member of the tenant.
-         *
-         *     Errors:
-         *
-         *     - 404: the user is not a member of the tenant.
-         *     - 409 with the code `last_admin`: the change would leave the tenant without an admin.
          */
         patch: operations["updateMember"];
         trace?: never;
@@ -468,11 +425,6 @@ export interface paths {
          * @description Invites an email address to the tenant with a role, and sends the invitation email. The link in the email works until `expiresAt`.
          *
          *     Inviting the same address again replaces the earlier invitation and sends a new email.
-         *
-         *     Errors:
-         *
-         *     - 400 with field errors: the address or the role is not valid.
-         *     - 409 with the code `already_member`: the address belongs to a member of the tenant.
          */
         post: operations["createInvitation"];
         delete?: never;
@@ -494,8 +446,6 @@ export interface paths {
         /**
          * Revoke an invitation
          * @description Revokes an invitation. The link in its email stops working.
-         *
-         *     Answers 404 when the invitation does not exist or was already accepted.
          */
         delete: operations["revokeInvitation"];
         options?: never;
@@ -533,15 +483,28 @@ export interface components {
             email: string;
         };
         HttpValidationProblemDetails: {
-            type?: null | string;
-            title?: null | string;
-            /** Format: int32 */
-            status?: null | number;
+            /** @description Identifies the error, as a URN: `urn:bigfatfile:problem:` followed by the code. */
+            type: string;
+            /** @description A short text for people. It may change, so a client never compares it. */
+            title: string;
+            /**
+             * Format: int32
+             * @description The HTTP status.
+             */
+            status: number;
             detail?: null | string;
             instance?: null | string;
+            /** @description Only with `invalid_fields`: what is wrong with each field. */
             errors?: {
                 [key: string]: string[];
             };
+            /**
+             * @description Identifies the error. A client branches on it.
+             * @enum {string}
+             */
+            code: "bad_request" | "invalid_fields" | "authentication_required" | "forbidden" | "not_found" | "method_not_allowed" | "request_too_large" | "unsupported_media_type" | "server_error" | "csrf_token_invalid" | "user_required" | "admin_required" | "last_admin" | "already_member" | "too_many_requests" | "sign_up_closed" | "wrong_credentials" | "email_not_confirmed" | "locked_out" | "invalid_code" | "already_confirmed" | "wrong_account";
+            /** @description Identifies the request in the server's traces and logs. Give it to the server's operator when you report a problem. */
+            traceId?: string;
         };
         /** @description An email address invited to join a tenant, until the person accepts or the invitation expires. */
         Invitation: {
@@ -630,12 +593,24 @@ export interface components {
             nextCursor: null | string;
         };
         ProblemDetails: {
-            type?: null | string;
-            title?: null | string;
-            /** Format: int32 */
-            status?: null | number;
+            /** @description Identifies the error, as a URN: `urn:bigfatfile:problem:` followed by the code. */
+            type: string;
+            /** @description A short text for people. It may change, so a client never compares it. */
+            title: string;
+            /**
+             * Format: int32
+             * @description The HTTP status.
+             */
+            status: number;
             detail?: null | string;
             instance?: null | string;
+            /**
+             * @description Identifies the error. A client branches on it.
+             * @enum {string}
+             */
+            code: "bad_request" | "invalid_fields" | "authentication_required" | "forbidden" | "not_found" | "method_not_allowed" | "request_too_large" | "unsupported_media_type" | "server_error" | "csrf_token_invalid" | "user_required" | "admin_required" | "last_admin" | "already_member" | "too_many_requests" | "sign_up_closed" | "wrong_credentials" | "email_not_confirmed" | "locked_out" | "invalid_code" | "already_confirmed" | "wrong_account";
+            /** @description Identifies the request in the server's traces and logs. Give it to the server's operator when you report a problem. */
+            traceId?: string;
         };
         ResetPasswordRequest: {
             /** Format: uuid */
@@ -769,7 +744,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Unauthorized */
+            /** @description `wrong_credentials`: The email address or the password is wrong. The answer does not say which one is wrong, so that it does not reveal which addresses have accounts. */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -778,7 +753,10 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Forbidden */
+            /**
+             * @description - `email_not_confirmed`: The email address is not confirmed yet. Open the link in the confirmation email first. `POST /account/resend-confirmation` sends the email again.
+             *     - `locked_out`: The account is locked for 5 minutes, because of too many wrong passwords. The lock starts after 10 wrong passwords in a row. During the lock, even the right password gets this answer. Try again when the lock ends.
+             */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -787,7 +765,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Not Found */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of the tenant in `tenantId`. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -796,7 +774,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Too Many Requests */
+            /** @description `too_many_requests`: Too many requests from this address. Wait for the number of seconds in the Retry-After header. This IP address sent more requests than the endpoint allows in a period of time. Here, the limit is 20 sign-in attempts per minute from one IP address, for any accounts. All the addresses of one IPv6 /64 block count as one address. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -823,7 +801,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Bad Request */
+            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -854,7 +832,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not Found */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of that tenant. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -887,7 +865,7 @@ export interface operations {
                     "application/json": components["schemas"]["SignUpResult"];
                 };
             };
-            /** @description Bad Request */
+            /** @description `invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field. For example, a password shorter than 12 characters. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -896,7 +874,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
                 };
             };
-            /** @description Forbidden */
+            /** @description `sign_up_closed`: This server accepts sign-ups only with an invitation. Ask an admin of a tenant to invite you. The operator's address, set in `BFF_OPERATOR_EMAIL`, can always sign up. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -927,8 +905,17 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Bad Request */
+            /** @description `invalid_code`: The code is wrong or has expired. Ask for a new email: a new confirmation email, or a new password reset email. It is also the answer when the user ID is unknown. */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description `already_confirmed`: This email address is already confirmed. Sign in instead. The confirmation link was used before. Only the first confirmation starts a session, so nobody can sign in with a link that was forwarded or saved. Sign in with the password. Only a request with a valid code gets this answer, so it does not reveal which addresses are confirmed. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1002,13 +989,16 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Bad Request */
+            /**
+             * @description - `invalid_code`: The code is wrong or has expired. Ask for a new email: a new confirmation email, or a new password reset email.
+             *     - `invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field. For example, a new password shorter than 12 characters.
+             */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
                 };
             };
         };
@@ -1033,7 +1023,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not Found */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, this server has no provider with that key. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1066,7 +1056,7 @@ export interface operations {
                     "application/json": components["schemas"]["InvitationPreview"];
                 };
             };
-            /** @description Not Found */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the token is unknown, has expired, was revoked or was already accepted. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1097,7 +1087,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not Found */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the token is unknown, has expired, was revoked or was already accepted. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1106,7 +1096,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Conflict */
+            /** @description `wrong_account`: This invitation was sent to another email address. Sign in with the invited address instead, or ask for an invitation to the address of the signed-in user. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1155,14 +1145,19 @@ export interface operations {
                     "application/json": components["schemas"]["Me"];
                 };
             };
-            /** @description Unauthorized */
+            /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
-            /** @description Forbidden */
+            /**
+             * @description - `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.
+             *     - `user_required`: This endpoint needs a signed-in user. The token belongs to an App, not to a user. An App gets such a token for itself, with client credentials. Use a token that a user signed in for.
+             */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1193,14 +1188,16 @@ export interface operations {
                     "application/json": components["schemas"]["Tenant"];
                 };
             };
-            /** @description Unauthorized */
+            /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
-            /** @description Forbidden */
+            /** @description `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1209,7 +1206,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Not Found */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1245,14 +1242,16 @@ export interface operations {
                     "application/json": components["schemas"]["PageOfMember"];
                 };
             };
-            /** @description Unauthorized */
+            /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
-            /** @description Forbidden */
+            /** @description `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1261,7 +1260,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Not Found */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1291,14 +1290,19 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Unauthorized */
+            /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
-            /** @description Forbidden */
+            /**
+             * @description - `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.
+             *     - `admin_required`: Only an admin of the tenant can do this. The user is not an admin of the tenant.
+             */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1307,7 +1311,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Not Found */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of the tenant. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1316,7 +1320,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Conflict */
+            /** @description `last_admin`: The tenant must keep at least one admin. The change would leave the tenant without an admin. Make another member an admin first. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1352,14 +1356,19 @@ export interface operations {
                     "application/json": components["schemas"]["Member"];
                 };
             };
-            /** @description Unauthorized */
+            /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
-            /** @description Forbidden */
+            /**
+             * @description - `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.
+             *     - `admin_required`: Only an admin of the tenant can do this. The user is not an admin of the tenant.
+             */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1368,7 +1377,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Not Found */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of the tenant. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1377,7 +1386,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Conflict */
+            /** @description `last_admin`: The tenant must keep at least one admin. The change would leave the tenant without an admin. Make another member an admin first. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1413,14 +1422,19 @@ export interface operations {
                     "application/json": components["schemas"]["PageOfInvitation"];
                 };
             };
-            /** @description Unauthorized */
+            /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
-            /** @description Forbidden */
+            /**
+             * @description - `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.
+             *     - `admin_required`: Only an admin of the tenant can do this. The user is not an admin of the tenant.
+             */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1429,7 +1443,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Not Found */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1464,7 +1478,7 @@ export interface operations {
                     "application/json": components["schemas"]["Invitation"];
                 };
             };
-            /** @description Bad Request */
+            /** @description `invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1473,14 +1487,19 @@ export interface operations {
                     "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
                 };
             };
-            /** @description Unauthorized */
+            /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
-            /** @description Forbidden */
+            /**
+             * @description - `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.
+             *     - `admin_required`: Only an admin of the tenant can do this. The user is not an admin of the tenant.
+             */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1489,7 +1508,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Not Found */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1498,7 +1517,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Conflict */
+            /** @description `already_member`: This address belongs to a member of the tenant. The invited address is already the address of a member, so there is nobody new to invite. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1528,14 +1547,19 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Unauthorized */
+            /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
-            /** @description Forbidden */
+            /**
+             * @description - `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.
+             *     - `admin_required`: Only an admin of the tenant can do this. The user is not an admin of the tenant.
+             */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1544,7 +1568,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Not Found */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the invitation does not exist or was already accepted. */
             404: {
                 headers: {
                     [name: string]: unknown;

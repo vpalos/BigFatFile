@@ -30,8 +30,24 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
       one is deprecated;
     - deprecations are announced in the changelog and in a `Deprecation` response
       header.
-- Errors: problem details (RFC 9457), with a stable `type` per error and a
-  machine-readable `code`.
+- Errors are problem details (RFC 9457):
+    - the fields of the body:
+        - `type`, a URN that identifies the error: `urn:bigfatfile:problem:<code>`;
+        - `title`, a short text for people, which a client never compares;
+        - `status`, the HTTP status;
+        - `code`, which a client branches on;
+        - `traceId`, the ID of the request's trace;
+        - `errors`, only for field errors;
+    - each error is defined once in the Server, with its status, code, title and
+      description:
+        - the spec's example bodies and its list of every error are built from these
+          definitions;
+        - a test fails when a code has no definition;
+    - each endpoint declares the errors that it returns, with a clause that says when;
+    - the spec lists an endpoint's errors under each response, with one example body per
+      code;
+    - an error that ASP.NET Core writes without a code, such as a 404 for an unknown
+      address, gets the generic code for its status.
 - Pagination: cursor-based everywhere (`cursor`, `limit`, `nextCursor`); no offsets.
 - Idempotency: an `Idempotency-Key` header on every request that creates something, so
   a retried request does not create it twice.

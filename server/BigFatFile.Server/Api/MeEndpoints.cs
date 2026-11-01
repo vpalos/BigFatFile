@@ -21,11 +21,10 @@ internal static class MeEndpoints
 
                 - `tenantId`: the tenant that the token or session works in;
                 - `tenants`: every tenant the user is a member of, with the user's role in each.
-
-                Answers 403 with the code `user_required` when the token has no user. An App that got a token for itself, with client credentials, has no user.
                 """)
-            .Produces(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesError(ApiErrors.AuthenticationRequired)
+            .ProducesError(ApiErrors.Forbidden)
+            .ProducesError(ApiErrors.UserRequired)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.OpenId));
 
     private static async Task<Results<Ok<Me>, ProblemHttpResult>> GetMeAsync(
@@ -37,7 +36,7 @@ internal static class MeEndpoints
             : null;
         if (user is null)
         {
-            return Problems.Of(StatusCodes.Status403Forbidden, ErrorCodes.UserRequired, "This endpoint needs a signed-in user.");
+            return Problems.Of(ApiErrors.UserRequired);
         }
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);

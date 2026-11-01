@@ -1,3 +1,4 @@
+using BigFatFile.Server.Api;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BigFatFile.Server.Account;
@@ -13,11 +14,9 @@ internal static class ExternalSignInEndpoints
 
                 - `provider` is a `key` from `GET /account/options`.
                 - The web app opens this address as a page in the browser, not with a fetch call, because the browser must follow the redirects.
-
-                Answers 404 when this server has no provider with that key.
                 """)
             .Produces(StatusCodes.Status302Found)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesError(ApiErrors.NotFound, "Here, this server has no provider with that key.")
             .AllowAnonymous();
 
     private static Task<Results<ChallengeHttpResult, ProblemHttpResult>> StartAsync(string provider, string? returnUrl, HttpContext context) =>

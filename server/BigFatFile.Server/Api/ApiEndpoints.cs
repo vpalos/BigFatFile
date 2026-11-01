@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Http.Metadata;
-using Microsoft.AspNetCore.Mvc;
-
 namespace BigFatFile.Server.Api;
 
 internal static class ApiEndpoints
@@ -13,9 +10,8 @@ internal static class ApiEndpoints
 
         var tenant = api.MapGroup("/tenants/{id:guid}")
             .WithTags("tenant")
-            .WithMetadata(
-                new ProducesResponseTypeMetadata(StatusCodes.Status401Unauthorized, typeof(void)),
-                new ProducesResponseTypeMetadata(StatusCodes.Status403Forbidden, typeof(ProblemDetails), ["application/problem+json"]));
+            .ProducesError(ApiErrors.AuthenticationRequired)
+            .ProducesError(ApiErrors.Forbidden);
         tenant.MapTenantEndpoints();
         tenant.MapMemberEndpoints();
         tenant.MapInvitationEndpoints();

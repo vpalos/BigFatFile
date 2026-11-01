@@ -1,4 +1,5 @@
 using BigFatFile.Contracts.Account;
+using BigFatFile.Server.Api;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BigFatFile.Server.Account;
@@ -16,14 +17,9 @@ internal static class SignUpEndpoints
                 - With `invitationToken`, the invitation email proves that the person receives mail at the address. The account is created at once, joins the invited tenant, and its session starts. The outcome is `signed_in`.
                 - Without it, a confirmation email is sent. The account can sign in once the address is confirmed. The outcome is `confirmation_sent`.
                 - When the address already has an account, the outcome is also `confirmation_sent`, and that account gets an email saying so. This way the response does not reveal which addresses have accounts.
-
-                Errors:
-
-                - 400 with field errors: a field is not valid, for example a password shorter than 12 characters.
-                - 403 with the code `sign_up_closed`: this server accepts sign-ups only with an invitation, and the request has none. The one exception is the operator's address, set in `BFF_OPERATOR_EMAIL`.
                 """)
-            .ProducesValidationProblem()
-            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesError(ApiErrors.InvalidFields, "For example, a password shorter than 12 characters.")
+            .ProducesError(ApiErrors.SignUpClosed)
             .AllowAnonymous();
 
         account.MapPost("/confirm-email", ConfirmEmailAsync)
@@ -34,9 +30,10 @@ internal static class SignUpEndpoints
 
                 On a server with open sign-up, this is also when the person's new tenant is created.
 
-                Answers 400 with the code `invalid_code` when the code is wrong or has expired.
+                Only the first confirmation of an address starts a session. So nobody can sign in later with a link that was forwarded or saved.
                 """)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesError(ApiErrors.InvalidCode, "It is also the answer when the user ID is unknown.")
+            .ProducesError(ApiErrors.AlreadyConfirmed)
             .AllowAnonymous();
 
         account.MapPost("/resend-confirmation", ResendConfirmationAsync)
@@ -50,7 +47,7 @@ internal static class SignUpEndpoints
             .AllowAnonymous();
     }
 
-    private static Task<Results<Ok<SignUpResult>, ValidationProblem, ProblemHttpResult>> SignUpAsync(SignUpRequest request, HttpContext context) =>
+    private static Task<Results<Ok<SignUpResult>, ProblemHttpResult>> SignUpAsync(SignUpRequest request, HttpContext context) =>
         throw new NotImplementedException();
 
     private static Task<Results<NoContent, ProblemHttpResult>> ConfirmEmailAsync(ConfirmEmailRequest request, HttpContext context) =>

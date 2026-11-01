@@ -16,7 +16,7 @@ internal static class MemberEndpoints
             .WithDescription("""
                 Returns the tenant's members, ordered by name, one page at a time.
                 """)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesError(ApiErrors.NotFound)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersRead));
 
         members.MapPatch("/{userId:guid}", UpdateMemberAsync)
@@ -24,14 +24,10 @@ internal static class MemberEndpoints
             .WithSummary("Change a member's role")
             .WithDescription("""
                 Changes the role of one member of the tenant.
-
-                Errors:
-
-                - 404: the user is not a member of the tenant.
-                - 409 with the code `last_admin`: the change would leave the tenant without an admin.
                 """)
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesError(ApiErrors.AdminRequired)
+            .ProducesError(ApiErrors.NotFound, "Here, the user is not a member of the tenant.")
+            .ProducesError(ApiErrors.LastAdmin)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersManage));
 
         members.MapDelete("/{userId:guid}", RemoveMemberAsync)
@@ -39,14 +35,10 @@ internal static class MemberEndpoints
             .WithSummary("Remove a member")
             .WithDescription("""
                 Removes a user from the tenant. The user loses access at once, also through tokens issued earlier.
-
-                Errors:
-
-                - 404: the user is not a member of the tenant.
-                - 409 with the code `last_admin`: the user is the tenant's last admin.
                 """)
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesError(ApiErrors.AdminRequired)
+            .ProducesError(ApiErrors.NotFound, "Here, the user is not a member of the tenant.")
+            .ProducesError(ApiErrors.LastAdmin)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersManage));
     }
 

@@ -13,7 +13,7 @@ internal static class TenantEndpoints
             .WithDescription("""
                 Returns the tenant's name, its plan and when it was created.
                 """)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesError(ApiErrors.NotFound)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersRead));
 
     private static Task<Results<Ok<Tenant>, ProblemHttpResult>> GetTenantAsync(Guid id, CancellationToken cancellationToken) =>
