@@ -15,13 +15,11 @@ internal static class SessionEndpoints
         account.MapGet("/options", GetOptions)
             .WithName("getAccountOptions")
             .WithSummary("Whether this server accepts sign-ups without an invitation, and the external accounts it accepts.")
-            .WithDescription("This is the description.")
-            .WithDisplayName("AUTHOptions")
             .AllowAnonymous();
 
         account.MapGet("/csrf", GetCsrfToken)
             .WithName("getCsrfToken")
-            .WithSummary("The token that writes made with the session cookie send in the X-CSRF-Token header.")
+            .WithSummary("The token that is sent in the X-CSRF-Token header by write operations made with the session cookie.")
             .AllowAnonymous();
 
         account.MapPost("/sign-in", SignInAsync)

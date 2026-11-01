@@ -7,7 +7,7 @@ internal static class ExternalSignInEndpoints
     public static void MapExternalSignInEndpoints(this IEndpointRouteBuilder account) =>
         account.MapGet("/external/{provider}", StartAsync)
             .WithName("signInExternally")
-            .WithSummary("Sends the browser to the provider's sign-in page. After it, the browser returns to returnUrl, which must be a path on this server.")
+            .WithSummary("Sends the browser to the provider's sign-in page. After the person signs in there, the browser returns to returnUrl, which must be a path on this server.")
             .Produces(StatusCodes.Status302Found)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .AllowAnonymous();

@@ -8,8 +8,9 @@
   "paths": {
     "/account/options": {
       "get": {
-        "tags": ["auth"],
-        "description": "www",
+        "tags": [
+          "auth"
+        ],
         "summary": "Whether this server accepts sign-ups without an invitation, and the external accounts it accepts.",
         "operationId": "getAccountOptions",
         "responses": {
@@ -28,8 +29,10 @@
     },
     "/account/csrf": {
       "get": {
-        "tags": ["auth"],
-        "summary": "The token that writes made with the session cookie send in the X-CSRF-Token header.",
+        "tags": [
+          "auth"
+        ],
+        "summary": "The token that is sent in the X-CSRF-Token header by write operations made with the session cookie.",
         "operationId": "getCsrfToken",
         "responses": {
           "200": {
@@ -47,7 +50,9 @@
     },
     "/account/sign-in": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Starts a session with an email and a password.",
         "operationId": "signIn",
         "requestBody": {
@@ -99,7 +104,9 @@
     },
     "/account/sign-out": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Ends the session.",
         "operationId": "signOut",
         "responses": {
@@ -119,14 +126,16 @@
         },
         "security": [
           {
-            "session": []
+            "session": [ ]
           }
         ]
       }
     },
     "/account/tenant": {
       "put": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Scopes the session to another of the user's tenants.",
         "operationId": "switchTenant",
         "requestBody": {
@@ -156,14 +165,16 @@
         },
         "security": [
           {
-            "session": []
+            "session": [ ]
           }
         ]
       }
     },
     "/account/sign-up": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Creates an account. Without an invitation token, a confirmation email is sent first.",
         "operationId": "signUp",
         "requestBody": {
@@ -212,7 +223,9 @@
     },
     "/account/confirm-email": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Confirms the address with the code from the confirmation email, and starts a session.",
         "operationId": "confirmEmail",
         "requestBody": {
@@ -244,7 +257,9 @@
     },
     "/account/resend-confirmation": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Sends the confirmation email again. The answer is the same whether or not the address has an account.",
         "operationId": "resendConfirmation",
         "requestBody": {
@@ -266,7 +281,9 @@
     },
     "/account/forgot-password": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Sends a password reset email. The answer is the same whether or not the address has an account.",
         "operationId": "forgotPassword",
         "requestBody": {
@@ -288,7 +305,9 @@
     },
     "/account/reset-password": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Sets a new password with the code from the password reset email.",
         "operationId": "resetPassword",
         "requestBody": {
@@ -320,8 +339,10 @@
     },
     "/account/external/{provider}": {
       "get": {
-        "tags": ["auth"],
-        "summary": "Sends the browser to the provider's sign-in page. After it, the browser returns to returnUrl, which must be a path on this server.",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Sends the browser to the provider's sign-in page. After the person signs in there, the browser returns to returnUrl, which must be a path on this server.",
         "operationId": "signInExternally",
         "parameters": [
           {
@@ -359,7 +380,9 @@
     },
     "/account/invitations/lookup": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "What an invitation is for, before the person accepts it.",
         "operationId": "lookUpInvitation",
         "requestBody": {
@@ -398,7 +421,9 @@
     },
     "/account/invitations/accept": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Joins the tenant and scopes the session to it. The session's user must have the invited address.",
         "operationId": "acceptInvitation",
         "requestBody": {
@@ -438,14 +463,16 @@
         },
         "security": [
           {
-            "session": []
+            "session": [ ]
           }
         ]
       }
     },
     "/api/v1/meta": {
       "get": {
-        "tags": ["meta"],
+        "tags": [
+          "meta"
+        ],
         "summary": "What a client needs to know about this server: versions, chunker parameters and enabled features.",
         "operationId": "getMeta",
         "responses": {
@@ -464,7 +491,9 @@
     },
     "/api/v1/me": {
       "get": {
-        "tags": ["tenant"],
+        "tags": [
+          "tenant"
+        ],
         "summary": "The signed-in user, their tenants and their role in each.",
         "operationId": "getMe",
         "responses": {
@@ -494,17 +523,21 @@
         },
         "security": [
           {
-            "oauth2": ["openid"]
+            "oauth2": [
+              "openid"
+            ]
           },
           {
-            "session": []
+            "session": [ ]
           }
         ]
       }
     },
     "/api/v1/tenants/{id}": {
       "get": {
-        "tags": ["tenant"],
+        "tags": [
+          "tenant"
+        ],
         "summary": "The tenant's name and plan.",
         "operationId": "getTenant",
         "parameters": [
@@ -555,17 +588,21 @@
         },
         "security": [
           {
-            "oauth2": ["members.read"]
+            "oauth2": [
+              "members.read"
+            ]
           },
           {
-            "session": []
+            "session": [ ]
           }
         ]
       }
     },
     "/api/v1/tenants/{id}/members": {
       "get": {
-        "tags": ["tenant"],
+        "tags": [
+          "tenant"
+        ],
         "summary": "The tenant's members, ordered by name.",
         "operationId": "listMembers",
         "parameters": [
@@ -635,17 +672,21 @@
         },
         "security": [
           {
-            "oauth2": ["members.read"]
+            "oauth2": [
+              "members.read"
+            ]
           },
           {
-            "session": []
+            "session": [ ]
           }
         ]
       }
     },
     "/api/v1/tenants/{id}/members/{userId}": {
       "patch": {
-        "tags": ["tenant"],
+        "tags": [
+          "tenant"
+        ],
         "summary": "Changes a member's role. The tenant always keeps at least one admin.",
         "operationId": "updateMember",
         "parameters": [
@@ -725,15 +766,19 @@
         },
         "security": [
           {
-            "oauth2": ["members.manage"]
+            "oauth2": [
+              "members.manage"
+            ]
           },
           {
-            "session": []
+            "session": [ ]
           }
         ]
       },
       "delete": {
-        "tags": ["tenant"],
+        "tags": [
+          "tenant"
+        ],
         "summary": "Removes a member from the tenant. The tenant always keeps at least one admin.",
         "operationId": "removeMember",
         "parameters": [
@@ -796,17 +841,21 @@
         },
         "security": [
           {
-            "oauth2": ["members.manage"]
+            "oauth2": [
+              "members.manage"
+            ]
           },
           {
-            "session": []
+            "session": [ ]
           }
         ]
       }
     },
     "/api/v1/tenants/{id}/invitations": {
       "get": {
-        "tags": ["tenant"],
+        "tags": [
+          "tenant"
+        ],
         "summary": "The invitations nobody has accepted yet, newest first.",
         "operationId": "listInvitations",
         "parameters": [
@@ -876,15 +925,19 @@
         },
         "security": [
           {
-            "oauth2": ["members.manage"]
+            "oauth2": [
+              "members.manage"
+            ]
           },
           {
-            "session": []
+            "session": [ ]
           }
         ]
       },
       "post": {
-        "tags": ["tenant"],
+        "tags": [
+          "tenant"
+        ],
         "summary": "Invites an email address and sends the invitation email. Inviting the same address again replaces the earlier invitation and sends a new email.",
         "operationId": "createInvitation",
         "parameters": [
@@ -965,17 +1018,21 @@
         },
         "security": [
           {
-            "oauth2": ["members.manage"]
+            "oauth2": [
+              "members.manage"
+            ]
           },
           {
-            "session": []
+            "session": [ ]
           }
         ]
       }
     },
     "/api/v1/tenants/{id}/invitations/{invitationId}": {
       "delete": {
-        "tags": ["tenant"],
+        "tags": [
+          "tenant"
+        ],
         "summary": "Revokes an invitation, so its email link stops working.",
         "operationId": "revokeInvitation",
         "parameters": [
@@ -1028,10 +1085,12 @@
         },
         "security": [
           {
-            "oauth2": ["members.manage"]
+            "oauth2": [
+              "members.manage"
+            ]
           },
           {
-            "session": []
+            "session": [ ]
           }
         ]
       }
@@ -1040,7 +1099,10 @@
   "components": {
     "schemas": {
       "AccountOptions": {
-        "required": ["signUp", "providers"],
+        "required": [
+          "signUp",
+          "providers"
+        ],
         "type": "object",
         "properties": {
           "signUp": {
@@ -1057,7 +1119,10 @@
         "description": "What the sign-in and sign-up screens offer on this server."
       },
       "ConfirmEmailRequest": {
-        "required": ["userId", "code"],
+        "required": [
+          "userId",
+          "code"
+        ],
         "type": "object",
         "properties": {
           "userId": {
@@ -1071,7 +1136,10 @@
         }
       },
       "CreateInvitationRequest": {
-        "required": ["email", "role"],
+        "required": [
+          "email",
+          "role"
+        ],
         "type": "object",
         "properties": {
           "email": {
@@ -1084,17 +1152,21 @@
         }
       },
       "CsrfToken": {
-        "required": ["token"],
+        "required": [
+          "token"
+        ],
         "type": "object",
         "properties": {
           "token": {
             "type": "string"
           }
         },
-        "description": "A write made with the session cookie carries this token in the `X-CSRF-Token` header."
+        "description": "Write operations that use the session cookie send this token in the `X-CSRF-Token` header."
       },
       "EmailRequest": {
-        "required": ["email"],
+        "required": [
+          "email"
+        ],
         "type": "object",
         "properties": {
           "email": {
@@ -1107,20 +1179,35 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "title": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "status": {
-            "type": ["null", "integer"],
+            "type": [
+              "null",
+              "integer"
+            ],
             "format": "int32"
           },
           "detail": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "instance": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "errors": {
             "type": "object",
@@ -1199,7 +1286,9 @@
         "description": "What the invitation screen shows before the person accepts."
       },
       "InvitationTokenRequest": {
-        "required": ["token"],
+        "required": [
+          "token"
+        ],
         "type": "object",
         "properties": {
           "token": {
@@ -1209,7 +1298,13 @@
         }
       },
       "Me": {
-        "required": ["id", "email", "name", "tenantId", "tenants"],
+        "required": [
+          "id",
+          "email",
+          "name",
+          "tenantId",
+          "tenants"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -1223,7 +1318,10 @@
             "type": "string"
           },
           "tenantId": {
-            "type": ["null", "string"],
+            "type": [
+              "null",
+              "string"
+            ],
             "description": "The tenant this token or session is scoped to; null when it is scoped to none.",
             "format": "uuid"
           },
@@ -1237,7 +1335,13 @@
         "description": "The signed-in user and the tenants they belong to."
       },
       "Member": {
-        "required": ["userId", "email", "name", "role", "joinedAt"],
+        "required": [
+          "userId",
+          "email",
+          "name",
+          "role",
+          "joinedAt"
+        ],
         "type": "object",
         "properties": {
           "userId": {
@@ -1323,7 +1427,11 @@
         }
       },
       "MeWithinTenant": {
-        "required": ["id", "name", "role"],
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -1339,7 +1447,10 @@
         }
       },
       "PageOfInvitation": {
-        "required": ["items", "nextCursor"],
+        "required": [
+          "items",
+          "nextCursor"
+        ],
         "type": "object",
         "properties": {
           "items": {
@@ -1349,14 +1460,20 @@
             }
           },
           "nextCursor": {
-            "type": ["null", "string"],
+            "type": [
+              "null",
+              "string"
+            ],
             "description": "Pass it as `cursor` to get the next page; null on the last page."
           }
         },
         "description": "One page of a listing."
       },
       "PageOfMember": {
-        "required": ["items", "nextCursor"],
+        "required": [
+          "items",
+          "nextCursor"
+        ],
         "type": "object",
         "properties": {
           "items": {
@@ -1366,7 +1483,10 @@
             }
           },
           "nextCursor": {
-            "type": ["null", "string"],
+            "type": [
+              "null",
+              "string"
+            ],
             "description": "Pass it as `cursor` to get the next page; null on the last page."
           }
         },
@@ -1376,25 +1496,44 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "title": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "status": {
-            "type": ["null", "integer"],
+            "type": [
+              "null",
+              "integer"
+            ],
             "format": "int32"
           },
           "detail": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "instance": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "ResetPasswordRequest": {
-        "required": ["userId", "code", "password"],
+        "required": [
+          "userId",
+          "code",
+          "password"
+        ],
         "type": "object",
         "properties": {
           "userId": {
@@ -1411,7 +1550,10 @@
         }
       },
       "SignInProvider": {
-        "required": ["key", "name"],
+        "required": [
+          "key",
+          "name"
+        ],
         "type": "object",
         "properties": {
           "key": {
@@ -1425,7 +1567,10 @@
         }
       },
       "SignInRequest": {
-        "required": ["email", "password"],
+        "required": [
+          "email",
+          "password"
+        ],
         "type": "object",
         "properties": {
           "email": {
@@ -1435,22 +1580,35 @@
             "type": "string"
           },
           "tenantId": {
-            "type": ["null", "string"],
+            "type": [
+              "null",
+              "string"
+            ],
             "description": "The tenant to scope the session to. Without it, the session gets the tenant the user signed in to last.",
             "format": "uuid"
           }
         }
       },
       "SignUpOutcome": {
-        "enum": ["confirmation_sent", "signed_in"],
+        "enum": [
+          "confirmation_sent",
+          "signed_in"
+        ],
         "description": "`confirmation_sent`: a confirmation email is on its way. It is also the answer when the address already has an account, so the response does not reveal which addresses do. `signed_in`: the invitation proved the address, the account exists and its session has started."
       },
       "SignUpPolicy": {
-        "enum": ["invitation", "open"],
+        "enum": [
+          "invitation",
+          "open"
+        ],
         "description": "`invitation`: only people with an invitation can create an account. `open`: anyone can create an account, and gets a new tenant of their own."
       },
       "SignUpRequest": {
-        "required": ["name", "email", "password"],
+        "required": [
+          "name",
+          "email",
+          "password"
+        ],
         "type": "object",
         "properties": {
           "name": {
@@ -1463,13 +1621,18 @@
             "type": "string"
           },
           "invitationToken": {
-            "type": ["null", "string"],
+            "type": [
+              "null",
+              "string"
+            ],
             "description": "The token from an invitation email. It proves the address, so no confirmation email is sent."
           }
         }
       },
       "SignUpResult": {
-        "required": ["outcome"],
+        "required": [
+          "outcome"
+        ],
         "type": "object",
         "properties": {
           "outcome": {
@@ -1478,7 +1641,9 @@
         }
       },
       "SwitchTenantRequest": {
-        "required": ["tenantId"],
+        "required": [
+          "tenantId"
+        ],
         "type": "object",
         "properties": {
           "tenantId": {
@@ -1488,7 +1653,12 @@
         }
       },
       "Tenant": {
-        "required": ["id", "name", "plan", "createdAt"],
+        "required": [
+          "id",
+          "name",
+          "plan",
+          "createdAt"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -1509,11 +1679,17 @@
         }
       },
       "TenantRole": {
-        "enum": ["admin", "member", "guest"],
+        "enum": [
+          "admin",
+          "member",
+          "guest"
+        ],
         "description": "What a member may do in a tenant; node permissions apply on top. `admin` manages members, invitations and the tenant's settings. `guest` is an outside person who sees only what is shared with them."
       },
       "UpdateMemberRequest": {
-        "required": ["role"],
+        "required": [
+          "role"
+        ],
         "type": "object",
         "properties": {
           "role": {
@@ -1581,7 +1757,7 @@
       },
       "session": {
         "type": "apiKey",
-        "description": "The web app's session, on the same origin only. A write made with it also sends the X-CSRF-Token header, with the token from GET /account/csrf; without it, the write gets 400 with the code csrf_token_invalid.",
+        "description": "The web app's session, on the same origin only. Write operations that use it must also send the X-CSRF-Token header, with the token from GET /account/csrf. A write operation without that header gets 400 with the code csrf_token_invalid.",
         "name": "bff_session",
         "in": "cookie"
       }

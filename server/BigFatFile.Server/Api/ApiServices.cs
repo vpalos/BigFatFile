@@ -79,7 +79,7 @@ internal static class ApiServices
         Type = SecuritySchemeType.ApiKey,
         In = ParameterLocation.Cookie,
         Name = "bff_session",
-        Description = "The web app's session, on the same origin only. A write made with it also sends the X-CSRF-Token header, with the token from GET /account/csrf; without it, the write gets 400 with the code csrf_token_invalid.",
+        Description = "The web app's session, on the same origin only. Write operations that use it must also send the X-CSRF-Token header, with the token from GET /account/csrf. A write operation without that header gets 400 with the code csrf_token_invalid.",
     };
 
     private static OpenApiSecurityScheme OAuthScheme()

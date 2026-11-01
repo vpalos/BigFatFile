@@ -31,7 +31,7 @@ public static class FastCdc
             center = remaining;
         }
 
-        // The reference scans in byte pairs, so it never tests the last byte of an odd length.
+        // The reference implementation reads the bytes in pairs, so it never tests the last byte of an odd length.
         center &= ~1;
         var end = remaining & ~1;
 

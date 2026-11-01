@@ -30,7 +30,7 @@ the audit log.
       case-insensitive and clients must detect collisions offline.
 - Limits:
     - 64 levels deep, 4,096 characters per full path.
-- Delete moves a node under the drive's trash root; restore moves it back.
+- Deleting a node moves it under the drive's trash root; restoring it moves it back.
 - Metrics:
     - each drive keeps a `used_bytes` counter, updated in the same transaction as the
       change, so quota checks never have to sum up a whole subtree.

@@ -21,7 +21,8 @@ public sealed class NameVectorTests
         Assert.Equal(NodeNames.UnicodeVersion, Vectors.Load("names.json").GetProperty("unicodeVersion").GetString());
     }
 
-    // Built in code: attribute arguments are stored as UTF-8, which turns a lone surrogate into U+FFFD.
+    // These cases are built in code, not in attributes. Attribute arguments are stored as
+    // UTF-8, which turns a lone surrogate into U+FFFD.
     public static TheoryData<string> UnpairedSurrogates => ["a\ud800b", "a\udc00", "\ud800", "\udc00\ud800"];
 
     [Theory]

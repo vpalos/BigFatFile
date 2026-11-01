@@ -5,7 +5,7 @@ namespace BigFatFile.Server.Modules;
 
 /// <summary>
 /// Loads one module and its own dependencies.
-/// The assemblies the core and the module pass types through come from the core, so each such type exists only once.
+/// The core loads the assemblies whose types pass between it and the module, so each such type exists only once.
 /// </summary>
 internal sealed class ModuleLoadContext(string mainAssemblyPath)
     : AssemblyLoadContext(Path.GetFileNameWithoutExtension(mainAssemblyPath))

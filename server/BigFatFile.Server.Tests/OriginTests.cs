@@ -91,8 +91,8 @@ public sealed class OriginTests(Origin origin) : IClassFixture<Origin>
     }
 
     /// <summary>
-    /// Selects every column the EF model maps. A package update that adds a column to the
-    /// Identity or OpenIddict model fails here until a core_ migration adds it.
+    /// Selects every column the EF model maps. After a package update adds a column to the
+    /// Identity or OpenIddict model, this test fails until a core_ migration adds that column.
     /// </summary>
     [Fact]
     public async Task TheAuthTablesMatchTheEfModel()

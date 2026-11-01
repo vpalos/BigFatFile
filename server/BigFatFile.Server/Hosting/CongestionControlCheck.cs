@@ -1,7 +1,7 @@
 namespace BigFatFile.Server.Hosting;
 
 /// <summary>
-/// Warns when the server's network does not use BBR, which uploads over lossy links need
+/// Warns when the server's network does not use BBR. Uploads over lossy links need BBR
 /// (Architecture.Deployment.md, section 1). The warning is not shown on non-Linux OSs.
 /// </summary>
 internal static class CongestionControlCheck

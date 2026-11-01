@@ -93,7 +93,7 @@ fn main() {
         vector("random", "64 MiB of pseudo-random bytes.", vec![xof("random", 64 * MIB)]),
         vector(
             "random-with-insert",
-            "The random input with 100 bytes inserted at 20 MiB. Only the chunks around the insert change.",
+            "The random input with 100 bytes inserted at 20 MiB. Only the chunks around the inserted bytes change.",
             vec![
                 xof("random", 20 * MIB),
                 xof("insert", 100),

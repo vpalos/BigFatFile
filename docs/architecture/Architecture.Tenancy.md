@@ -17,8 +17,8 @@ Apps authenticate.
 
 - Application-level scoping (first layer):
     - every tenant-owned table carries `tenant_id`, used to filter all queries;
-    - an isolation test set calls every endpoint with another tenant's IDs and expects
-      404s.
+    - a set of isolation tests calls every endpoint with another tenant's IDs and
+      expects 404s.
 - Row-level security (second layer):
     - simple predicates, one policy per table:
         - `tenant_id = current_setting('app.tenant_id', true)::uuid`
@@ -34,7 +34,7 @@ Apps authenticate.
 ## 3. Permissions
 
 - Rules on nodes grant a role (viewer, editor, owner) to a user or a group;
-- The effective permission is the nearest rule walking up the tree;
+- The effective permission is the first rule found when walking up the tree from the node;
 - External people get access through share links and guest memberships, never through
   anonymous write.
 - Sends (transfers to recipients outside the system):
@@ -51,11 +51,12 @@ Apps authenticate.
       GitHub) through standard OAuth;
     - the operator can point the Origin at one OpenID Connect provider (Keycloak,
       Authentik, Entra ID);
-    - who may sign up, set by `BFF_SIGN_UP`:
+    - `BFF_SIGN_UP` sets who may sign up:
         - `invitation`, the default: only invited addresses can create an account;
         - `open`: anyone can, and gets a new tenant of their own; the cloud runs this;
-    - the operator (job dashboard, tenant creation) is the account whose address is
-      `BFF_OPERATOR_EMAIL`, once the address is confirmed:
+    - the operator is the account whose address is `BFF_OPERATOR_EMAIL`, once the
+      address is confirmed:
+        - the operator can open the job dashboard and create tenants;
         - that address may sign up under either policy;
         - it gets a tenant of its own, so a fresh install has its first tenant;
     - per-tenant identity providers, SAML, SCIM, group sync and LDAP are licensed modules
@@ -70,7 +71,7 @@ Apps authenticate.
     - MailKit for email.
 - Flows:
     - web UI: session cookie, same origin, no tokens in the browser;
-        - a write made with the cookie carries the `X-CSRF-Token` header;
+        - every write operation that uses the cookie carries the `X-CSRF-Token` header;
     - desktop, Replica, CLI: authorization code with PKCE through the system browser and
       a loopback redirect, or device code for headless installs;
     - refresh tokens live in the platform's secure store (DPAPI, keychain, protected
@@ -91,16 +92,17 @@ Apps authenticate.
     - a user with several tenants picks one; the web app switches tenant by asking for a
       new session cookie, so every open tab switches with it;
     - every request finds its tenant in the same place, the signed-in principal.
-- The account screens (sign-in, sign-up, email confirmation, password reset, invitations)
-  are pages of the web app, which every Origin image serves:
+- The account screens are pages of the web app, which every Origin image serves:
+    - the screens are sign-in, sign-up, email confirmation, password reset and
+      invitations;
     - the authorization endpoint sends a browser there, and the pages call the
       `/account` endpoints (`Architecture.API.md`, section 5);
     - links in emails carry their code after `#`, which browsers never send to a server,
       so the codes stay out of request logs.
 - On first sign-in the Origin finds or creates the user, links the external account, and
   provisions tenant membership from invitations or the tenant's domain rules.
-- Data Protection keys (cookies, anti-forgery) are stored in the database so every node
-  and container restart shares them.
+- Data Protection keys (cookies, anti-forgery) are stored in the database, so that every
+  node uses the same keys and the keys survive a container restart.
 - Stores:
     - Identity and OpenIddict are store-based and ship EF Core implementations;
     - one small EF Core `DbContext` holds only their tables and is used at runtime by
@@ -109,7 +111,7 @@ Apps authenticate.
       `core_` migration files; EF's own migrations never run;
         - the Server's `print-auth-schema` command prints what the current packages
           expect;
-        - a test selects every column the EF model maps, so a package update that
-          changes the model fails until a new `core_` file follows it;
+        - a test selects every column the EF model maps; after a package update that
+          changes the model, the test fails until a new `core_` file matches it;
     - row-level security does not apply to these tables; users are global and tenant
       membership is ours.

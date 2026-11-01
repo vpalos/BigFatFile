@@ -56,7 +56,7 @@ public sealed class ChunkingVectorTests
         var input = Materialise(vector.GetProperty("input"));
         if (readSize == 1)
         {
-            // One byte per read over 64 MiB takes too long; a 9 MiB prefix covers the cases.
+            // Reading 64 MiB one byte at a time takes too long; a 9 MiB prefix covers the same cases.
             input = input[..(9 * 1024 * 1024)];
         }
 

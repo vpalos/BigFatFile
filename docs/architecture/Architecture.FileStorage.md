@@ -13,8 +13,9 @@ encryption.
     - the chunker places each boundary where the bytes match a pattern, so boundaries
       follow the content, not the offset;
     - chunk sizes: 1 MiB minimum, 4 MiB average, 8 MiB maximum;
-    - identified by the BLAKE3 hash of its bytes;
-    - stored once per tenant within a warehouse, possibly referenced by many files:
+    - each chunk is identified by the BLAKE3 hash of its bytes;
+    - each chunk is stored once per tenant within a warehouse, possibly referenced by
+      many files:
         - a chunk is never reused across tenants;
         - cross-tenant sharing would let anyone test whether a given file exists somewhere
           in the system by asking "do you already have this chunk?";
@@ -37,15 +38,15 @@ encryption.
 ```
 
 - Why content-defined and not fixed-size chunks:
-    - an overwrite in place (databases, mail stores, VM images) changes only the chunks
-      that hold the changed bytes, with either method;
-    - an insert or delete shifts every later byte; with fixed offsets every later chunk
-      then gets a new hash, so the rest of the file is uploaded again;
+    - with either method, an overwrite in place changes only the chunks that hold the
+      changed bytes; databases, mail stores and VM images write this way;
+    - inserting or deleting bytes shifts every later byte; with fixed offsets every later
+      chunk then gets a new hash, so the rest of the file is uploaded again;
     - content-defined boundaries re-align within one chunk after the change, so only
       the chunks around it are new;
-    - most design and media tools (Photoshop, TIFF, CAD, Blender, audio and video
-      projects) and zip containers such as Office files rewrite the file with sections
-      at new offsets, so they need content-defined chunking to get a delta.
+    - most design and media tools rewrite the file with sections at new offsets, and so
+      do zip containers such as Office files; they need content-defined chunking to get
+      a delta. Examples: Photoshop, TIFF, CAD, Blender, audio and video projects.
 - Chunker parameters (minimum, average and maximum size, the boundary mask) are fixed in
   Contracts. The C# and WebAssembly chunkers must cut identically, which the shared test
   vectors check: a different cut means no deduplication between web and desktop
@@ -57,8 +58,9 @@ encryption.
     - the test vectors are generated with that crate, so the WebAssembly build of the
       same crate matches by construction;
     - on 64 MiB of random bytes the chunks average about 6 MiB, and 3 of the 11 stop at
-      the 8 MiB maximum; a chunk cut at the maximum ends at an offset, not at content.
-- Every manifest, whoever produced it, follows these rules:
+      the 8 MiB maximum; a chunk that is cut at the maximum size ends at a fixed offset,
+      not at a content boundary.
+- Every manifest follows these rules, whoever produced it:
     - each chunk has 1 byte to 8 MiB;
     - only the last chunk may be smaller than 1 MiB;
     - the chunk sizes add up to the file size;
@@ -66,8 +68,8 @@ encryption.
 - Performance:
     - chunking runs where files are produced (desktop, CLI, Replica, browser) through
       the SDKs, and on the Origin, inline, for uploads through the file-level
-      endpoints (`Architecture.FileTransfer.md`); it and hashing are one streaming pass over the
-      file;
+      endpoints (`Architecture.FileTransfer.md`);
+    - chunking and hashing happen in one streaming pass over the file;
     - about 0.7 to 1 GB/s per core natively and 150 to 300 MB/s in WebAssembly,
       far above any uplink;
     - memory: one chunk per upload in flight must be buffered for hashing, so the 8 MiB
@@ -85,8 +87,8 @@ encryption.
       timestamps and the path at commit time; read only by `bff export`, disaster
       recovery and integrity audits.
 - A daily job writes a tree snapshot per tenant into the warehouse
-  (`snapshots/<tenant>/<date>.json`), so manifests plus the latest snapshot rebuild
-  names, folders and contents without the database.
+  (`snapshots/<tenant>/<date>.json`), so names, folders and contents can be rebuilt from
+  the manifests and the latest snapshot, without the database.
 - Commit order: chunks, then the warehouse manifest, then the database transaction. The
   database never references what the warehouse lacks. The database is authoritative
   when the two disagree, except in recovery mode.
@@ -109,9 +111,9 @@ encryption.
         - definitions live in a mounted file (`/config/warehouses.json`); credentials are
           referenced from environment variables or Docker secrets, never written in the
           file;
-    - the database, defined by tenant administrators in the web UI, credentials
-      encrypted at rest (licensed module `storage.tenant-warehouses`); this is how a
-      tenant brings its own bucket.
+    - the database: warehouses that tenant administrators define in the web UI, with
+      credentials encrypted at rest (licensed module `storage.tenant-warehouses`); this
+      is how a tenant brings its own bucket.
 - Every tenant has a `warehouse_id`; new tenants get the default unless an administrator
   assigns another.
 - Chunk identity is `(warehouse_id, tenant_id, hash)`: deduplication, the missing-chunks
@@ -120,7 +122,7 @@ encryption.
   tenant, let garbage collection clean the old location.
 - Startup checks:
     - probe every configured warehouse (write and read a test object);
-    - verify every warehouse referenced by a tenant exists;
+    - check that each warehouse that a tenant references exists;
     - either failure stops the Origin.
 - Cluster mode requires every warehouse to be shared storage (S3 or a shared
   filesystem); a `local` warehouse on one node's disk fails the check.

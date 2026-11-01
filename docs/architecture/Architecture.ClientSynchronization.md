@@ -17,7 +17,8 @@ in step with the server, and how conflicts are handled.
 - Change storage/detection:
     - for one server process, committed changes go on an in-process bus;
     - in cluster mode each node listens on a PostgreSQL `NOTIFY` channel, so a change
-      committed on one node reaches clients connected to another.
+      that is committed on one node reaches the clients that are connected to another
+      node.
 
 ## 2. Desktop client loop
 
@@ -40,12 +41,13 @@ in step with the server, and how conflicts are handled.
 ## 3. Conflicts
 
 - No merges and no silent overwrites.
-- A write rejected because the version moved on becomes a conflict copy:
+- When a write operation is rejected because the version has moved on, its content
+  becomes a conflict copy:
     - named `<name> (conflict copy, <device>).<ext>`, next to the original;
     - both appear everywhere;
     - the user resolves afterwards from Explorer or the web UI.
-- A remote delete of a file with un-synced local edits keeps the local file as a
-  conflict copy.
+- When a file is deleted remotely while it has unsynced local edits, the local file is
+  kept as a conflict copy.
 - Edits by the same client are recognised by the actor's client ID and are not conflicts.
 - Later feature:
     - "someone else is editing this file" notifications sent over the same SignalR hub.

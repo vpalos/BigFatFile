@@ -28,7 +28,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The token that writes made with the session cookie send in the X-CSRF-Token header. */
+        /** The token that is sent in the X-CSRF-Token header by write operations made with the session cookie. */
         get: operations["getCsrfToken"];
         put?: never;
         post?: never;
@@ -181,7 +181,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Sends the browser to the provider's sign-in page. After it, the browser returns to returnUrl, which must be a path on this server. */
+        /** Sends the browser to the provider's sign-in page. After the person signs in there, the browser returns to returnUrl, which must be a path on this server. */
         get: operations["signInExternally"];
         put?: never;
         post?: never;
@@ -367,7 +367,7 @@ export interface components {
             /** @description Admin or member. Guests are invited through sharing. */
             role: components["schemas"]["TenantRole"];
         };
-        /** @description A write made with the session cookie carries this token in the `X-CSRF-Token` header. */
+        /** @description Write operations that use the session cookie send this token in the `X-CSRF-Token` header. */
         CsrfToken: {
             token: string;
         };

@@ -6,9 +6,9 @@ using Npgsql;
 namespace BigFatFile.Server.Auth;
 
 /// <summary>
-/// The ES256 key that signs tokens and the AES key that encrypts the ones only the server
-/// reads. Both are created on first start and kept in <c>server_keys</c>, so every node
-/// uses the same pair.
+/// The ES256 key that signs tokens and the AES key that encrypts the tokens that only the
+/// server reads. Both are created on first start and kept in <c>server_keys</c>, so every
+/// node uses the same pair.
 /// </summary>
 internal sealed class ServerKeys(NpgsqlDataSource dataSource)
 {

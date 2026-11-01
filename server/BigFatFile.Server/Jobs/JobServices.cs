@@ -35,8 +35,8 @@ internal static class JobServices
             AppPath = "/",
         });
 
-    // Resolves the data source on first use: the build maps the dashboard to write the
-    // OpenAPI document, and has no database to point a data source at.
+    // Resolves the data source on first use. When the build runs the app to write the
+    // OpenAPI document, the app also maps the dashboard, but there is no database then.
     private sealed class DataSourceConnectionFactory(IServiceProvider provider) : IConnectionFactory
     {
         public NpgsqlConnection GetOrCreateConnection() => provider.GetRequiredService<NpgsqlDataSource>().CreateConnection();

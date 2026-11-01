@@ -20,9 +20,9 @@ internal static class DatabaseServices
                 builder.ConnectionStringBuilder.GssEncryptionMode = GssEncryptionMode.Disable;
             }
 
-            // Database spans only inside a recorded request or job span. The others are queue
-            // polls, health probes and the pool opening connections, which would bury the
-            // useful traces.
+            // Record a database span only inside a recorded request span or job span. The
+            // other database calls are queue polling, health probes and the pool opening
+            // connections; their spans would hide the useful traces.
             builder.ConfigureTracing(tracing => tracing
                 .ConfigureCommandFilter(_ => Activity.Current is { Recorded: true })
                 .ConfigureBatchFilter(_ => Activity.Current is { Recorded: true })

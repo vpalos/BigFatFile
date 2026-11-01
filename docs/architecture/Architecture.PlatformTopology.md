@@ -24,7 +24,7 @@ Core topology: Origin Server <-> Replica Server <=> Apps (Clients).
     - Web, Desktop.?, Cli, Replica and any third-party App;
     - they talk to the Replica when one is reachable, otherwise to the Origin;
     - the protocol is the same either way:
-        - the one public API, whose chunk-level endpoints the SDKs use on their behalf (`Architecture.API.md`).
+        - the one public API (`Architecture.API.md`); the SDKs call its chunk-level endpoints for the Apps.
     - a BFF App has:
         - level:
             - file-level Apps use the `files` endpoints (high-level);
@@ -75,7 +75,7 @@ Licensed modules are (by exception) kept in a separate repository.
     - PostgreSQL row-level security (`Architecture.Tenancy.md`, section 2).
 - Jobs and queues:
     - Hangfire with PostgreSQL storage is the single scheduling mechanism;
-    - recurring jobs: send expiry, garbage collection, retention;
+    - recurring jobs: expiry of sends, garbage collection, retention;
     - one-off work: malware scan after upload, thumbnails, notification emails, webhooks;
     - jobs receive identifiers, not objects;
     - jobs are retried with backoff;
@@ -103,33 +103,33 @@ Licensed modules are (by exception) kept in a separate repository.
     - the Origin publishes the Replica's LAN address and public key to the tenant's
       clients;
     - clients prefer the Replica when reachable and fall back to the Origin;
-    - switching endpoints triggers a version-based reconcile of the client's tree, not a
-      cursor replay, because the two servers have different sequence spaces.
+    - switching endpoints triggers a reconciliation of the client's tree by version, not
+      a replay from the cursor, because the two servers have different sequence spaces.
 - Full mirror and active backup:
     - a complete copy of the tenant's tree, permissions, change log and every referenced
       chunk, for the whole tenant or selected drives;
     - capacity planning: the tenant's deduplicated size plus retained versions;
     - applies the whole change feed without filtering; fetches missing chunks in the
-      background, prioritising chunks LAN clients ask for;
+      background, and fetches first the chunks that LAN clients ask for;
     - a verification job compares every manifest against the chunks on disk, re-fetches
       anything missing, and reports status to the Origin ("Replica complete as of
       `<time>`" in the web UI).
 - Backup semantics:
     - version retention is configured independently of the Origin's plan and may be
       longer;
-    - restores run from the Replica's admin page: a folder to a point in time, or a
-      single version;
+    - a restore is started from the Replica's admin page: a folder to a point in time,
+      or a single version;
     - a restore is a metadata operation plus local reads, because manifests are
       immutable and chunks are content-addressed.
 - Online:
-    - reads are served from the mirror; a chunk not yet mirrored is fetched from the
-      Origin on demand;
-    - writes are accepted at LAN speed, acknowledged, and queued in a durable journal
-      (outbox).
+    - read requests are served from the mirror; a chunk that is not mirrored yet is
+      fetched from the Origin when it is needed;
+    - write operations are accepted at LAN speed, acknowledged, and queued in a durable
+      journal (outbox).
 - Offline:
-    - reads and writes continue; LAN clients keep receiving change events;
-    - all LAN writes pass through one Replica, so the LAN side has one linear history and
-      conflicts between two LAN users are detected immediately.
+    - read and write operations continue; LAN clients keep receiving change events;
+    - all write operations on the LAN pass through one Replica, so the LAN side has one
+      linear history and conflicts between two LAN users are detected immediately.
 - Reconnect:
     - pull the Origin's changes since the stored cursor and emit them as local events;
     - replay the journal in order, each operation carrying its base version;
@@ -149,7 +149,7 @@ Licensed modules are (by exception) kept in a separate repository.
 
 - A sync engine with OS integration;
     - shows the whole remote drive immediately, however large;
-    - fetches file content on first open into a managed local cache (LRU);
+    - when a file is first opened, fetches its content into a managed local cache (LRU);
 - Uses materialisation model (avoid filesystem drivers where possible):
     - real folder entries that are hollow until opened ([Architecture.FileMaterialisation.md](Architecture.FileMaterialisation.md)).
 - Platforms:
@@ -165,7 +165,7 @@ Licensed modules are (by exception) kept in a separate repository.
     - serves live status over a WebSocket;
     - the CLI uses this API to talk to a running instance.
 - Settings window:
-    - Photino.NET window hosting the platform's webview consuming the local API;
+    - a Photino.NET window that hosts the platform's webview; the webview uses the local API;
     - the UI is a Svelte 5 app (shared stack, runs in browser during dev).
 - Native per platform:
     - tray icon and menu, notifications, auto-start, Explorer context-menu actions.
@@ -195,23 +195,24 @@ Licensed modules are (by exception) kept in a separate repository.
     - `IBffModule` (module registration, endpoints, embedded migrations), `IFeatureGate`;
     - interfaces the core consumes: `IChunkStore`, `IWarehouseRegistry`, `IChangeNotifier`,
       `IAuthProvider`, `IMalwareScanner`, `IPlanPolicy`, `IGroupDirectory`;
-    - domain events modules subscribe to; access to the tenant context, audit writer,
-      job registration and encrypted per-tenant settings;
-    - changes rarely, because the private repository compiles against it.
+    - domain events that modules subscribe to; access to the tenant context, audit
+      writer, job registration and encrypted per-tenant settings;
+    - it changes rarely, because the private repository compiles against it.
 - **BigFatFile.Client** (the SDK, published to NuGet):
     - typed API client over Contracts from the OpenAPI spec;
     - authentication flows (credentials, PKCE etc.) and a pluggable secure token store;
-    - the transfer engine: chunk, dedup check, parallel upload with resume, verified
-      download, presigned direct-to-storage when possible, bandwidth limits, retries;
-    - real-time subscription to change notification events;
+    - the transfer engine: chunking, the deduplication check, parallel upload with
+      resume, verified download, presigned direct-to-storage when possible, bandwidth
+      limits, retries;
+    - a real-time subscription to the events that announce changes;
     - endpoint discovery and failover between Origin and Replica.
 - **@bigfatfile/client** (npm):
     - `BigFatFile.Client` ported for the browser and Node;
     - the chunker and hasher in WebAssembly, in a web worker (a `worker_thread` on Node);
     - the transfer engine is separated (`@bigfatfile/client/transfer`),
       so Apps that only read folders can avoid bundling it;
-    - resumes a partial upload after a page reload from the session ID and the file's
-      fingerprint kept in `localStorage`.
+    - after a page reload, resumes a partial upload, using the session ID and the file
+      fingerprint that are kept in `localStorage`.
 - **@bigfatfile/ui** (npm):
     - Svelte 5 components wrapped as web components:
         - file browser, uploader, share dialog, file-request form;
@@ -246,7 +247,7 @@ Licensed modules are (by exception) kept in a separate repository.
     - a file starting with `-- no-transaction` runs outside a transaction (for
       `CREATE INDEX CONCURRENTLY` and the like);
         - on PostgreSQL such a file holds one statement, because several statements
-          sent together run as one implicit transaction;
+          that are sent together run as one implicit transaction;
     - knows nothing about BFF tables; the SQL files live with the project that owns the
       tables.
 - **Licensed modules** (private repository):
@@ -289,8 +290,8 @@ api/openapi.json --> @bigfatfile/client --> @bigfatfile/ui --> apps/web,
   generated from the Origin and is the source of the TypeScript types.
 - `BigFatFile.Migrator` is used by Server (PostgreSQL) and Sync (SQLite); modules only
   embed their SQL files and do not reference it.
-- Domain rules (permissions, quotas, plans), database tables and anything that
-  references ASP.NET or the database stay in Server and are never shared with clients.
+- These stay in Server and are never shared with clients: domain rules (permissions,
+  quotas, plans), database tables, and anything that references ASP.NET or the database.
 
 ## 3. Apps
 
@@ -350,8 +351,8 @@ Designed for Apps rather than discovered by them. Our own clients use these.
 - App-managed folders:
     - an App may own a subtree;
     - the policy says users may read and only the App writes;
-    - the App's own data model (e.g. invoices, deadlines) are kept in the App's database,
-      keyed by node IDs;
+    - the App keeps its own data (for example invoices and deadlines) in its own
+      database, keyed by node IDs;
     - BFF stores files, the App stores meaning (semantics).
 - Guest memberships and share links, sends, groups and permissions:
     - provided via the same API, with the same scopes.
@@ -439,7 +440,7 @@ Identity and access:
 | ----------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | SSO management          | `sso.tenant-config` | per-tenant identity provider settings with an admin UI; domain enforcement (everyone at a domain must use SSO, passwords off) | one server-wide OIDC provider, configured by the operator |
 | SAML 2.0                | `sso.saml`          | SAML sign-in                                                                                                                  | OIDC                                                      |
-| SCIM provisioning       | `sso.scim`          | the directory pushes user creates, updates and deactivations                                                                  | invitations, just-in-time provisioning                    |
+| SCIM provisioning       | `sso.scim`          | the directory pushes new users, changes to users and deactivations                                                            | invitations, just-in-time provisioning                    |
 | Directory group sync    | `sso.groups`        | directory groups become BFF groups, kept in sync                                                                              | manually managed groups                                   |
 | LDAP / Active Directory | `sso.ldap`          | bind against on-premises AD, including from a dedicated instance inside the client's network                                  | none                                                      |
 | Access policies         | `access.policies`   | mandatory 2FA per tenant, IP allowlists, session limits, client version requirements                                          | per-user 2FA and passkeys                                 |

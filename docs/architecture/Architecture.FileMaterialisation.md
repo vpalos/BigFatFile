@@ -18,8 +18,9 @@ how content is cached, and how changes travel in both directions.
 
 - Projection:
     - our process is the filesystem for the folder; nothing exists on disk;
-    - every operation an application performs (open, read, write, lock, map into memory,
-      rename) is routed to our process, which must answer with full filesystem semantics;
+    - our process receives every operation that an application performs (open, read,
+      write, lock, map into memory, rename) and must answer with full filesystem
+      semantics;
     - examples: FUSE on Linux; WinFsp and Dokany on Windows (need a driver); ProjFS on
       Windows (built in, designed for developer tooling, no sync-status integration).
 - Materialisation:
@@ -27,13 +28,13 @@ how content is cached, and how changes travel in both directions.
     - our process creates real entries lazily; entries are hollow until a file is opened;
     - the operating system's own filter notices the first read of a hollow file and asks
       our process for the bytes;
-    - after that the file is an ordinary file: reads, writes, locks and memory maps are
-      handled by the native filesystem with no involvement from us;
+    - after that the file is an ordinary file: read, write, lock and memory-map
+      operations are handled by the native filesystem with no involvement from us;
     - examples: Cloud Files API on Windows (used by OneDrive), File Provider on macOS.
 - Decision: materialisation.
-    - In-place writes work because a hydrated file is simply a local file: databases,
-      Outlook data files, design tools, the Office save sequence (temporary file, lock,
-      rename, extra data stream).
+    - In-place write operations work because a hydrated file is simply a local file:
+      databases, Outlook data files, design tools, the Office save sequence (temporary
+      file, lock, rename, extra data stream).
     - A projection must reimplement all of that and pays a round trip through our process
       per operation; projections that handle it well do so with a write-back cache, which
       is materialisation rebuilt by hand.
@@ -56,7 +57,7 @@ how content is cached, and how changes travel in both directions.
     - up-sync: wait until a changed file is closed and quiet; chunk it; compute the delta
       against the last known manifest; upload missing chunks; complete with `If-Match`;
     - conflict copies, ignore rules, bandwidth limits, pause and resume;
-    - delete safeguard: if a large share of a folder disappears locally at once, stop and
+    - deletion safeguard: if a large part of a folder disappears locally at once, stop and
       ask instead of deleting remotely.
 - Each platform implements one adapter:
 
@@ -97,15 +98,15 @@ enum AdapterCapabilities
     - macOS reports all four, because File Provider does those jobs itself; the engine
       skips those stages.
 - Contract tests run the same scenarios against every adapter:
-    - a remote create appears; opening a file hydrates the requested range; an edit
-      uploads a delta; a remote rename lands; edits on both sides produce a conflict copy;
-      the engine restarts and finishes pending work.
+    - a file created remotely appears; opening a file hydrates the requested range; an
+      edit uploads a delta; a file renamed remotely is renamed locally; edits on both
+      sides produce a conflict copy; the engine restarts and finishes pending work.
 - An in-memory adapter serves engine unit tests and is the base of the Replica's adapter.
 
 ## 4. Metadata: lazy everywhere
 
 - The client never downloads the whole tree:
-    - directory listings are fetched the first time a directory is opened and cached;
+    - directory listings are fetched and cached the first time a directory is opened;
     - the root of a drive of any size appears in under a second after sign-in.
 - Per platform:
     - Windows: the sync root uses on-demand population; the first enumeration of a
@@ -132,12 +133,13 @@ enum AdapterCapabilities
 - Reading:
     - a read of range R on file F maps to the chunks covering R by a binary search over
       the cumulative chunk sizes in F's manifest;
-    - present chunks are served from disk; missing ones are fetched, verified, stored,
-      served;
+    - chunks already on disk are served from disk; missing ones are fetched, verified,
+      stored, served;
     - sequential reads trigger read-ahead of the next chunks.
 - Writing:
-    - writes land in the local file (Windows, macOS) or a write-back copy (Linux);
-    - when the file is closed and quiet, the engine chunks it and uploads the delta.
+    - write operations go to the local file (Windows, macOS) or a write-back copy (Linux);
+    - when the file is closed and quiet, the engine splits it into chunks and uploads the
+      delta.
 - Where the cache is:
     - Windows: the hydrated bytes inside the placeholders (the Cloud Files API stores
       content in the file itself; partially hydrated files are sparse); eviction is
@@ -148,8 +150,8 @@ enum AdapterCapabilities
     - Linux: a chunk cache under `~/.cache/bigfatfile` plus a write-back directory for
       dirty files.
 - Warm-up on first sign-in (no local history yet):
-    1. pin policies per group, where the tenant has the `ops.devices` licensed module
-       (folders that must always be offline for that group): pinned and prefetched at
+    1. pin policies per group (folders that must always be offline for that group),
+       where the tenant has the `ops.devices` licensed module: pinned and prefetched at
        low priority;
     2. the user's own pins from another device, if any;
     3. the user's recent files from the Origin's access history, up to a budget (for
@@ -183,8 +185,8 @@ enum AdapterCapabilities
 - Our process:
     - a normal user-mode application connected to the sync root with a table of
       callbacks;
-    - packaged as MSIX, which gives the identity that sync root registration and Explorer
-      context-menu commands expect.
+    - packaged as MSIX, because sync root registration and Explorer context-menu commands
+      need the package identity that MSIX gives.
 - Down-sync:
     - new remote entries: create placeholders with node ID, size, timestamps and version;
       nothing is downloaded; directories get on-demand population;
@@ -199,14 +201,14 @@ enum AdapterCapabilities
       the same notifications as for user actions, so the engine keeps a short-lived set
       of its own operations and ignores the matching notifications;
     - content on demand:
-        - a read of a dehydrated range makes the filter call `FETCH_DATA` with offset and
-          length;
+        - when an application reads a dehydrated range, the filter calls `FETCH_DATA`
+          with the offset and the length;
         - the engine acknowledges at once, streams chunks in the background, returns bytes
           with `TRANSFER_DATA` in 4 KB-aligned pieces, and reports progress every few
           hundred milliseconds so Explorer shows its dialog;
         - partial hydration is enabled;
-        - the callback names the calling process; hydration is declined for indexers and
-          scanners that ignore the recall attribute;
+        - the callback says which process is calling; hydration is declined for indexers
+          and scanners that ignore the recall attribute;
         - pinned files are hydrated proactively; "Free up space" dehydrates.
 - Up-sync:
     - renames and deletes: the filter calls `NOTIFY_RENAME` and `NOTIFY_DELETE` before the
@@ -242,9 +244,10 @@ enum AdapterCapabilities
       watch.
 - Structure:
     - the extension must be Swift and runs sandboxed; a host application is required;
-    - the Swift adapter is thin and talks to the .NET engine, running as a login-item
-      agent, over the loopback API: fetch node X at version Y to this path; upload this
-      path as node X with base version V; give me changes since anchor A;
+    - the .NET engine runs as a login-item agent;
+    - the Swift adapter is thin and talks to the engine over the loopback API: fetch
+      node X at version Y to this path; upload this path as node X with base version V;
+      give me changes since anchor A;
     - the host application shows the settings UI in a `WKWebView` pointed at the agent;
     - fallback if the sandbox blocks the loopback route: a Swift port of Contracts and
       the transfer part of Client, checked against the shared test vectors.

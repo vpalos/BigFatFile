@@ -81,7 +81,7 @@ Milestones for v2, in order, each with what it contains and when it counts as do
     - the isolation test set.
 - The audit log, starting with sign-ins.
 - The web app skeleton: the Svelte 5 stack, sign-up, sign-in and the members page.
-- CSRF protection for writes made with the session cookie.
+- CSRF protection for write operations that use the session cookie.
 - The reference deployment behind TLS:
     - the `proxy` compose profile (Caddy);
     - forwarded headers from the proxy;
@@ -98,7 +98,7 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 - Nodes:
     - create a folder, rename, move, trash and restore, with `If-Match`;
     - cursor-paged listings, the path and lookup by path;
-    - `Idempotency-Key` on every create.
+    - `Idempotency-Key` on every request that creates something.
 - The change log, one row per tree change in the same transaction, and the tenant's
   sequence counter.
 - The web app's folder browser.
@@ -119,7 +119,8 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 - Versions: list and restore.
 - The first CLI commands: sign in (PKCE, device code), `ls`, upload and download.
 - Done when:
-    - a file uploaded from the web app and one from the CLI download byte for byte;
+    - a file that is uploaded from the web app and a file that is uploaded from the CLI
+      both download identically, byte for byte;
     - an interrupted upload resumes from its offset;
     - an earlier version is restored.
 
@@ -136,7 +137,7 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 - The SDKs choose between file-level and chunk-level transfer.
 - Garbage collection: mark and sweep per tenant, session pins, the 24-hour rule.
 - Done when:
-    - a file the tenant already has uploads without sending a chunk, from the web app
+    - uploading a file that the tenant already has sends no chunks, from the web app
       and from the CLI;
     - an edit to a large file uploads only its changed chunks;
     - garbage collection deletes unreferenced chunks and keeps those of uploads in
@@ -153,8 +154,8 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 - The SDK subscription.
 - Live updates in the web app.
 - Done when:
-    - a change made in one browser shows in another within a second, on one node and
-      across two;
+    - a change that is made in one browser appears in another within a second, on one
+      node and across two;
     - a client whose cursor is older than the retention period resyncs;
     - the feed is the one the desktop client (M2) reads.
 

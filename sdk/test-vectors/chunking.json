@@ -258,7 +258,7 @@
           "size": 5887607
         }
       ],
-      "description": "The random input with 100 bytes inserted at 20 MiB. Only the chunks around the insert change.",
+      "description": "The random input with 100 bytes inserted at 20 MiB. Only the chunks around the inserted bytes change.",
       "hash": "blake3:fee8557c83b0d1069cc0bbb24e8e0eb5bd5c3d5bb42467c9edaa2c74ae09f379",
       "input": [
         {

@@ -82,7 +82,7 @@ docs/       architecture documents, developer docs
 - [File storage](Architecture.FileStorage.md):
     - how drive files are stored using CDC, in warehouses.
 - [File transfer](Architecture.FileTransfer.md):
-    - how files are transferred through the API, the API scopes and throughput optimization.
+    - file transfer through the API, the API scopes and throughput optimization.
 - [File materialisation](Architecture.FileMaterialisation.md):
     - how a desktop client shows the whole remote drive as a local folder with
       explorer (OS) integration, and how file changes are detected on each platform.

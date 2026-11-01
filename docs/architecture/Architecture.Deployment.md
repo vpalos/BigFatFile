@@ -16,8 +16,8 @@ and updated on each platform.
       Origin Server and Replica Server services; the setting is per container network, so the host
       keeps its own;
     - the host must have the `tcp_bbr` kernel module loaded; the docs give the one
-      command, and the Origin Server logs a warning at startup when it runs on another
-      algorithm;
+      command, and the Origin Server writes a warning to its log at startup when it runs
+      on another algorithm;
     - the development override does not set it, because not every development host has
       the module.
 
@@ -37,8 +37,8 @@ and updated on each platform.
     - the Origin Server plus a pinned PostgreSQL; a `local` default warehouse on a named volume;
     - profiles add optional targets (`garage`, `minio`, extra volumes for more local
       targets) and a `proxy` profile (Caddy with automatic TLS);
-    - each target a profile starts is referenced from the warehouse file inside the BFF
-      container by service name or mounted path;
+    - the warehouse file inside the BFF container refers to each target that a profile
+      starts, by service name or by mounted path;
     - override files cover the cluster and development cases;
     - migration, backup and restore are commands of the Origin Server image.
 - Other hosts:
@@ -80,8 +80,9 @@ and updated on each platform.
 - Pairing:
     - an administrator creates the Replica Server in the web UI and receives a one-time pairing
       code;
-    - `bff-replica pair <code>` (or the same value in the container's environment)
-      fetches the Origin Server address, the tenant and the key pair; nothing else to configure.
+    - `bff-replica pair <code>` fetches the Origin Server address, the tenant and the key
+      pair; nothing else to configure;
+    - the container's environment can give the same code instead.
 - Hosts:
     - NAS: the NAS's container UI with the compose file, or the same one-click templates
       as the Origin Server;
@@ -106,14 +107,14 @@ and updated on each platform.
     - `linux/arm64` builds;
     - modest memory: the compose file sets PostgreSQL to `shared_buffers=128MB` and a
       small `max_connections`; the Replica Server stays well under 500 MB;
-    - `PUID` and `PGID` environment variables (or a `user:` override) so bind mounts owned
-      by the NAS user work without permission errors;
+    - `PUID` and `PGID` environment variables (or a `user:` override), so that bind mounts
+      that the NAS user owns work without permission errors;
     - data on plain directories of the NAS pool: the `local` warehouse and the Replica Server's
       mirror are bind mounts of a share;
     - the Replica Server's SQLite file must be on the NAS's own filesystem (Btrfs or ext4), never
       on an SMB or NFS mount;
-    - health check and restart policy, so the NAS UI shows the state and restarts after a
-      power cut;
+    - health check and restart policy, so the NAS UI shows the state and the containers
+      restart after a power cut;
     - no privileged mode, no host networking; one published port each;
     - the NAS's built-in reverse proxy with Let's Encrypt sits in front of the Origin Server's
       port.

@@ -16,7 +16,7 @@ public interface IBffModule
 
     /// <summary>
     /// The core version the module was built against. The Origin loads the module only when
-    /// its own major version is the same and its minor version is the same or higher.
+    /// the core's major version is the same and the core's minor version is the same or higher.
     /// </summary>
     Version RequiredCoreVersion { get; }
 

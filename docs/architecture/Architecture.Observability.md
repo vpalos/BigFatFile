@@ -24,9 +24,9 @@ measures about itself, and where the data goes.
     - ASP.NET Core: one span per request with route, status and duration; `/health`
       excluded;
     - Npgsql: one child span per SQL statement;
-        - only inside a recorded request or job span: queue polls, health probes and
-          the pool opening connections are not traced, because they would bury the
-          useful traces;
+        - only inside a recorded request or job span: queue polling, health probes and
+          the pool opening connections are not traced, because their spans would hide
+          the useful traces;
     - `HttpClient` and the AWS SDK: outgoing calls, including every S3 request;
     - Hangfire: one span per job run;
     - SignalR: connection and message counters;
@@ -36,13 +36,14 @@ measures about itself, and where the data goes.
   `Meter("BigFatFile")`, both defined in `Abstractions` so licensed modules report
   into the same stream.
 - Spans:
-    - upload session: one parent span from create to complete, with chunk count, bytes
-      received, bytes deduplicated and the warehouse as attributes; no span per chunk,
-      which would be too much volume; a failed chunk is an event on the session span;
+    - upload session: one parent span from creation to completion; its attributes are
+      the chunk count, the bytes received, the bytes deduplicated and the warehouse; no
+      span per chunk, which would be too much volume; a failed chunk is an event on the
+      session span;
     - download and share-link stream: bytes served and whether they came from a `local`
       or an `s3` warehouse;
     - manifest commit and change-log append;
-    - garbage collection run per warehouse: chunks marked, swept and deleted bytes;
+    - each garbage collection pass over a warehouse: chunks marked, swept and deleted bytes;
     - module loading and licence checks.
 - Metrics:
     - bytes uploaded and downloaded, by warehouse and by route (through the Origin,
@@ -85,9 +86,9 @@ measures about itself, and where the data goes.
 
 ## 5. Where the data goes
 
-- Development: the .NET Aspire dashboard, one container
-  (`mcr.microsoft.com/dotnet/aspire-dashboard`), accepts OTLP and shows traces, metrics
-  and logs with no configuration. Part of the development compose override.
+- Development: the .NET Aspire dashboard accepts OTLP and shows traces, metrics and logs
+  with no configuration. It is one container (`mcr.microsoft.com/dotnet/aspire-dashboard`),
+  part of the development compose override.
 - Self-hosters: nothing is bundled. The OTLP variables and the Prometheus endpoint are
   documented, and an `observability` compose profile starts an OpenTelemetry Collector
   plus one all-in-one backend for those who want it:

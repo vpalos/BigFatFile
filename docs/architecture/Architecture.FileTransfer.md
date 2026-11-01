@@ -1,8 +1,8 @@
 # BigFatFile Architecture: Transfer
 
 How bytes move between Apps, the Origin and storage: the file-level endpoints, the
-chunk-level endpoints, the tenant-wide scope that mirroring Apps such as the Replica
-use, sends, and the transport layer. All of it is one API (`Architecture.API.md`); there
+chunk-level endpoints, the tenant-wide scope used by mirroring Apps such as the Replica,
+sends, and the transport layer. All of it is one API (`Architecture.API.md`); there
 are no private endpoints.
 
 ## 1. File-level transfer (`files` tag)
@@ -29,8 +29,8 @@ are no private endpoints.
 - Download: `GET /files/{id}/content` with range support; the Origin maps the range to
   chunks and streams only what is requested. Previews and playback (PDF, video) always
   use this.
-- Share links to drive files are served the same way by the Origin (or the Replica on
-  the LAN); multi-file links as a streamed zip.
+- The Origin (or the Replica on the LAN) serves share links to drive files the same way;
+  a link to several files is served as one streamed zip.
 - The SDKs choose the tier: a seekable input of known size goes through the Transfer
   Protocol; a stream of unknown length goes through this path. An App never picks.
 
@@ -50,7 +50,7 @@ are no private endpoints.
 - Resume is automatic:
     - a restarted client repeats step 1 and is told what is still missing;
     - sessions expire after a configurable time.
-- Downloads by our own clients (desktop, CLI, Replica) assemble on the client:
+- Our own clients (desktop, CLI, Replica) assemble downloads themselves:
     - `GET /nodes/{id}/manifest` returns the manifest and, on S3, a presigned
       URL per chunk with a short expiry;
     - the client fetches the missing chunks in parallel (from the Replica, the Origin or
@@ -59,20 +59,20 @@ are no private endpoints.
     - errors are caught per chunk so resume is also per chunk.
 - Chunks by hash, part of this protocol:
     - `GET /transfer/chunks/{hash}` and `POST /transfer/chunks/exists`;
-    - a hash alone grants nothing: the caller presents a grant, which is what a
-      manifest fetch returns for the chunks of a node the caller may read, valid for
-      minutes; on S3 the grant is the presigned URL itself;
+    - a hash alone grants nothing: the caller presents a grant;
+    - fetching the manifest of a node that the caller may read returns a grant for each
+      chunk, valid for a few minutes; on S3 the grant is the presigned URL itself;
     - an App holding the `tenant.mirror` scope (section 4) presents that instead; it
       stands for a grant over every chunk of the tenant;
     - chunks never enter the Origin by hash; they arrive only through an upload session
       or the file-level upload, so nothing orphaned arrives and garbage collection's
       pinning holds.
 - Downloads in the browser:
-    - `@bigfatfile/client` assembles in the browser where a streaming download is
+    - `@bigfatfile/client` assembles the file in the browser when a streaming download is
       possible (service worker, or the File System Access API), otherwise falls back to
       the file-level download (section 1).
-- The web uploader chunks the file with FastCDC and hashes with BLAKE3 in WebAssembly,
-  in a web worker;
+- The web uploader splits the file into chunks with FastCDC and hashes them with BLAKE3,
+  in WebAssembly, in a web worker;
     - the desktop client does the same natively.
 
 ## 3. Sends (transfers)
@@ -80,8 +80,8 @@ are no private endpoints.
 - A send (a transfer to recipients outside the system) is stored as whole-file objects,
   not chunks:
     - a send is immutable, has no versions and needs no delta;
-    - its traffic is mostly downloads by external recipients on any browser or phone,
-      which must be a plain download.
+    - most of its traffic is downloads by external recipients on any browser or phone,
+      and each of those must be a plain download.
 - Upload:
     - presigned multipart upload to storage on S3 warehouses;
     - direct `PUT` to the Origin on `local` warehouses;
@@ -108,12 +108,13 @@ are no private endpoints.
     - afterwards the App follows the change feed from the snapshot's sequence number.
 - Delegated identity: token exchange (RFC 8693) on the auth endpoints. An App presents
   its own token and an assertion "on behalf of user X" and receives a token carrying
-  both, so a write accepted offline can be replayed hours later; the audit log records
-  the user as actor and the App as agent. Available to any App whose scopes allow it.
+  both, so a write operation that was accepted offline can be replayed hours later; the
+  audit log records the user as actor and the App as agent. Available to any App whose
+  scopes allow it.
 - The Replica additionally registers itself and reports status through the `replicas`
   resource of the API: pairing with a one-time code, periodic status (lag,
-  completeness, last verification), and the list clients read to find a Replica's LAN
-  address and public key.
+  completeness, last verification), and the list that clients read to find a Replica's
+  LAN address and public key.
 
 ## 5. Transport
 

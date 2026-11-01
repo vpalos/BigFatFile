@@ -26,14 +26,15 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 ## 2. Conventions
 
 - Versioning:
-    - `/api/v1`; a new major version runs beside the previous one while deprecated;
+    - `/api/v1`; a new major version runs beside the previous one while the previous
+      one is deprecated;
     - deprecations are announced in the changelog and in a `Deprecation` response
       header.
 - Errors: problem details (RFC 9457), with a stable `type` per error and a
   machine-readable `code`.
 - Pagination: cursor-based everywhere (`cursor`, `limit`, `nextCursor`); no offsets.
-- Writes: an `Idempotency-Key` header on every create, so a retried request does not
-  create twice.
+- Idempotency: an `Idempotency-Key` header on every request that creates something, so
+  a retried request does not create it twice.
 - Concurrency: `If-Match` with the node version on every change to a node; a stale
   version gets `412`.
 - Rate limits: per App and per tenant, reported in `RateLimit-*` headers; limits are
@@ -45,8 +46,8 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 
 - Bearer JWT (ES256, keys at the JWKS endpoint) issued by the Origin's OpenIddict
   server; the web app on the same origin uses a session cookie instead.
-- A write made with the session cookie sends the `X-CSRF-Token` header, with the token
-  from `GET /account/csrf`; bearer requests do not need it.
+- Every write operation that uses the session cookie sends the `X-CSRF-Token` header,
+  with the token from `GET /account/csrf`; bearer requests do not need it.
 - A token carries: the user (if any), the App, the tenant it is scoped to, the granted
   scopes.
 - Flows:
@@ -56,13 +57,15 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
     - refresh tokens with `offline_access`;
     - token exchange (RFC 8693): an App acting on behalf of a user later, with both
       identities in the token.
-- Public endpoints (section 5, `public` tag) need no token: share links, send downloads,
-  file-request uploads; a link token in the path, and the link's own password where set.
+- Public endpoints (section 5, `public` tag) need no token: share links, downloads of
+  sends, uploads to file requests; a link token in the path, and the link's own password
+  where set.
 
 ## 4. Scopes
 
 - Scopes are coarse and readable.
-- An App asks for a set; the tenant administrator (or the user, for user-scoped Apps) sees and grants it.
+- An App asks for a set; the tenant administrator sees and grants it, or the user does
+  for a user-scoped App.
 - Files:
     - `files.read`: list, read metadata, download; manifests and chunk grants;
     - `files.write`: create, upload, rename, move, trash, restore; upload sessions.
@@ -139,7 +142,8 @@ permissions apply on top.
 - Files, file-level transfer (`files` tag):
     - `POST /files` (`files.write`): name, parent, size; returns an upload ID;
     - `PUT /files/{uploadId}/content` (`files.write`): the bytes as one stream;
-      `Content-Range` to continue from an offset; the Origin chunks inline;
+      `Content-Range` to continue from an offset; the Origin splits the bytes into chunks
+      as they arrive;
     - `GET /files/{uploadId}` (`files.write`): the offset to resume from;
     - `GET /nodes/{id}/content` (`files.read`): download with `Range` support;
     - `GET /nodes/{id}/thumbnail`, `GET /nodes/{id}/preview` (`files.read`).
@@ -154,7 +158,7 @@ permissions apply on top.
       URL) per chunk;
     - `GET /transfer/chunks/{hash}` (`files.read` with a grant, or `tenant.mirror`);
     - `POST /transfer/chunks/exists` (`files.read` with grants, or `tenant.mirror`):
-      which of these hashes the tenant has.
+      which of these chunks the tenant already has.
 - Changes:
     - `GET /changes?since=&limit=&subtree=` (`events.read`): the change log from a
       cursor; `subtree` limits it to a folder;
@@ -218,7 +222,7 @@ permissions apply on top.
 - `files.upload(folder, input)`: a seekable input of known size goes through the
   `transfer` endpoints (delta, deduplication, parallel upload); a stream of unknown
   length goes through `POST /files`. The App's call is the same either way.
-- `files.download(id)`: assembles from chunks where the runtime can stream to disk;
-  otherwise `GET /nodes/{id}/content`.
+- `files.download(id)`: assembles the file from its chunks when the runtime can stream to
+  disk; otherwise `GET /nodes/{id}/content`.
 - Pagination, retries, `Idempotency-Key`, `If-Match` and token refresh are handled by
   the SDK; an App that calls the API directly handles them itself, as documented here.

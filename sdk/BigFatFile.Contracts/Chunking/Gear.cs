@@ -4,7 +4,7 @@ internal static class Gear
 {
     // The GEAR table of fastcdc-rs 5.0.0 (src/v2020/mod.rs), copied value for value.
     // The shared test vectors come from that crate. One changed value moves the cut points,
-    // and then the same file uploaded from two clients no longer deduplicates.
+    // and then a file that is uploaded from two clients is stored twice.
     public static ReadOnlySpan<ulong> Table =>
     [
         0x3b5d3c7d207e37dc, 0x784d68ba91123086, 0xcd52880f882e7298, 0xeacf8e4e19fdcca7,

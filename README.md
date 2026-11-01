@@ -57,7 +57,7 @@ dotnet run --project server/BigFatFile.Server
 
 ## 4. Running examples
 
-Signs in from a script and calls the API through the generated TypeScript types:
+The sign-in example signs in from a script and calls the API through the generated TypeScript types:
 
 ```sh
 pnpm install
