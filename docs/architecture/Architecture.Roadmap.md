@@ -66,28 +66,41 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 
 #### M1.1. Accounts and tenants
 
-- Accounts:
-    - sign-up with email and password, email verification and password reset, through
-      MailKit;
-    - `BFF_SIGN_UP`, and `BFF_PASSWORD_SIGN_IN` to turn password sign-in off;
-    - Google and Microsoft sign-in;
-    - the operator's one OpenID Connect provider.
-- Tenants:
-    - members, roles and invitations (`members.*` endpoints);
-    - the tenant a token is scoped to, chosen at sign-in;
-    - the one unlimited plan behind `IPlanPolicy`.
-- Tenant isolation:
-    - the application connects as a role that does not own the tables;
-    - row-level security on every tenant-owned table;
-    - the isolation test set.
-- The audit log, starting with sign-ins.
-- The web app skeleton: the Svelte 5 stack, sign-up, sign-in and the members page.
-- CSRF protection for write operations that use the session cookie.
-- The reference deployment behind TLS:
-    - the `proxy` compose profile (Caddy);
-    - forwarded headers from the proxy;
-    - connection pool sizes that fit PostgreSQL's `max_connections`.
-- The `BigFatFile` activity source and meter in `Abstractions`.
+- Status: steps 1 and 2 are done.
+- Steps, in order:
+    1. The API spec, with every endpoint of M1.1 as a stub.
+    2. Tenant isolation:
+        - the application connects as a role that does not own the tables;
+        - row-level security on every tenant-owned table;
+        - the tenant a session or a token is scoped to, chosen at sign-in;
+        - the isolation test set.
+    3. Telemetry, plans and audit:
+        - the `BigFatFile` activity source and meter in `Abstractions`;
+        - the one unlimited plan behind `IPlanPolicy`;
+        - the audit log, partitioned, starting with sign-ins.
+    4. Accounts:
+        - sign-up with email and password, email verification and password reset,
+          through MailKit;
+        - Mailpit in the development compose file, to catch those emails;
+        - `BFF_SIGN_UP`, `BFF_OPERATOR_EMAIL`, and `BFF_PASSWORD_SIGN_IN` to turn
+          password sign-in off;
+        - the server-rendered sign-in form removed.
+    5. Members and invitations:
+        - members, roles and invitations (`members.*` endpoints);
+        - the invitation email.
+    6. External sign-in:
+        - Google and Microsoft;
+        - the operator's one OpenID Connect provider.
+    7. CSRF protection for write operations that use the session cookie.
+    8. The SDK calls for the account, tenant and member endpoints, in
+       `@bigfatfile/client` and `BigFatFile.Client`.
+    9. The web app skeleton, on `@bigfatfile/client`:
+        - the Svelte 5 stack;
+        - the sign-up, sign-in and members pages.
+    10. The reference deployment behind TLS:
+        - the `proxy` compose profile (Caddy);
+        - forwarded headers from the proxy;
+        - connection pool sizes that fit PostgreSQL's `max_connections`.
 - Done when:
     - an invited person signs up from the email and lands in the tenant;
     - every endpoint, called with another tenant's IDs, answers 404;
