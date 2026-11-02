@@ -5,17 +5,17 @@ The design is explained in detail in `docs/architecture`.
 
 ## 1. Requirements
 
-- Docker with the Compose plugin, to run the Origin.
-- To work on the code:
-    - the .NET 10 SDK;
-    - Node 24, with `corepack enable` run once so that `pnpm` is on the path.
+- Docker with Compose plugin
+- .NET 10 SDK
+- Node 24 then run `corepack enable` once to enable `pnpm`.
 
 ## 2. Running locally
 
 - `./bff dev up` starts the Origin server (hot-reload mode);
 - `./bff dev logs` follows logs;
 - `./bff dev down` stops everything and keeps the data;
-- `./bff dev reset` stops everything and also deletes the data and the build cache.
+- `./bff dev reset` stops everything and also deletes the data and the build cache;
+- `./bff docs architecture` serves the architecture docs at http://localhost:3000.
 
 **Notes:**
 

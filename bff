@@ -1,35 +1,37 @@
 #!/usr/bin/env bash
-# Commands for working on this repository. Needs Docker with the Compose plugin.
+# Commands for working on this repository.
+# Requires Docker with the Compose plugin.
 #
-#   ./bff dev up      start the Origin, PostgreSQL and the Aspire dashboard;
-#                     the Origin applies saved changes to its code with Hot Reload
-#   ./bff dev down    stop them and keep the data
-#   ./bff dev reset   stop them and delete the data and the build cache
-#   ./bff dev logs    follow the Origin's log
+#   ./bff dev up           start the Origin, PostgreSQL and the Aspire dashboard;
+#                          the Origin applies saved changes to its code with Hot Reload
+#   ./bff dev down         stop them and keep the data
+#   ./bff dev reset        stop them and delete the data and the build cache
+#   ./bff dev logs         follow the Origin's log
+#   ./bff docs <name>      serve the docsify site in docs/<name>, such as architecture
 
 set -euo pipefail
 cd "$(dirname "$0")"
 
-# The development database password; the reference deployment takes it from .env instead.
+# The development database passwords; the reference deployment takes them from .env instead.
 export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-bigfatfile-dev}"
+export BFF_DATABASE_PASSWORD="${BFF_DATABASE_PASSWORD:-bigfatfile-app-dev}"
 
 compose() {
     docker compose --file docker-compose.yml --file docker-compose.dev.yml "$@"
 }
 
 usage() {
-    sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '1d; /^#/!q; s/^# \{0,1\}//p' "$0"
     exit 1
 }
 
-[[ "${1:-}" == "dev" ]] || usage
+dev() {
+    case "${1:-}" in
+        up)
+            compose up --detach --wait
+            cat <<INFO
 
-case "${2:-}" in
-    up)
-        compose up --detach --wait
-        cat <<INFO
-
-The Origin is running.
+The Origin is running (Hot Reload).
   Sign in        http://localhost:${BFF_PORT:-8080}/account/sign-in
   API reference  http://localhost:${BFF_PORT:-8080}/api/docs
   Job dashboard  http://localhost:${BFF_PORT:-8080}/admin/jobs
@@ -38,11 +40,34 @@ The Origin is running.
 
 Demo user: demo@bigfatfile.local / bigfatfile-demo
 
-The Origin applies saved changes with Hot Reload; ./bff dev logs shows it.
+Run "./bff dev logs" to follow the Origin's logs.
 INFO
-        ;;
-    down) compose down ;;
-    reset) compose down --volumes ;;
-    logs) compose logs --follow origin ;;
+            ;;
+        down) compose down ;;
+        reset) compose down --volumes ;;
+        logs) compose logs --follow origin ;;
+        *) usage ;;
+    esac
+}
+
+docs() {
+    local site="docs/${1:-}"
+    if [[ ! -f "$site/index.html" ]]; then
+        echo "There is no docs site at $site. The sites are:" >&2
+        for index in docs/*/index.html; do
+            echo "  ./bff docs $(basename "$(dirname "$index")")" >&2
+        done
+        exit 1
+    fi
+    echo "Serving $site at http://localhost:3000. Press Ctrl+C to stop."
+    # Without --init, the server runs as the container's first process, and Ctrl+C does not stop it.
+    # Without the .md content type, Firefox logs an error for every page.
+    exec docker run --rm --init --publish 3000:3000 --volume "$PWD/$site:/www:ro" busybox:stable \
+        sh -c 'echo ".md:text/markdown; charset=utf-8" > /etc/httpd.conf && exec httpd -f -p 3000 -h /www'
+}
+
+case "${1:-}" in
+    dev) dev "${2:-}" ;;
+    docs) docs "${2:-}" ;;
     *) usage ;;
 esac
