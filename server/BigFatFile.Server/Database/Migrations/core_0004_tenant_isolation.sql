@@ -1,6 +1,6 @@
--- Row-level security, the second layer of tenant isolation (Architecture.Tenancy.md,
--- section 2). Each request's transaction sets app.tenant_id and app.user_id. The owner of
--- the tables is not subject to these policies.
+-- Row-level security, the database layer of tenant isolation.
+-- Each request's transaction sets app.tenant_id and app.user_id.
+-- These policies don't apply to the owner of the tables.
 
 -- A setting that an earlier transaction on the same connection set reads back as '', not
 -- NULL, so NULLIF turns it back into "not set".

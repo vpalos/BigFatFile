@@ -1,5 +1,6 @@
--- Keys the server signs and encrypts its OpenID Connect tokens with. Every node reads the
--- same keys from here.
+-- The keys for the server to sign and encrypt its OpenID Connect tokens.
+-- Every node reads the same keys from here.
+
 CREATE TABLE server_keys (
     id           uuid        PRIMARY KEY,
     purpose      text        NOT NULL CHECK (purpose IN ('oidc-signing', 'oidc-encryption')),
