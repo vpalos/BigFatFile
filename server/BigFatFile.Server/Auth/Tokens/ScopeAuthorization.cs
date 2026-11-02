@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using OpenIddict.Abstractions;
 
-namespace BigFatFile.Server.Auth;
+namespace BigFatFile.Server.Auth.Tokens;
 
 internal static class ScopeAuthorization
 {

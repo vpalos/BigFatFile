@@ -1,6 +1,6 @@
 using OpenIddict.Abstractions;
 
-namespace BigFatFile.Server.Auth;
+namespace BigFatFile.Server.Auth.Tokens;
 
 /// <summary>The scopes an App can ask for. <c>Architecture.API.md</c> section 4 says what each allows.</summary>
 internal static class BffScopes

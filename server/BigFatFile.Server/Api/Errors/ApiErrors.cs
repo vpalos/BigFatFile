@@ -1,5 +1,6 @@
 using BigFatFile.Contracts.Api;
 using BigFatFile.Server.Auth;
+using BigFatFile.Server.Auth.Users;
 
 namespace BigFatFile.Server.Api.Errors;
 
@@ -85,8 +86,8 @@ internal static class ApiErrors
         "Open the link in the confirmation email first. `POST /api/v1/account/resend-confirmation` sends the email again.");
 
     public static readonly ApiError LockedOut = new(403, ErrorCodes.LockedOut,
-        $"The account is locked for {AuthServices.LockoutMinutes} minutes, because of too many wrong passwords.",
-        $"The lock starts after {AuthServices.LockoutAttempts} wrong passwords in a row. During the lock, even the right password gets this answer. Try again when the lock ends.");
+        $"The account is locked for {UserServices.LockoutMinutes} minutes, because of too many wrong passwords.",
+        $"The lock starts after {UserServices.LockoutAttempts} wrong passwords in a row. During the lock, even the right password gets this answer. Try again when the lock ends.");
 
     public static readonly ApiError InvalidCode = new(400, ErrorCodes.InvalidCode,
         "The code is wrong or has expired.",

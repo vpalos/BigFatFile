@@ -1,5 +1,6 @@
 using BigFatFile.Contracts.Api;
-using BigFatFile.Server.Auth;
+using BigFatFile.Server.Auth.Tokens;
+using BigFatFile.Server.Auth.Users;
 using BigFatFile.Server.Database;
 using BigFatFile.Server.Jobs;
 using BigFatFile.Server.Models;

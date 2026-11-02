@@ -1,9 +1,10 @@
 using System.Reflection;
 using BigFatFile.Abstractions.Features;
 using BigFatFile.Abstractions.Modules;
-using BigFatFile.Server.Api.Endpoints;
 using BigFatFile.Server.Api;
+using BigFatFile.Server.Api.Endpoints;
 using BigFatFile.Server.Auth;
+using BigFatFile.Server.Auth.SignIn;
 using BigFatFile.Server.Configuration;
 using BigFatFile.Server.Database;
 using BigFatFile.Server.Development;

@@ -88,7 +88,7 @@ Apps authenticate.
     - per-tenant identity providers, SAML, SCIM, group sync and LDAP are licensed modules
       behind `IAuthProvider` (`Architecture.PlatformTopology.md`, section 7).
 - Sign-in limits:
-    - the account lock (`AuthServices.cs`):
+    - the account lock (`UserServices.cs`):
         - 10 wrong passwords in a row lock the account for 5 minutes;
         - during the lock, even the right password is refused;
         - a successful sign-in sets the count back to 0;

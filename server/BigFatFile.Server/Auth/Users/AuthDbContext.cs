@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.EntityFrameworkCore.Models;
 
-namespace BigFatFile.Server.Auth;
+namespace BigFatFile.Server.Auth.Users;
 
 /// <summary>
 /// The tables of ASP.NET Core Identity, OpenIddict and Data Protection, which those

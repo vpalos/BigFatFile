@@ -1,4 +1,4 @@
-using BigFatFile.Server.Auth;
+using BigFatFile.Server.Auth.Tokens;
 using BigFatFile.Server.Configuration;
 using BigFatFile.Server.Database;
 using BigFatFile.Server.Development;

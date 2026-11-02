@@ -2,7 +2,7 @@ using BigFatFile.Server.Database;
 using BigFatFile.Server.Models;
 using Npgsql;
 
-namespace BigFatFile.Server.Auth;
+namespace BigFatFile.Server.Auth.SignIn;
 
 /// <summary>Chooses the tenant that a new session works in, and records the choice.</summary>
 internal static class SignInTenant

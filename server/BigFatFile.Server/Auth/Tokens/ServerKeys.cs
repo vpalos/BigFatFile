@@ -3,7 +3,7 @@ using Dapper;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 
-namespace BigFatFile.Server.Auth;
+namespace BigFatFile.Server.Auth.Tokens;
 
 /// <summary>
 /// The ES256 key that signs tokens and the AES key that encrypts the tokens that only the

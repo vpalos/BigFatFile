@@ -3,6 +3,7 @@ using BigFatFile.Contracts.Api;
 using BigFatFile.Server.Api.Errors;
 using BigFatFile.Server.Api.Parameters;
 using BigFatFile.Server.Auth;
+using BigFatFile.Server.Auth.Tokens;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;

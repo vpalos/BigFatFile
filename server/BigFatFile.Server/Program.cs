@@ -1,4 +1,4 @@
-using BigFatFile.Server.Auth;
+using BigFatFile.Server.Auth.Users;
 using BigFatFile.Server.Health;
 using BigFatFile.Server.Hosting;
 using Microsoft.EntityFrameworkCore;

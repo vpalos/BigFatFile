@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
-using BigFatFile.Server.Auth;
+using BigFatFile.Server.Auth.SignIn;
+using BigFatFile.Server.Auth.Users;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;

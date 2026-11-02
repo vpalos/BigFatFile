@@ -1,5 +1,5 @@
 using BigFatFile.Contracts.Api;
-using BigFatFile.Server.Auth;
+using BigFatFile.Server.Auth.Users;
 using BigFatFile.Server.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;

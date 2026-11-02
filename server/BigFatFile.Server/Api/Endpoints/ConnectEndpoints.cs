@@ -1,9 +1,9 @@
-using System.Security.Claims;
 using BigFatFile.Server.Auth;
+using BigFatFile.Server.Auth.Tokens;
+using BigFatFile.Server.Auth.Users;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -52,12 +52,13 @@ internal static class ConnectEndpoints
             return Forbid(OpenIddictConstants.Errors.ConsentRequired, "This client needs a consent screen, which this server does not have yet.");
         }
 
-        var identity = await CreateUserIdentityAsync(users, user);
-        identity.SetClaim(TenantClaims.TenantId, session.Principal!.GetClaim(TenantClaims.TenantId));
-        identity.SetScopes(request.GetScopes());
-        identity.SetResources(await scopes.ListResourcesAsync(identity.GetScopes()).ToListAsync());
-        identity.SetDestinations(DestinationsOf);
-        return Results.SignIn(new ClaimsPrincipal(identity), authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        var principal = await TokenIdentity.ForUserAsync(
+            users,
+            user,
+            session.Principal!.GetClaim(TenantClaims.TenantId),
+            request.GetScopes(),
+            await scopes.ListResourcesAsync(request.GetScopes()).ToListAsync());
+        return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
     private static async Task<IResult> TokenAsync(
@@ -81,12 +82,13 @@ internal static class ConnectEndpoints
                 return Forbid(OpenIddictConstants.Errors.InvalidGrant, "The user can no longer sign in.");
             }
 
-            var identity = await CreateUserIdentityAsync(users, user);
-            identity.SetClaim(TenantClaims.TenantId, granted.Principal!.GetClaim(TenantClaims.TenantId));
-            identity.SetScopes(granted.Principal!.GetScopes());
-            identity.SetResources(granted.Principal!.GetResources());
-            identity.SetDestinations(DestinationsOf);
-            return Results.SignIn(new ClaimsPrincipal(identity), authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            var principal = await TokenIdentity.ForUserAsync(
+                users,
+                user,
+                granted.Principal!.GetClaim(TenantClaims.TenantId),
+                granted.Principal!.GetScopes(),
+                granted.Principal!.GetResources());
+            return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
         if (request.IsClientCredentialsGrantType())
@@ -94,13 +96,12 @@ internal static class ConnectEndpoints
             var application = await applications.FindByClientIdAsync(request.ClientId!)
                 ?? throw new InvalidOperationException("OpenIddict accepted a request from an unknown client.");
 
-            var identity = new ClaimsIdentity(TokenValidationParameters.DefaultAuthenticationType, Claims.Name, Claims.Role);
-            identity.SetClaim(Claims.Subject, request.ClientId);
-            identity.SetClaim(Claims.Name, await applications.GetDisplayNameAsync(application));
-            identity.SetScopes(request.GetScopes());
-            identity.SetResources(await scopes.ListResourcesAsync(identity.GetScopes()).ToListAsync());
-            identity.SetDestinations(DestinationsOf);
-            return Results.SignIn(new ClaimsPrincipal(identity), authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            var principal = TokenIdentity.ForApp(
+                request.ClientId!,
+                await applications.GetDisplayNameAsync(application),
+                request.GetScopes(),
+                await scopes.ListResourcesAsync(request.GetScopes()).ToListAsync());
+            return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
         return Forbid(OpenIddictConstants.Errors.UnsupportedGrantType, "This grant type is not supported.");
@@ -135,24 +136,6 @@ internal static class ConnectEndpoints
 
         return Results.Ok(claims);
     }
-
-    private static async Task<ClaimsIdentity> CreateUserIdentityAsync(UserManager<BffUser> users, BffUser user)
-    {
-        var identity = new ClaimsIdentity(TokenValidationParameters.DefaultAuthenticationType, Claims.Name, Claims.Role);
-        identity.SetClaim(Claims.Subject, user.Id.ToString())
-            .SetClaim(Claims.Email, user.Email)
-            .SetClaim(Claims.Name, user.UserName)
-            .SetClaims(Claims.Role, [.. await users.GetRolesAsync(user)]);
-        return identity;
-    }
-
-    private static IEnumerable<string> DestinationsOf(Claim claim) => claim.Type switch
-    {
-        Claims.Subject => [Destinations.AccessToken, Destinations.IdentityToken],
-        Claims.Name when claim.Subject!.HasScope(BffScopes.Profile) => [Destinations.AccessToken, Destinations.IdentityToken],
-        Claims.Email when claim.Subject!.HasScope(BffScopes.Email) => [Destinations.AccessToken, Destinations.IdentityToken],
-        _ => [Destinations.AccessToken],
-    };
 
     private static IResult Forbid(string error, string description) =>
         Results.Forbid(

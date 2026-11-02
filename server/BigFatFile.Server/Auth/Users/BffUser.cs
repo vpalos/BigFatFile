@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace BigFatFile.Server.Auth;
+namespace BigFatFile.Server.Auth.Users;
 
 internal sealed class BffUser : IdentityUser<Guid>
 {

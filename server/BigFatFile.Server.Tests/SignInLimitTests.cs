@@ -1,7 +1,8 @@
 using System.Net;
 using System.Text.Json;
 using BigFatFile.Contracts.Api;
-using BigFatFile.Server.Auth;
+using BigFatFile.Server.Auth.SignIn;
+using BigFatFile.Server.Auth.Users;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +24,7 @@ public sealed class SignInLimitTests(Origin origin) : IClassFixture<Origin>
         }
 
         using var browser = origin.CreateClient();
-        for (var attempt = 1; attempt < AuthServices.LockoutAttempts; attempt++)
+        for (var attempt = 1; attempt < UserServices.LockoutAttempts; attempt++)
         {
             await SignIn.PostSignInFormAsync(browser, email, "a wrong password");
         }
@@ -33,7 +34,7 @@ public sealed class SignInLimitTests(Origin origin) : IClassFixture<Origin>
         await SignIn.PostSignInFormAsync(browser, email, "a wrong password");
         var lockoutEnd = await LockoutEndAsync(email);
         Assert.NotNull(lockoutEnd);
-        Assert.InRange(lockoutEnd.Value - before, TimeSpan.FromMinutes(AuthServices.LockoutMinutes) - TimeSpan.FromSeconds(10), TimeSpan.FromMinutes(AuthServices.LockoutMinutes) + TimeSpan.FromSeconds(10));
+        Assert.InRange(lockoutEnd.Value - before, TimeSpan.FromMinutes(UserServices.LockoutMinutes) - TimeSpan.FromSeconds(10), TimeSpan.FromMinutes(UserServices.LockoutMinutes) + TimeSpan.FromSeconds(10));
 
         var refused = await SignIn.PostSignInFormAsync(browser, email, password);
         Assert.Equal(HttpStatusCode.OK, refused.StatusCode);

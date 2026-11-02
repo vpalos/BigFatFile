@@ -5,7 +5,7 @@ using System.Threading.RateLimiting;
 using BigFatFile.Server.Api.Errors;
 using Microsoft.AspNetCore.RateLimiting;
 
-namespace BigFatFile.Server.Auth;
+namespace BigFatFile.Server.Auth.SignIn;
 
 /// <summary>Limits how many sign-in attempts one client address makes per minute, whatever the account.</summary>
 internal static class SignInRateLimit

@@ -1,9 +1,10 @@
 using System.Security.Claims;
+using BigFatFile.Server.Auth.Users;
 using Microsoft.AspNetCore.Identity;
 using Npgsql;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
-namespace BigFatFile.Server.Auth;
+namespace BigFatFile.Server.Auth.SignIn;
 
 /// <summary>Signs a user in with a password. Every form and endpoint that takes a password calls this.</summary>
 internal static class PasswordSignIn

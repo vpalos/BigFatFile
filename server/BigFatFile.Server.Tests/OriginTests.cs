@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 using BigFatFile.Contracts.Account;
 using BigFatFile.Contracts.Api;
 using BigFatFile.Contracts.Chunking;
-using BigFatFile.Server.Auth;
+using BigFatFile.Server.Auth.Users;
 using BigFatFile.Server.Development;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +14,7 @@ using Npgsql;
 
 namespace BigFatFile.Server.Tests;
 
-public sealed class OriginTests(Origin origin) : IClassFixture<Origin>
+public sealed class OriginTests(Origin origin, Postgres postgres) : IClassFixture<Origin>
 {
     private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
 
@@ -139,23 +139,58 @@ public sealed class OriginTests(Origin origin) : IClassFixture<Origin>
     }
 
     /// <summary>
-    /// Selects every column the EF model maps. After a package update adds a column to the
-    /// Identity or OpenIddict model, this test fails until a core_ migration adds that column.
+    /// Builds a second database from the EF model, and compares its auth tables with the ones
+    /// that the core_ migrations made. After a package update changes the Identity, OpenIddict
+    /// or Data Protection model, this test fails until a core_ migration makes the same change.
     /// </summary>
     [Fact]
     public async Task TheAuthTablesMatchTheEfModel()
     {
         await using var scope = origin.Factory.Services.CreateAsyncScope();
-        var model = scope.ServiceProvider.GetRequiredService<AuthDbContext>().Model;
-        await using var connection = new NpgsqlConnection(origin.ConnectionString);
+        var auth = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+        string[] tables = [.. auth.Model.GetEntityTypes().Select(e => e.GetTableName()!).Distinct()];
 
-        // Owned types are stored inside their owner's JSON column, which the owner's check covers.
-        foreach (var entity in model.GetEntityTypes().Where(e => !e.IsOwned()))
+        var fromModel = await postgres.CreateDatabaseAsync();
+        await using (var connection = new NpgsqlConnection(fromModel))
         {
-            var table = entity.GetTableName()!;
-            var columns = entity.GetProperties().Select(p => p.GetColumnName()).ToList();
-            await connection.ExecuteAsync($"SELECT {string.Join(", ", columns)} FROM {table} LIMIT 0");
+            await connection.ExecuteAsync(auth.Database.GenerateCreateScript());
         }
+
+        var expected = await SchemaOfAsync(fromModel, tables);
+        var actual = await SchemaOfAsync(origin.ConnectionString, tables);
+        var differences = expected.Except(actual).Select(line => "only in the EF model: " + line)
+            .Concat(actual.Except(expected).Select(line => "only in the migrations: " + line))
+            .Order()
+            .ToList();
+        Assert.True(differences.Count == 0, "The auth tables differ from the EF model:\n" + string.Join("\n", differences));
+    }
+
+    // One line per column, index and constraint, so that two databases compare as two sets of lines.
+    private static async Task<HashSet<string>> SchemaOfAsync(string connectionString, string[] tables)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        var lines = await connection.QueryAsync<string>(
+            """
+            SELECT format('column %s.%s %s%s%s%s%s', table_name, column_name, data_type,
+                          '(' || character_maximum_length || ')',
+                          CASE WHEN is_nullable = 'NO' THEN ' not null' END,
+                          ' default ' || column_default,
+                          CASE WHEN is_identity = 'YES' THEN ' identity' END)
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = ANY(@tables)
+            UNION ALL
+            SELECT format('index %s', indexdef)
+            FROM pg_indexes
+            WHERE schemaname = 'public' AND tablename = ANY(@tables)
+            UNION ALL
+            SELECT format('constraint %s.%s %s', t.relname, c.conname, pg_get_constraintdef(c.oid))
+            FROM pg_constraint c
+            JOIN pg_class t ON t.oid = c.conrelid
+            JOIN pg_namespace n ON n.oid = t.relnamespace
+            WHERE n.nspname = 'public' AND t.relname = ANY(@tables)
+            """,
+            new { tables });
+        return [.. lines];
     }
 
     [Fact]

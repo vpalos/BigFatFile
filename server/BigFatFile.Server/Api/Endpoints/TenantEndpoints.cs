@@ -1,6 +1,6 @@
 using BigFatFile.Contracts.Api;
 using BigFatFile.Server.Api.Errors;
-using BigFatFile.Server.Auth;
+using BigFatFile.Server.Auth.Tokens;
 using BigFatFile.Server.Database;
 using BigFatFile.Server.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
