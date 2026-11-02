@@ -16,7 +16,7 @@ public sealed class EnumParameterTests(Origin origin) : IClassFixture<Origin>
     {
         using var client = origin.CreateClient();
 
-        var response = await client.GetAsync("/api/v1/account/external/google", Cancellation);
+        var response = await client.GetAsync("/api/v1/account/sign-in/google", Cancellation);
 
         Assert.NotEqual(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -31,7 +31,7 @@ public sealed class EnumParameterTests(Origin origin) : IClassFixture<Origin>
     {
         using var client = origin.CreateClient();
 
-        var response = await client.GetAsync($"/api/v1/account/external/{provider}", Cancellation);
+        var response = await client.GetAsync($"/api/v1/account/sign-in/{provider}", Cancellation);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Cancellation));

@@ -99,7 +99,8 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 - Nodes:
     - create a folder, rename, move, trash and restore, with `If-Match`;
     - cursor-paged listings, the path and lookup by path;
-    - `Idempotency-Key` on every request that creates something.
+    - client-generated node IDs; `Idempotency-Key` on every other request that creates
+      something.
 - The change log, one row per tree change in the same transaction, and the tenant's
   sequence counter.
 - The web app's folder browser.
@@ -127,8 +128,8 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 
 #### M1.4. Chunk-level transfer
 
-- Upload sessions: the missing chunks, presigned URLs on S3, a hash check on every
-  chunk, completion with `If-Match`.
+- Chunked uploads keyed by the node ID: the missing chunks, presigned URLs on S3, a
+  hash check on every chunk, completion with `If-Match`.
 - Manifest downloads with chunk grants.
 - `POST /nodes/chunks/exists`.
 - The chunker and hasher in WebAssembly, built from the reference crates, passing the
@@ -136,7 +137,7 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 - The transfer engines in both SDKs: parallel chunks over several connections, the
   adaptive in-flight count, per-chunk retry and resume, delta against the last version.
 - The SDKs choose between file-level and chunk-level transfer.
-- Garbage collection: mark and sweep per tenant, session pins, the 24-hour rule.
+- Garbage collection: mark and sweep per tenant, upload pins, the 24-hour rule.
 - Done when:
     - uploading a file that the tenant already has sends no chunks, from the web app
       and from the CLI;

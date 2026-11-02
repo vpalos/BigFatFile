@@ -8,7 +8,7 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 - One prefix, `/api/v1`, one OpenAPI specification, one version line.
 - The transfer endpoints all live under the `nodes` prefix and tag:
     - the file-level ones: create, upload as one stream, download;
-    - the chunk-level ones: upload sessions, manifests, chunks;
+    - the chunk-level ones: chunked uploads, manifests, chunks;
     - both are gated by the same `files.*` scopes;
     - what separates the chunk-level ones is an "Advanced" badge on each operation in
       the reference, from the spec's `x-badges` extension; not a prefix, a tag or a
@@ -60,7 +60,7 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
     - an error that ASP.NET Core writes without a code, such as a 404 for an unknown
       address, gets the generic code for its status.
 - Parameters with a fixed set of values, such as the provider in
-  `/api/v1/account/external/{provider}`:
+  `/api/v1/account/sign-in/{provider}`:
     - the spec lists the values, as an enum;
     - any other value gets 400 with the code `bad_request`;
     - a test fails when a path, query or header parameter is a plain C# enum, because
@@ -68,8 +68,10 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 - Pagination:
     - cursor-based everywhere (`cursor`, `limit`, `nextCursor`); no offsets.
 - Idempotency:
-    - an `Idempotency-Key` header on every request that creates something;
-    - this prevents a retried request from creating something twice.
+    - a node is created with a client-generated UUIDv7, so a retried create returns the
+      existing node;
+    - every other request that creates something takes an `Idempotency-Key` header, so
+      a retried request does not create twice.
 - Concurrency:
     - `If-Match` with the node version on every change to a node;
     - a stale version gets `412`.
@@ -109,7 +111,7 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
   for a user-scoped App.
 - Files:
     - `files.read`: list, read metadata, download; manifests and chunk grants;
-    - `files.write`: create, upload, rename, move, trash, restore; upload sessions.
+    - `files.write`: create, upload, rename, move, trash, restore; chunked uploads.
 - Sharing:
     - `shares.manage`: create and revoke share links on nodes the App may read;
     - `sends.manage`: create sends;
@@ -153,7 +155,7 @@ permissions apply on top.
       `POST /account/resend-confirmation`;
     - `POST /account/forgot-password`, `POST /account/reset-password`;
     - `POST /account/invitations/lookup`, `POST /account/invitations/accept`;
-    - `GET /account/external/{provider}`: starts a Google, Microsoft or OpenID Connect
+    - `GET /account/sign-in/{provider}`: starts a Google, Microsoft or OpenID Connect
       sign-in;
     - codes and tokens from emails travel in the request body, never in the path.
 - Tenants:
@@ -169,37 +171,58 @@ permissions apply on top.
       node and usage;
     - `POST /drives`, `PATCH /drives/{id}`, `DELETE /drives/{id}` (`tenant.admin`).
 - Nodes (files and folders as tree entries):
-    - `GET /nodes/{id}` (`files.read`);
-    - `GET /nodes/{id}/children` (`files.read`): cursor-paged listing;
-    - `GET /nodes/{id}/path` (`files.read`): the ancestors, for breadcrumbs;
-    - `GET /nodes/by-path?drive=&path=` (`files.read`);
-    - `PATCH /nodes/{id}` (`files.write`, `If-Match`): rename, move;
+    - `GET /nodes/{id}` (`files.read`): the node's metadata, without content or
+      manifest; `?ancestors=true` adds the ancestors, for breadcrumbs;
+    - `GET /nodes/{id}/children` (`files.read`): cursor-paged listing of a folder;
+      400 `not_a_folder` for a file;
+    - `POST /nodes/resolve` (`files.read`): the node at a path; `drive` and `path` in
+      the body, because paths can be long;
+    - `PATCH /nodes/{id}` (`files.write`, `If-Match`): rename, move; the new name and
+      parent in the body;
     - `DELETE /nodes/{id}` (`files.write`, `If-Match`): to trash;
-      `POST /nodes/{id}/restore`;
-    - `GET /nodes/{id}/versions`, `POST /nodes/{id}/versions/{v}/restore`
-      (`files.read` / `files.write`);
-    - `GET /search?q=&drive=&metadata=` (`files.read`).
-- Nodes, file-level transfer:
-    - `POST /nodes` (`files.write`): creates a folder, or a file from its name, parent
-      and size; for a file it returns an upload ID;
-    - `PUT /nodes/uploads/{uploadId}/content` (`files.write`): the bytes as one stream;
-      `Content-Range` to continue from an offset; the Origin splits the bytes into chunks
-      as they arrive;
-    - `GET /nodes/uploads/{uploadId}` (`files.write`): the offset to resume from;
+    - `POST /nodes/{id}/restore` (`files.write`): back from trash;
+    - `GET /nodes/{id}/versions` (`files.read`): the version history;
+    - `POST /nodes/{id}/versions/{v}/restore` (`files.write`): makes an earlier version
+      the current one;
+    - `POST /nodes/search` (`files.read`): full search in the tree; `q`, `drive`, `path`,
+      `metadata` and the other filters in the body;
+    - the literal segments (`resolve`, `search`, `chunks`) share the prefix with `{id}`;
+      the ID is routed with a `{id:guid}` constraint, so a literal never binds as an ID.
+- Nodes, uploads. The upload ID is the node ID: the client gives a UUIDv7 at creation,
+  the `uploads` table is keyed by it, and the node keeps that ID once it is in the tree
+  (`Architecture.DataModel.md`, section 2). One upload per node at a time: a second
+  start gets 409 unless it resumes the same one.
+    - `POST /nodes` (`files.write`): creates a folder, or a file to be uploaded; body:
+      `id` (optional, a client UUIDv7), `parent`, `name`, `kind`, `size` (optional);
+      a repeat with the same `id` returns the existing node; a file is not in the tree
+      until its upload completes;
+    - `PUT /nodes/{id}/content` (`files.write`): the simple upload: the bytes as one
+      stream; `Content-Range` to continue from an offset, which needs `size`; the Origin
+      splits the bytes into chunks as they arrive; completes when the received bytes
+      reach `size`, or at the end of the body when no size was given; on a node already
+      in the tree it starts a new version and `If-Match` is required;
+    - `GET /nodes/{id}/upload` (`files.write`): the resume state: the offset for a
+      simple upload, the missing hashes for a chunked one; 404 when no upload is in
+      progress;
+    - `DELETE /nodes/{id}/upload` (`files.write`): abandon; a pending new file is
+      discarded, a node already in the tree is untouched;
     - `GET /nodes/{id}/content` (`files.read`): download with `Range` support;
-    - `GET /nodes/{id}/thumbnail`, `GET /nodes/{id}/preview` (`files.read`).
-- Nodes, chunk-level transfer (each with the "Advanced" badge):
-    - `POST /nodes/sessions` (`files.write`): the manifest for a node; returns the
-      missing chunk hashes and, on S3 warehouses, a presigned URL per chunk;
-    - `GET /nodes/sessions/{id}` (`files.write`): what is still missing;
-    - `PUT /nodes/sessions/{id}/chunks/{hash}` (`files.write`): one chunk;
-    - `POST /nodes/sessions/{id}/complete` (`files.write`, `If-Match`);
-    - `DELETE /nodes/sessions/{id}` (`files.write`): abandon;
+    - `GET /nodes/{id}/thumbnail` (`files.read`): the thumbnail, if there is one.
+- Nodes, chunked uploads (each with the "Advanced" badge):
+    - `POST /nodes/{id}/upload` (`files.write`): starts a chunked upload with the
+      manifest in the body; returns the missing hashes and, on S3 warehouses, a presigned
+      URL per missing chunk; on a node already in the tree it starts a new version and
+      `If-Match` is required;
+    - `PUT /nodes/{id}/upload/chunks/{hash}` (`files.write`): one chunk;
+    - `POST /nodes/{id}/upload/complete` (`files.write`, `If-Match`): for a new file,
+      inserts the node; for a new version, bumps the version; commits the manifest,
+      appends the change-log row and deletes the upload, in one transaction;
     - `GET /nodes/{id}/manifest` (`files.read`): the manifest with a grant (or presigned
-      URL) per chunk;
-    - `GET /nodes/chunks/{hash}` (`files.read` with a grant, or `tenant.mirror`);
-    - `POST /nodes/chunks/exists` (`files.read` with grants, or `tenant.mirror`):
-      which of these chunks the tenant already has.
+      URL) per chunk; 400 `not_a_file` for a folder;
+    - `GET /nodes/chunks/{hash}` (`files.read` with a grant, or `tenant.mirror`): one
+      chunk of the tenant's;
+    - `POST /nodes/chunks/exists` (`files.read` with grants, or `tenant.mirror`): which
+      of the hashes in the body the tenant already has.
 - Changes:
     - `GET /changes?since=&limit=&subtree=` (`events.read`): the change log from a
       cursor; `subtree` limits it to a folder;
@@ -221,8 +244,9 @@ permissions apply on top.
       `POST /public/sends/{token}/report` (abuse).
 - File requests (uploads into a folder by people without an account):
     - `GET|POST /requests` (`requests.manage`), `GET|PATCH|DELETE /requests/{id}`;
-    - public: `GET /public/requests/{token}`, `POST /public/requests/{token}/files`
-      (starts an upload), `PUT /public/requests/{token}/files/{uploadId}/content`.
+    - public: `GET /public/requests/{token}`, `POST /public/requests/{token}/nodes`
+      (creates a file to be uploaded, as `POST /nodes` does),
+      `PUT /public/requests/{token}/nodes/{id}/content`.
 - Metadata:
     - `GET /nodes/{id}/metadata` (`metadata.read`): all namespaces the App may read;
     - `PUT|DELETE /nodes/{id}/metadata/{namespace}` (`metadata.write`): the App's own

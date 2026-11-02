@@ -143,7 +143,8 @@ encryption.
 - A pruned version's warehouse manifest is deleted the same way; an expired send's
   object is deleted when the send expires.
 - Two safeguards for chunks in flight:
-    - an upload session pins its chunks until it completes or expires;
+    - an upload in progress pins its chunks until it completes or expires
+      (`Architecture.DataModel.md`, section 2);
     - the sweep never deletes a chunk written less than 24 hours ago.
 - Runs as a recurring Hangfire job.
 

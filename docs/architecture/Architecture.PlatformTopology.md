@@ -211,7 +211,7 @@ Licensed modules are (by exception) kept in a separate repository.
     - the chunker and hasher in WebAssembly, in a web worker (a `worker_thread` on Node);
     - the transfer engine is separated (`@bigfatfile/client/transfer`),
       so Apps that only read folders can avoid bundling it;
-    - after a page reload, resumes a partial upload, using the session ID and the file
+    - after a page reload, resumes a partial upload, using the node ID and the file
       fingerprint that are kept in `localStorage`.
 - **@bigfatfile/ui** (npm):
     - Svelte 5 components wrapped as web components:

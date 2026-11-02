@@ -81,7 +81,8 @@ docs/       architecture documents, developer docs
     - tenants, tenant isolation (scoping and row-level security), permissions and
       authentication.
 - [Data Model](Architecture.DataModel.md):
-    - the file tree, file versioning, the change log and the audit log.
+    - the file tree, uploads in progress, file versioning, the change log and the audit
+      log.
 - [File storage](Architecture.FileStorage.md):
     - how drive files are stored using CDC, in warehouses.
 - [File transfer](Architecture.FileTransfer.md):

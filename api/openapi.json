@@ -6,6 +6,50 @@
     "version": "1.0"
   },
   "paths": {
+    "/api/v1/meta": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Get server information",
+        "description": "Returns what a client needs to know about this server before it uses the API:\n\n- the API version and the server version;\n- the parameters of the chunker, which splits files into chunks for transfer;\n- the Unicode version used to normalise file names before they are compared;\n- the licensed features that are turned on;\n- `account`: what the sign-in and sign-up flows offer:\n    - `signUp` says whether anyone can create an account, or only people with an invitation;\n    - `password` says whether people can sign in and sign up with an email address and a password;\n    - `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.\n\nIt needs no token.",
+        "operationId": "getMeta",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/csrf": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Get a CSRF token",
+        "description": "Returns a token that protects against cross-site request forgery (CSRF). In that attack, another website makes the browser send a request, and the browser adds the session cookie to it.\n\n- Send the token in the `X-CSRF-Token` header of every POST, PUT, PATCH and DELETE request that uses the session cookie.\n- Get a new token after signing in or out, because each token belongs to one user.\n- Requests with a bearer token do not need it.",
+        "operationId": "getCsrfToken",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsrfToken"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/account/me": {
       "get": {
         "tags": [
@@ -89,26 +133,55 @@
         ]
       }
     },
-    "/api/v1/account/csrf": {
-      "get": {
+    "/api/v1/account/tenant": {
+      "put": {
         "tags": [
           "account"
         ],
-        "summary": "Get a CSRF token",
-        "description": "Returns a token that protects against cross-site request forgery (CSRF). In that attack, another website makes the browser send a request, and the browser adds the session cookie to it.\n\n- Send the token in the `X-CSRF-Token` header of every POST, PUT, PATCH and DELETE request that uses the session cookie.\n- Get a new token after signing in or out, because each token belongs to one user.\n- Requests with a bearer token do not need it.",
-        "operationId": "getCsrfToken",
+        "summary": "Switch tenant",
+        "description": "Moves the session to another tenant that the user is a member of. The response sets a new session cookie, so every open tab of the web app switches too.",
+        "operationId": "switchTenant",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchTenantRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
-          "200": {
-            "description": "OK",
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of that tenant.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CsrfToken"
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": [ ]
+          }
+        ]
       }
     },
     "/api/v1/account/sign-in": {
@@ -229,71 +302,37 @@
         }
       }
     },
-    "/api/v1/account/sign-out": {
-      "post": {
+    "/api/v1/account/sign-in/{provider}": {
+      "get": {
         "tags": [
           "account"
         ],
-        "summary": "Sign out",
-        "description": "Ends the session and removes the session cookie. The request must send the `X-CSRF-Token` header.",
-        "operationId": "signOut",
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "`csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "examples": {
-                  "csrf_token_invalid": {
-                    "value": {
-                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
-                      "title": "The X-CSRF-Token header is missing or wrong.",
-                      "status": 400,
-                      "code": "csrf_token_invalid",
-                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
+        "summary": "Sign in with an external account (OAuth)",
+        "description": "Sends the browser to the sign-in page of another service, such as Google or Microsoft. When the person has signed in there, the browser comes back to `returnUrl`, which must be a path on this server.\n\n- `provider` is a `key` from `account.providers` in `GET /api/v1/meta`.\n- The web app opens this address as a page in the browser, not with a fetch call, because the browser must follow the redirects.",
+        "operationId": "signInExternally",
+        "parameters": [
           {
-            "session": [ ]
-          }
-        ]
-      }
-    },
-    "/api/v1/account/tenant": {
-      "put": {
-        "tags": [
-          "account"
-        ],
-        "summary": "Switch tenant",
-        "description": "Moves the session to another tenant that the user is a member of. The response sets a new session cookie, so every open tab of the web app switches too.",
-        "operationId": "switchTenant",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SwitchTenantRequest"
-              }
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ExternalProvider"
             }
           },
-          "required": true
-        },
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
-          "204": {
-            "description": "No Content"
+          "302": {
+            "description": "Found"
           },
           "404": {
-            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of that tenant.",
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, this server has not set up that provider.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -313,12 +352,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "session": [ ]
-          }
-        ]
+        }
       }
     },
     "/api/v1/account/sign-up": {
@@ -577,49 +611,32 @@
         }
       }
     },
-    "/api/v1/account/external/{provider}": {
-      "get": {
+    "/api/v1/account/sign-out": {
+      "post": {
         "tags": [
           "account"
         ],
-        "summary": "Sign in with an external account (OAuth)",
-        "description": "Sends the browser to the sign-in page of another service, such as Google or Microsoft. When the person has signed in there, the browser comes back to `returnUrl`, which must be a path on this server.\n\n- `provider` is a `key` from `account.providers` in `GET /api/v1/meta`.\n- The web app opens this address as a page in the browser, not with a fetch call, because the browser must follow the redirects.",
-        "operationId": "signInExternally",
-        "parameters": [
-          {
-            "name": "provider",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/ExternalProvider"
-            }
-          },
-          {
-            "name": "returnUrl",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "summary": "Sign out",
+        "description": "Ends the session and removes the session cookie. The request must send the `X-CSRF-Token` header.",
+        "operationId": "signOut",
         "responses": {
-          "302": {
-            "description": "Found"
+          "204": {
+            "description": "No Content"
           },
-          "404": {
-            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, this server has not set up that provider.",
+          "400": {
+            "description": "`csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 },
                 "examples": {
-                  "not_found": {
+                  "csrf_token_invalid": {
                     "value": {
-                      "type": "urn:bigfatfile:problem:not_found",
-                      "title": "Nothing exists at this address.",
-                      "status": 404,
-                      "code": "not_found",
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
                       "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
                     }
                   }
@@ -627,7 +644,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "session": [ ]
+          }
+        ]
       }
     },
     "/api/v1/account/invitations/lookup": {
@@ -753,28 +775,6 @@
             "session": [ ]
           }
         ]
-      }
-    },
-    "/api/v1/meta": {
-      "get": {
-        "tags": [
-          "meta"
-        ],
-        "summary": "Get server information",
-        "description": "Returns what a client needs to know about this server before it uses the API:\n\n- the API version and the server version;\n- the parameters of the chunker, which splits files into chunks for transfer;\n- the Unicode version used to normalise file names before they are compared;\n- the licensed features that are turned on;\n- `account`: what the sign-in and sign-up flows offer:\n    - `signUp` says whether anyone can create an account, or only people with an invitation;\n    - `password` says whether people can sign in and sign up with an email address and a password;\n    - `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.\n\nIt needs no token.",
-        "operationId": "getMeta",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Meta"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/api/v1/tenants/{id}": {
@@ -2265,7 +2265,7 @@
         "type": "object",
         "properties": {
           "key": {
-            "description": "The provider's path segment in `/api/v1/account/external/{provider}`.",
+            "description": "The provider's path segment in `/api/v1/account/sign-in/{provider}`.",
             "$ref": "#/components/schemas/ExternalProvider"
           },
           "name": {
@@ -2419,7 +2419,7 @@
               "email": "The user's email address.",
               "offline_access": "Refresh tokens, to keep access after the access token expires.",
               "files.read": "List folders, read file metadata, download files, read manifests and chunk grants.",
-              "files.write": "Create, upload, rename, move, trash and restore files; upload sessions.",
+              "files.write": "Create, upload, rename, move, trash and restore files, including chunked uploads.",
               "shares.manage": "Create and revoke share links on nodes the App may read.",
               "sends.manage": "Create sends.",
               "requests.manage": "Create and manage file requests.",
@@ -2445,7 +2445,7 @@
               "email": "The user's email address.",
               "offline_access": "Refresh tokens, to keep access after the access token expires.",
               "files.read": "List folders, read file metadata, download files, read manifests and chunk grants.",
-              "files.write": "Create, upload, rename, move, trash and restore files; upload sessions.",
+              "files.write": "Create, upload, rename, move, trash and restore files, including chunked uploads.",
               "shares.manage": "Create and revoke share links on nodes the App may read.",
               "sends.manage": "Create sends.",
               "requests.manage": "Create and manage file requests.",
@@ -2473,12 +2473,12 @@
   },
   "tags": [
     {
-      "name": "account",
-      "description": "The signed-in user, and the endpoints behind the web app's account screens: sign-up, sign-in, passwords and invitations.\n\n- The web app calls them from the same origin as the server, with the session cookie.\n- `GET /api/v1/account/me` also accepts a token with the `openid` scope, so Apps can call it too. The other endpoints do not accept tokens.\n- Apps get their tokens from the OpenID Connect endpoints under `/connect`."
-    },
-    {
       "name": "meta",
       "description": "Information about the server itself."
+    },
+    {
+      "name": "account",
+      "description": "The signed-in user, and the endpoints behind the web app's account screens: sign-up, sign-in, passwords and invitations.\n\n- The web app calls them from the same origin as the server, with the session cookie.\n- `GET /api/v1/account/me` also accepts a token with the `openid` scope, so Apps can call it too. The other endpoints do not accept tokens.\n- Apps get their tokens from the OpenID Connect endpoints under `/connect`."
     },
     {
       "name": "tenants",

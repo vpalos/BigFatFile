@@ -7,19 +7,27 @@ are no private endpoints.
 
 ## 1. File-level transfer
 
-- What Apps use regularly. File level only: no chunks, hashes or sessions appear in it.
+- What Apps use regularly. File level only: no chunks or hashes appear in it.
+- The upload ID is the node ID (`Architecture.DataModel.md`, section 2): the client
+  gives the node a UUIDv7 when it creates it, and every upload endpoint is under
+  `/nodes/{id}`.
 - Upload: one sequential stream, resumable by offset:
-    1. `POST /nodes` with name, parent and size; the Origin returns an upload ID.
-    2. `PUT /nodes/uploads/{id}/content` streams the bytes. The Origin runs the chunker from
+    1. `POST /nodes` with `id`, name, parent and size (`size` optional); the file is not
+       in the tree yet.
+    2. `PUT /nodes/{id}/content` streams the bytes. The Origin runs the chunker from
        Contracts on the bytes as they arrive and writes chunks straight to the
        warehouse; there is no intermediate object and no background job.
-    3. The Origin attaches the manifest when the last byte arrives; `If-Match` applies as
-       for every change.
+    3. The upload completes when the received bytes reach `size`, or at the end of the
+       body when no size was given: the Origin inserts the node, commits the manifest and
+       appends the change-log row in one transaction. On a node already in the tree the
+       same `PUT` starts a new version; `If-Match` is required.
 - Resume:
-    - the Origin records the byte offset after the last completed chunk;
-    - `GET /nodes/uploads/{id}` returns that offset; the client continues from there;
-    - the Origin keeps only the chunker's carry-over buffer per open upload, at most one
-      maximum chunk (8 MiB).
+    - the Origin records the byte offset after the last completed chunk, and writes the
+      chunker's carry-over (at most one maximum chunk, 8 MiB) to
+      `uploads/<node_id>.partial` in the warehouse, so the offset is exact;
+    - `GET /nodes/{id}/upload` returns that offset; the client continues from there with
+      `Content-Range`;
+    - resume needs `size`; a stream of unknown length is one uninterrupted request.
 - What this path gives and does not give:
     - resume and one storage model, like every other file;
     - no parallel parts, no delta against an earlier version, no skipping of chunks the
@@ -39,17 +47,21 @@ are no private endpoints.
 - The chunk-level endpoints, each with an "Advanced" badge in the reference; consumed
   through the SDKs; documented as "use the SDK unless you are writing one". This is
   where delta, deduplication and client-side assembly live.
-- Uploads use an upload session shaped like S3 multipart:
-    1. `POST /nodes/sessions` with the manifest; the Origin returns the chunks the tenant does
-       not have and, on S3, a presigned URL for each.
+- A chunked upload is shaped like S3 multipart, keyed by the node ID:
+    1. `POST /nodes` as for a simple upload (skipped for a new version of an existing
+       node), then `POST /nodes/{id}/upload` with the manifest; the Origin returns the
+       chunks the tenant does not have and, on S3, a presigned URL for each. On a node
+       already in the tree `If-Match` is required.
     2. The client uploads the missing chunks in parallel, one request each, to the Origin
-       (`PUT /nodes/sessions/{id}/chunks/{hash}`) or directly to storage; the Origin verifies
-       each chunk's hash on receipt.
-    3. `POST /nodes/sessions/{id}/complete` attaches the manifest to the node, with `If-Match` on
-       the node's version.
+       (`PUT /nodes/{id}/upload/chunks/{hash}`) or directly to storage; the Origin
+       verifies each chunk's hash on receipt.
+    3. `POST /nodes/{id}/upload/complete` inserts the node (new file) or bumps its version
+       (new version), commits the manifest and appends the change-log row, with
+       `If-Match` on the node's version.
 - Resume is automatic:
-    - a restarted client repeats step 1 and is told what is still missing;
-    - sessions expire after a configurable time.
+    - a restarted client calls `GET /nodes/{id}/upload`, or repeats step 1 with the same
+      manifest, and is told what is still missing;
+    - an upload with no activity for 24 hours expires; a pending new file goes with it.
 - Our own clients (desktop, CLI, Replica) assemble downloads themselves:
     - `GET /nodes/{id}/manifest` returns the manifest and, on S3, a presigned
       URL per chunk with a short expiry;
@@ -64,7 +76,7 @@ are no private endpoints.
       chunk, valid for a few minutes; on S3 the grant is the presigned URL itself;
     - an App holding the `tenant.mirror` scope (section 4) presents that instead; it
       stands for a grant over every chunk of the tenant;
-    - chunks never enter the Origin by hash; they arrive only through an upload session
+    - chunks never enter the Origin by hash; they arrive only through a chunked upload
       or the file-level upload, so nothing orphaned arrives and garbage collection's
       pinning holds.
 - Downloads in the browser:

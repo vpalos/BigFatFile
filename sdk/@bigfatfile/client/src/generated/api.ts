@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/v1/account/me": {
+    "/api/v1/meta": {
         parameters: {
             query?: never;
             header?: never;
@@ -12,13 +12,21 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get the signed-in user
-         * @description Returns the user that the token or session belongs to, and:
+         * Get server information
+         * @description Returns what a client needs to know about this server before it uses the API:
          *
-         *     - `tenantId`: the tenant that the token or session works in;
-         *     - `tenants`: every tenant the user is a member of, with the user's role in each.
+         *     - the API version and the server version;
+         *     - the parameters of the chunker, which splits files into chunks for transfer;
+         *     - the Unicode version used to normalise file names before they are compared;
+         *     - the licensed features that are turned on;
+         *     - `account`: what the sign-in and sign-up flows offer:
+         *         - `signUp` says whether anyone can create an account, or only people with an invitation;
+         *         - `password` says whether people can sign in and sign up with an email address and a password;
+         *         - `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.
+         *
+         *     It needs no token.
          */
-        get: operations["getMe"];
+        get: operations["getMeta"];
         put?: never;
         post?: never;
         delete?: never;
@@ -51,6 +59,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the signed-in user
+         * @description Returns the user that the token or session belongs to, and:
+         *
+         *     - `tenantId`: the tenant that the token or session works in;
+         *     - `tenants`: every tenant the user is a member of, with the user's role in each.
+         */
+        get: operations["getMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/tenant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Switch tenant
+         * @description Moves the session to another tenant that the user is a member of. The response sets a new session cookie, so every open tab of the web app switches too.
+         */
+        put: operations["switchTenant"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/account/sign-in": {
         parameters: {
             query?: never;
@@ -73,39 +124,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/account/sign-out": {
+    "/api/v1/account/sign-in/{provider}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Sign in with an external account (OAuth)
+         * @description Sends the browser to the sign-in page of another service, such as Google or Microsoft. When the person has signed in there, the browser comes back to `returnUrl`, which must be a path on this server.
+         *
+         *     - `provider` is a `key` from `account.providers` in `GET /api/v1/meta`.
+         *     - The web app opens this address as a page in the browser, not with a fetch call, because the browser must follow the redirects.
+         */
+        get: operations["signInExternally"];
         put?: never;
-        /**
-         * Sign out
-         * @description Ends the session and removes the session cookie. The request must send the `X-CSRF-Token` header.
-         */
-        post: operations["signOut"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/account/tenant": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Switch tenant
-         * @description Moves the session to another tenant that the user is a member of. The response sets a new session cookie, so every open tab of the web app switches too.
-         */
-        put: operations["switchTenant"];
         post?: never;
         delete?: never;
         options?: never;
@@ -225,23 +259,20 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/account/external/{provider}": {
+    "/api/v1/account/sign-out": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Sign in with an external account (OAuth)
-         * @description Sends the browser to the sign-in page of another service, such as Google or Microsoft. When the person has signed in there, the browser comes back to `returnUrl`, which must be a path on this server.
-         *
-         *     - `provider` is a `key` from `account.providers` in `GET /api/v1/meta`.
-         *     - The web app opens this address as a page in the browser, not with a fetch call, because the browser must follow the redirects.
-         */
-        get: operations["signInExternally"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Sign out
+         * @description Ends the session and removes the session cookie. The request must send the `X-CSRF-Token` header.
+         */
+        post: operations["signOut"];
         delete?: never;
         options?: never;
         head?: never;
@@ -285,37 +316,6 @@ export interface paths {
          * @description Adds the signed-in user to the invited tenant, with the invited role. The session then works in that tenant.
          */
         post: operations["acceptInvitation"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/meta": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get server information
-         * @description Returns what a client needs to know about this server before it uses the API:
-         *
-         *     - the API version and the server version;
-         *     - the parameters of the chunker, which splits files into chunks for transfer;
-         *     - the Unicode version used to normalise file names before they are compared;
-         *     - the licensed features that are turned on;
-         *     - `account`: what the sign-in and sign-up flows offer:
-         *         - `signUp` says whether anyone can create an account, or only people with an invitation;
-         *         - `password` says whether people can sign in and sign up with an email address and a password;
-         *         - `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.
-         *
-         *     It needs no token.
-         */
-        get: operations["getMeta"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -612,7 +612,7 @@ export interface components {
             password: string;
         };
         SignInProvider: {
-            /** @description The provider's path segment in `/api/v1/account/external/{provider}`. */
+            /** @description The provider's path segment in `/api/v1/account/sign-in/{provider}`. */
             key: components["schemas"]["ExternalProvider"];
             /** @description The name to show on the button. */
             name: string;
@@ -681,6 +681,46 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getMeta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meta"];
+                };
+            };
+        };
+    };
+    getCsrfToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsrfToken"];
+                };
+            };
+        };
+    };
     getMe: {
         parameters: {
             query?: never;
@@ -722,22 +762,33 @@ export interface operations {
             };
         };
     };
-    getCsrfToken: {
+    switchTenant: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwitchTenantRequest"];
+            };
+        };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of that tenant. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CsrfToken"];
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
         };
@@ -803,54 +854,27 @@ export interface operations {
             };
         };
     };
-    signOut: {
+    signInExternally: {
         parameters: {
-            query?: never;
+            query?: {
+                returnUrl?: string;
+            };
             header?: never;
-            path?: never;
+            path: {
+                provider: components["schemas"]["ExternalProvider"];
+            };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
-            204: {
+            /** @description Found */
+            302: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    switchTenant: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SwitchTenantRequest"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of that tenant. */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, this server has not set up that provider. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1021,28 +1045,24 @@ export interface operations {
             };
         };
     };
-    signInExternally: {
+    signOut: {
         parameters: {
-            query?: {
-                returnUrl?: string;
-            };
+            query?: never;
             header?: never;
-            path: {
-                provider: components["schemas"]["ExternalProvider"];
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Found */
-            302: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, this server has not set up that provider. */
-            404: {
+            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1121,26 +1141,6 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    getMeta: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Meta"];
                 };
             };
         };

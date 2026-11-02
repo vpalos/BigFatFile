@@ -21,7 +21,7 @@ public enum SignUpPolicy
     Open,
 }
 
-/// <param name="Key">The provider's path segment in <c>/api/v1/account/external/{provider}</c>.</param>
+/// <param name="Key">The provider's path segment in <c>/api/v1/account/sign-in/{provider}</c>.</param>
 /// <param name="Name">The name to show on the button.</param>
 public sealed record SignInProvider(ExternalProvider Key, string Name);
 

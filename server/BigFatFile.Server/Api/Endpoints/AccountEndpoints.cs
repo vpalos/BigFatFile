@@ -21,16 +21,28 @@ internal static class AccountEndpoints
 {
     public static void MapAccountEndpoints(this IEndpointRouteBuilder account)
     {
-        MapMe(account);
         MapSession(account);
+        MapSignIn(account);
         MapSignUp(account);
         MapPassword(account);
         MapInvitations(account.MapGroup("/invitations"));
-        MapExternalSignIn(account);
+        MapSignOut(account);
     }
 
-    private static void MapMe(IEndpointRouteBuilder account)
+    private static void MapSession(IEndpointRouteBuilder account)
     {
+        account.MapGet("/csrf", GetCsrfToken)
+            .WithName("getCsrfToken")
+            .WithSummary("Get a CSRF token")
+            .WithDescription("""
+                Returns a token that protects against cross-site request forgery (CSRF). In that attack, another website makes the browser send a request, and the browser adds the session cookie to it.
+
+                - Send the token in the `X-CSRF-Token` header of every POST, PUT, PATCH and DELETE request that uses the session cookie.
+                - Get a new token after signing in or out, because each token belongs to one user.
+                - Requests with a bearer token do not need it.
+                """)
+            .AllowAnonymous();
+
         account.MapGet("/me", GetMeAsync)
             .WithName("getMe")
             .WithSummary("Get the signed-in user")
@@ -44,7 +56,19 @@ internal static class AccountEndpoints
             .ProducesError(ApiErrors.Forbidden)
             .ProducesError(ApiErrors.UserRequired)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.OpenId));
+
+        account.MapPut("/tenant", SwitchTenantAsync)
+            .WithName("switchTenant")
+            .WithSummary("Switch tenant")
+            .WithDescription("""
+                Moves the session to another tenant that the user is a member of. The response sets a new session cookie, so every open tab of the web app switches too.
+                """)
+            .ProducesError(ApiErrors.NotFound, "Here, the user is not a member of that tenant.")
+            .RequireAuthorization(AuthServices.SessionPolicy);
     }
+
+    private static Ok<CsrfToken> GetCsrfToken(HttpContext context) =>
+        throw new NotImplementedException();
 
     private static async Task<Results<Ok<Me>, ProblemHttpResult>> GetMeAsync(
         ClaimsPrincipal principal, UserManager<BffUser> users, RequestDatabase database, CancellationToken cancellationToken)
@@ -66,20 +90,11 @@ internal static class AccountEndpoints
             [.. tenants.Select(tenant => new MeWithinTenant(tenant.TenantId, tenant.TenantName, tenant.Role))]));
     }
 
-    private static void MapSession(IEndpointRouteBuilder account)
+    private static Task<Results<NoContent, ProblemHttpResult>> SwitchTenantAsync(SwitchTenantRequest request, HttpContext context) =>
+        throw new NotImplementedException();
+
+    private static void MapSignIn(IEndpointRouteBuilder account)
     {
-        account.MapGet("/csrf", GetCsrfToken)
-            .WithName("getCsrfToken")
-            .WithSummary("Get a CSRF token")
-            .WithDescription("""
-                Returns a token that protects against cross-site request forgery (CSRF). In that attack, another website makes the browser send a request, and the browser adds the session cookie to it.
-
-                - Send the token in the `X-CSRF-Token` header of every POST, PUT, PATCH and DELETE request that uses the session cookie.
-                - Get a new token after signing in or out, because each token belongs to one user.
-                - Requests with a bearer token do not need it.
-                """)
-            .AllowAnonymous();
-
         account.MapPost("/sign-in", SignInAsync)
             .WithName("signIn")
             .WithSummary("Sign in with a password")
@@ -96,45 +111,24 @@ internal static class AccountEndpoints
             .RequireRateLimiting(SignInRateLimit.Policy)
             .AllowAnonymous();
 
-        account.MapPost("/sign-out", SignOutAsync)
-            .WithName("signOut")
-            .WithSummary("Sign out")
+        account.MapGet("/sign-in/{provider}", StartExternalSignInAsync)
+            .WithName("signInExternally")
+            .WithSummary("Sign in with an external account (OAuth)")
             .WithDescription("""
-                Ends the session and removes the session cookie. The request must send the `X-CSRF-Token` header.
-                """)
-            .ProducesError(ApiErrors.CsrfTokenInvalid)
-            .RequireAuthorization(AuthServices.SessionPolicy);
+                Sends the browser to the sign-in page of another service, such as Google or Microsoft. When the person has signed in there, the browser comes back to `returnUrl`, which must be a path on this server.
 
-        account.MapPut("/tenant", SwitchTenantAsync)
-            .WithName("switchTenant")
-            .WithSummary("Switch tenant")
-            .WithDescription("""
-                Moves the session to another tenant that the user is a member of. The response sets a new session cookie, so every open tab of the web app switches too.
+                - `provider` is a `key` from `account.providers` in `GET /api/v1/meta`.
+                - The web app opens this address as a page in the browser, not with a fetch call, because the browser must follow the redirects.
                 """)
-            .ProducesError(ApiErrors.NotFound, "Here, the user is not a member of that tenant.")
-            .RequireAuthorization(AuthServices.SessionPolicy);
+            .Produces(StatusCodes.Status302Found)
+            .ProducesError(ApiErrors.NotFound, "Here, this server has not set up that provider.")
+            .AllowAnonymous();
     }
-
-    private static Ok<CsrfToken> GetCsrfToken(HttpContext context) =>
-        throw new NotImplementedException();
 
     private static Task<Results<NoContent, ProblemHttpResult>> SignInAsync(SignInRequest request, HttpContext context) =>
         throw new NotImplementedException();
 
-    private static async Task<Results<NoContent, ProblemHttpResult>> SignOutAsync(
-        HttpContext context, IAntiforgery antiforgery, SignInManager<BffUser> signIn)
-    {
-        // The antiforgery middleware refuses only requests to endpoints that bind form fields.
-        if (!await antiforgery.IsRequestValidAsync(context))
-        {
-            return Problems.Of(ApiErrors.CsrfTokenInvalid);
-        }
-
-        await signIn.SignOutAsync();
-        return TypedResults.NoContent();
-    }
-
-    private static Task<Results<NoContent, ProblemHttpResult>> SwitchTenantAsync(SwitchTenantRequest request, HttpContext context) =>
+    private static Task<Results<ChallengeHttpResult, ProblemHttpResult>> StartExternalSignInAsync(EnumParameter<ExternalProvider> provider, string? returnUrl, HttpContext context) =>
         throw new NotImplementedException();
 
     private static void MapSignUp(IEndpointRouteBuilder account)
@@ -247,22 +241,28 @@ internal static class AccountEndpoints
     private static Task<Results<NoContent, ProblemHttpResult>> AcceptInvitationAsync(InvitationTokenRequest request, HttpContext context) =>
         throw new NotImplementedException();
 
-    private static void MapExternalSignIn(IEndpointRouteBuilder account)
+    private static void MapSignOut(IEndpointRouteBuilder account)
     {
-        account.MapGet("/external/{provider}", StartExternalSignInAsync)
-            .WithName("signInExternally")
-            .WithSummary("Sign in with an external account (OAuth)")
+        account.MapPost("/sign-out", SignOutAsync)
+            .WithName("signOut")
+            .WithSummary("Sign out")
             .WithDescription("""
-                Sends the browser to the sign-in page of another service, such as Google or Microsoft. When the person has signed in there, the browser comes back to `returnUrl`, which must be a path on this server.
-
-                - `provider` is a `key` from `account.providers` in `GET /api/v1/meta`.
-                - The web app opens this address as a page in the browser, not with a fetch call, because the browser must follow the redirects.
+                Ends the session and removes the session cookie. The request must send the `X-CSRF-Token` header.
                 """)
-            .Produces(StatusCodes.Status302Found)
-            .ProducesError(ApiErrors.NotFound, "Here, this server has not set up that provider.")
-            .AllowAnonymous();
+            .ProducesError(ApiErrors.CsrfTokenInvalid)
+            .RequireAuthorization(AuthServices.SessionPolicy);
     }
 
-    private static Task<Results<ChallengeHttpResult, ProblemHttpResult>> StartExternalSignInAsync(EnumParameter<ExternalProvider> provider, string? returnUrl, HttpContext context) =>
-        throw new NotImplementedException();
+    private static async Task<Results<NoContent, ProblemHttpResult>> SignOutAsync(
+        HttpContext context, IAntiforgery antiforgery, SignInManager<BffUser> signIn)
+    {
+        // The antiforgery middleware refuses only requests to endpoints that bind form fields.
+        if (!await antiforgery.IsRequestValidAsync(context))
+        {
+            return Problems.Of(ApiErrors.CsrfTokenInvalid);
+        }
+
+        await signIn.SignOutAsync();
+        return TypedResults.NoContent();
+    }
 }

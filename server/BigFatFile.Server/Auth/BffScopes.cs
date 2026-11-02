@@ -35,7 +35,7 @@ internal static class BffScopes
         [Email] = "The user's email address.",
         [OfflineAccess] = "Refresh tokens, to keep access after the access token expires.",
         [FilesRead] = "List folders, read file metadata, download files, read manifests and chunk grants.",
-        [FilesWrite] = "Create, upload, rename, move, trash and restore files; upload sessions.",
+        [FilesWrite] = "Create, upload, rename, move, trash and restore files, including chunked uploads.",
         [SharesManage] = "Create and revoke share links on nodes the App may read.",
         [SendsManage] = "Create sends.",
         [RequestsManage] = "Create and manage file requests.",

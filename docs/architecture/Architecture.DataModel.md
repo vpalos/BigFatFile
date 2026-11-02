@@ -1,7 +1,7 @@
 # BigFatFile Architecture: Data model
 
-The tables that describe a tenant's files: the tree, file versions, the change log and
-the audit log.
+The tables that describe a tenant's files: the tree, uploads in progress, file versions,
+the change log and the audit log.
 
 ## 1. File tree
 
@@ -39,7 +39,37 @@ the audit log.
     - filled lazily;
     - has to be cleared for a subtree when a folder moves.
 
-## 2. File versioning
+## 2. Uploads
+
+- A file enters the tree only when its upload completes; until then it is a row in
+  `uploads`, not in `nodes`.
+- The `uploads` table has one row per upload in progress, keyed by the node ID:
+    - `node_id` (primary key), `tenant_id`;
+    - for a new file: `parent_id`, `name`, `name_key`, `size`, everything the node row
+      will need;
+    - for a new version of an existing node: `base_version`, the version the client saw
+      when it started (`If-Match`);
+    - `kind`: `simple` (one stream) or `chunked`;
+    - `received_bytes` for a simple upload; `manifest` (the target chunk list) for a
+      chunked one;
+    - `expires_at`.
+- One upload per node at a time: `node_id` is the primary key, so a second start on the
+  same node is refused unless it resumes the same upload (same `base_version`, same
+  manifest or fingerprint).
+- Names:
+    - a unique index on `(tenant_id, parent_id, name_key)` in `uploads` stops two
+      concurrent uploads of the same name;
+    - against `nodes`, the check at start is best-effort (409 if taken) and the check at
+      completion is the authoritative one, through the unique index on `nodes`; if the
+      name was taken meanwhile, the SDK completes under the conflict-copy name.
+- Completion is one transaction: insert the node (new file) or update it (new version,
+  `If-Match` on `base_version`, `version + 1`), write the manifest, append the
+  change-log row, delete the `uploads` row.
+- An upload with no activity for 24 hours is removed by the sweep job; a pending new
+  file disappears with it. This is the same grace the chunk garbage collector uses, so a
+  chunk is never collected under an upload that could still complete.
+
+## 3. File versioning
 
 - Every node has an integer `version` that increases on each change;
 - Each file version is stored as a manifest (see `Architecture.FileStorage.md`, section 1);
@@ -51,7 +81,7 @@ the audit log.
         - two clients through one Replica;
         - a Replica syncing against the Origin.
 
-## 3. Change log
+## 4. Change log
 
 - Every mutation of the tree inserts a row into `changes` in the same transaction:
     - per-tenant sequence number;
@@ -68,7 +98,7 @@ the audit log.
 - Retention is configurable (default 90 days):
     - a client with an older cursor does a full tree resync.
 
-## 4. Audit log
+## 5. Audit log
 
 - Separate from the change log;
 - Stores:

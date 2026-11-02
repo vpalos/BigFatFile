@@ -36,10 +36,10 @@ measures about itself, and where the data goes.
   `Meter("BigFatFile")`, both defined in `Abstractions` so licensed modules report
   into the same stream.
 - Spans:
-    - upload session: one parent span from creation to completion; its attributes are
-      the chunk count, the bytes received, the bytes deduplicated and the warehouse; no
-      span per chunk, which would be too much volume; a failed chunk is an event on the
-      session span;
+    - upload: one parent span from start to completion; its attributes are the node ID,
+      the kind, the chunk count, the bytes received, the bytes deduplicated and the
+      warehouse; no span per chunk, which would be too much volume; a failed chunk is an
+      event on the upload span;
     - download and share-link stream: bytes served and whether they came from a `local`
       or an `s3` warehouse;
     - manifest commit and change-log append;
@@ -49,7 +49,7 @@ measures about itself, and where the data goes.
     - bytes uploaded and downloaded, by warehouse and by route (through the Origin,
       direct to storage);
     - chunk deduplication hit ratio;
-    - active upload sessions; session failures and timeouts;
+    - active uploads; upload failures and expiries;
     - chunk hash verification failures (expected to be zero; any value is an alert);
     - garbage collection: bytes freed, duration, last completed time;
     - real-time hub connections per node;
@@ -113,7 +113,7 @@ measures about itself, and where the data goes.
 
 - The short list that means something is wrong:
     - any chunk hash verification failure;
-    - upload session failure rate above a threshold;
+    - upload failure rate above a threshold;
     - garbage collection not completed within its schedule;
     - Replica lag growing for longer than its reconcile interval;
     - Hangfire failed jobs;

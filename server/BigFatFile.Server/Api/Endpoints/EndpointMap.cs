@@ -25,8 +25,8 @@ internal static class EndpointMap
         app.MapGroup("/account").ExcludeFromDescription().MapSignInFormEndpoints();
 
         var api = app.MapGroup("/api/v1");
-        api.MapGroup("/account").WithTags("account").MapAccountEndpoints();
         api.MapGroup("/meta").WithTags("meta").MapMetaEndpoints();
+        api.MapGroup("/account").WithTags("account").MapAccountEndpoints();
 
         var tenant = api.MapGroup("/tenants/{id:guid}")
             .WithTags("tenants")
