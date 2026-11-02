@@ -14,7 +14,8 @@ The design is explained in detail in `docs/architecture`.
 - `./bff dev up` starts the Origin server (hot-reload mode);
 - `./bff dev logs` follows logs;
 - `./bff dev down` stops everything and keeps the data;
-- `./bff dev reset` stops everything and also deletes the data and the build cache;
+- `./bff dev restart` stops everything and starts it again, and keeps the data;
+- `./bff dev purge` stops everything and also deletes the data and the build cache;
 - `./bff docs architecture` serves the architecture docs at http://localhost:3000.
 
 **Notes:**
