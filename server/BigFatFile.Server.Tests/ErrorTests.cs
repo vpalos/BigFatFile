@@ -2,7 +2,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using BigFatFile.Contracts.Api;
-using BigFatFile.Server.Api;
+using BigFatFile.Server.Api.Errors;
 using Microsoft.AspNetCore.Http;
 
 namespace BigFatFile.Server.Tests;
@@ -31,7 +31,7 @@ public sealed class ErrorTests(Origin origin) : IClassFixture<Origin>
     {
         using var client = origin.CreateClient();
 
-        var response = await client.GetAsync("/api/v1/me", Cancellation);
+        var response = await client.GetAsync("/api/v1/account/me", Cancellation);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Cancellation));

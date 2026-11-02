@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 using BigFatFile.Contracts.Api;
+using BigFatFile.Server.Api.Errors;
+using BigFatFile.Server.Api.Parameters;
 using BigFatFile.Server.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi;
@@ -13,16 +15,16 @@ internal static class ApiServices
 
     private static readonly Dictionary<string, string> TagDescriptions = new()
     {
-        ["auth"] = """
-            The endpoints behind the web app's account screens: sign-up, sign-in, passwords and invitations.
+        ["account"] = """
+            The signed-in user, and the endpoints behind the web app's account screens: sign-up, sign-in, passwords and invitations.
 
-            - Only the web app calls them, from the same origin as the server.
-            - They work with the session cookie, not with tokens.
-            - Apps get their tokens from the OpenID Connect endpoints under `/connect` instead.
+            - The web app calls them from the same origin as the server, with the session cookie.
+            - `GET /api/v1/account/me` also accepts a token with the `openid` scope, so Apps can call it too. The other endpoints do not accept tokens.
+            - Apps get their tokens from the OpenID Connect endpoints under `/connect`.
             """,
         ["meta"] = "Information about the server itself.",
-        ["tenant"] = """
-            The signed-in user, the tenant, its members and its invitations.
+        ["tenants"] = """
+            The tenant, its members and its invitations.
 
             - A token or a session works in one tenant. A request with any other tenant's ID gets 404, the same answer as for a tenant that does not exist.
             - The endpoints that need the `members.manage` scope are for admins only. A user who is not an admin of the tenant gets 403 with the code `admin_required`.
@@ -84,17 +86,10 @@ internal static class ApiServices
 
                 return Task.CompletedTask;
             });
+            options.AddEnumParameters();
             options.AddApiErrors();
         });
         return services;
-    }
-
-    public static void MapApiDocs(this IEndpointRouteBuilder endpoints)
-    {
-        endpoints.MapOpenApi(DocumentPath);
-        endpoints.MapScalarApiReference("/api/docs", options => options
-            .WithTitle("BigFatFile API")
-            .WithOpenApiRoutePattern(DocumentPath));
     }
 
     private static OpenApiSecurityScheme SessionScheme() => new()
@@ -102,7 +97,7 @@ internal static class ApiServices
         Type = SecuritySchemeType.ApiKey,
         In = ParameterLocation.Cookie,
         Name = "bff_session",
-        Description = "The web app's session, on the same origin only. Write operations that use it must also send the X-CSRF-Token header, with the token from GET /account/csrf. A write operation without that header gets 400 with the code csrf_token_invalid.",
+        Description = "The web app's session, on the same origin only. Write operations that use it must also send the X-CSRF-Token header, with the token from GET /api/v1/account/csrf. A write operation without that header gets 400 with the code csrf_token_invalid.",
     };
 
     private static OpenApiSecurityScheme OAuthScheme()

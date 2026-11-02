@@ -1,7 +1,7 @@
 // Signs in to a BigFatFile Origin the way a CLI does, then calls the API with the typed client.
 // 1. Opens the browser at the Origin's authorization endpoint (authorization code with PKCE).
 // 2. Receives the code on a loopback address and exchanges it for tokens.
-// 3. Calls GET /api/v1/me.
+// 3. Calls GET /api/v1/account/me.
 //
 // Usage, with `./bff dev up` running: pnpm --filter @bigfatfile/example-sign-in start
 // Set BFF_URL to use another Origin than http://localhost:8080.
@@ -72,9 +72,9 @@ if (!tokenResponse.ok) {
 const tokens = (await tokenResponse.json()) as { access_token: string };
 
 const client = createBffClient({ baseUrl: origin, accessToken: () => tokens.access_token });
-const { data, error } = await client.GET("/api/v1/me");
+const { data, error } = await client.GET("/api/v1/account/me");
 if (error || !data) {
-  throw new Error(`GET /api/v1/me failed: ${JSON.stringify(error)}`);
+  throw new Error(`GET /api/v1/account/me failed: ${JSON.stringify(error)}`);
 }
 
 const me: Me = data;

@@ -1,19 +1,20 @@
 using System.Text.Encodings.Web;
+using BigFatFile.Server.Auth;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Npgsql;
 
-namespace BigFatFile.Server.Auth;
+namespace BigFatFile.Server.Api.Endpoints;
 
 /// <summary>
 /// The sign-in form that the authorization endpoint sends a browser to. It is plain HTML from
 /// the server, so signing in works before any web app is built.
 /// </summary>
-internal static class AccountEndpoints
+internal static class SignInFormEndpoints
 {
-    public static void MapAccountEndpoints(this IEndpointRouteBuilder endpoints)
+    public static void MapSignInFormEndpoints(this IEndpointRouteBuilder account)
     {
-        var account = endpoints.MapGroup("/account").ExcludeFromDescription();
         account.MapGet("/sign-in", (HttpContext context, IAntiforgery antiforgery, string? returnUrl) =>
             Page(context, antiforgery, SafeReturnUrl(returnUrl), email: "", error: null));
         account.MapPost("/sign-in", SignInAsync).RequireRateLimiting(SignInRateLimit.Policy);
@@ -24,6 +25,7 @@ internal static class AccountEndpoints
         IAntiforgery antiforgery,
         UserManager<BffUser> users,
         SignInManager<BffUser> signIn,
+        NpgsqlDataSource dataSource,
         [FromForm] string email,
         [FromForm] string password,
         [FromForm] string? returnUrl)
@@ -32,7 +34,7 @@ internal static class AccountEndpoints
         var user = await users.FindByEmailAsync(email);
         if (user is not null)
         {
-            var result = await signIn.PasswordSignInAsync(user, password, isPersistent: true, lockoutOnFailure: true);
+            var result = await PasswordSignIn.SignInAsync(signIn, dataSource, user, password, context.RequestAborted);
             if (result.Succeeded)
             {
                 return Results.Redirect(target);
@@ -41,6 +43,11 @@ internal static class AccountEndpoints
             if (result.IsLockedOut)
             {
                 return Page(context, antiforgery, target, email, "Too many failed attempts. Try again in a few minutes.");
+            }
+
+            if (result.RequiresTwoFactor)
+            {
+                return Page(context, antiforgery, target, email, "This account uses two-factor sign-in, which this server does not offer yet.");
             }
         }
 

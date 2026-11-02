@@ -7,7 +7,10 @@ public sealed record SignUpRequest(string Name, string Email, string Password, s
 
 public sealed record SignUpResult(SignUpOutcome Outcome);
 
-/// <summary><c>confirmation_sent</c>: a confirmation email is on its way. It is also the answer when the address already has an account, so the response does not reveal which addresses do. <c>signed_in</c>: the invitation proved the address, the account exists and its session has started.</summary>
+/// <summary>
+/// - <c>confirmation_sent</c>: a confirmation email is on its way. It is also the answer when the address already has an account, so the response does not reveal which addresses do.
+/// - <c>signed_in</c>: the invitation proved the address, the account exists and its session has started.
+/// </summary>
 [JsonConverter(typeof(JsonStringEnumConverter<SignUpOutcome>))]
 public enum SignUpOutcome
 {

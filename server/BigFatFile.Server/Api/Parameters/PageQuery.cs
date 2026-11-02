@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BigFatFile.Server.Api;
+namespace BigFatFile.Server.Api.Parameters;
 
 /// <summary>The query parameters of every listing: <c>cursor</c> and <c>limit</c>.</summary>
 internal sealed class PageQuery

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
-namespace BigFatFile.Server.Api;
+namespace BigFatFile.Server.Api.Errors;
 
 /// <summary>
 /// Puts the definitions of <see cref="ApiErrors"/> in the spec: the list of every error, the
@@ -44,7 +44,7 @@ internal static class ApiErrorsOpenApi
 
             ### Errors of specific endpoints
 
-            Each endpoint lists its own errors under its responses, with an example body for each code. For example, see the responses of [Accept an invitation](#tag/auth/POST/account/invitations/accept).
+            Each endpoint lists its own errors under its responses, with an example body for each code. For example, see the responses of [Accept an invitation](#tag/account/POST/api/v1/account/invitations/accept).
             """);
         return text.ToString();
     }
@@ -132,7 +132,7 @@ internal static class ApiErrorsOpenApi
                 {
                     [ContentType] = new()
                     {
-                        Schema = await SchemaReferenceAsync(bodyType, context, cancellationToken),
+                        Schema = await context.SchemaReferenceAsync(bodyType, cancellationToken),
                         Examples = errors.ToDictionary(
                             declared => declared.Error.Code,
                             declared => (IOpenApiExample)new OpenApiExample { Value = ExampleBody(declared.Error) }),
@@ -164,16 +164,5 @@ internal static class ApiErrorsOpenApi
         }
 
         return body;
-    }
-
-    private static async Task<IOpenApiSchema> SchemaReferenceAsync(Type type, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
-    {
-        var document = context.Document!;
-        if (document.Components?.Schemas?.ContainsKey(type.Name) != true)
-        {
-            document.AddComponent(type.Name, await context.GetOrCreateSchemaAsync(type, null, cancellationToken));
-        }
-
-        return new OpenApiSchemaReference(type.Name, document);
     }
 }

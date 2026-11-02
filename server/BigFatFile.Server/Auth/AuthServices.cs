@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
@@ -64,8 +65,21 @@ internal static class AuthServices
         {
             options.Cookie.Name = "bff_session";
             options.LoginPath = "/account/sign-in";
-            options.Events.OnRedirectToLogin = context => RejectApiRedirect(context, StatusCodes.Status401Unauthorized);
-            options.Events.OnRedirectToAccessDenied = context => RejectApiRedirect(context, StatusCodes.Status403Forbidden);
+            options.Events.OnRedirectToLogin = context => RedirectOnlyForConnect(context, StatusCodes.Status401Unauthorized);
+            options.Events.OnRedirectToAccessDenied = context => RedirectOnlyForConnect(context, StatusCodes.Status403Forbidden);
+        });
+
+        // Every 30 minutes the security stamp check rebuilds the session from the user. The
+        // tenant belongs to the session, not to the user, so it is copied over.
+        services.Configure<SecurityStampValidatorOptions>(options => options.OnRefreshingPrincipal = context =>
+        {
+            var tenant = context.CurrentPrincipal?.FindFirst(TenantClaims.TenantId);
+            if (tenant is not null && context.NewPrincipal?.Identity is ClaimsIdentity identity)
+            {
+                identity.AddClaim(new Claim(tenant.Type, tenant.Value));
+            }
+
+            return Task.CompletedTask;
         });
 
         services.AddAuthentication(options =>
@@ -139,15 +153,17 @@ internal static class AuthServices
         return services;
     }
 
-    private static Task RejectApiRedirect(Microsoft.AspNetCore.Authentication.RedirectContext<Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationOptions> context, int status)
+    // Only the authorization endpoint sends a browser to the sign-in page. The JSON endpoints,
+    // all under /api, answer with the status instead.
+    private static Task RedirectOnlyForConnect(Microsoft.AspNetCore.Authentication.RedirectContext<Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationOptions> context, int status)
     {
-        if (context.Request.Path.StartsWithSegments("/api"))
+        if (context.Request.Path.StartsWithSegments("/connect"))
         {
-            context.Response.StatusCode = status;
+            context.Response.Redirect(context.RedirectUri);
         }
         else
         {
-            context.Response.Redirect(context.RedirectUri);
+            context.Response.StatusCode = status;
         }
 
         return Task.CompletedTask;

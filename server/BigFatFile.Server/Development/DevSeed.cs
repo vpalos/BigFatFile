@@ -1,6 +1,8 @@
+using BigFatFile.Contracts.Api;
 using BigFatFile.Server.Auth;
+using BigFatFile.Server.Database;
 using BigFatFile.Server.Jobs;
-using Dapper;
+using BigFatFile.Server.Models;
 using Microsoft.AspNetCore.Identity;
 using Npgsql;
 using OpenIddict.Abstractions;
@@ -18,7 +20,8 @@ internal sealed class DevSeed(
     UserManager<BffUser> users,
     RoleManager<IdentityRole<Guid>> roles,
     IOpenIddictApplicationManager applications,
-    NpgsqlDataSource dataSource,
+    // Creating a tenant is outside any one tenant, so it runs as the owner.
+    [FromKeyedServices(DatabaseServices.Owner)] NpgsqlDataSource dataSource,
     ILogger<DevSeed> logger)
 {
     public const string UserEmail = "demo@bigfatfile.local";
@@ -69,23 +72,17 @@ internal sealed class DevSeed(
     private async Task EnsureTenantAsync(BffUser user, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        await connection.ExecuteAsync(new CommandDefinition(
-            """
-            WITH existing AS (
-                SELECT t.id FROM tenants t
-                JOIN tenant_members m ON m.tenant_id = t.id
-                WHERE t.name = @TenantName AND m.user_id = @UserId
-            ),
-            created AS (
-                INSERT INTO tenants (id, name)
-                SELECT @TenantId, @TenantName WHERE NOT EXISTS (SELECT 1 FROM existing)
-                RETURNING id
-            )
-            INSERT INTO tenant_members (tenant_id, user_id, role)
-            SELECT id, @UserId, 'admin' FROM created
-            """,
-            new { TenantId = Guid.CreateVersion7(), TenantName, UserId = user.Id },
-            cancellationToken: cancellationToken));
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var tenants = await MemberModel.ListTenantsOfUserAsync(connection, user.Id, cancellationToken);
+        if (tenants.Any(tenant => tenant.TenantName == TenantName))
+        {
+            return;
+        }
+
+        var tenantId = Guid.CreateVersion7();
+        await TenantModel.CreateAsync(connection, tenantId, TenantName, cancellationToken);
+        await MemberModel.AddAsync(connection, tenantId, user.Id, TenantRole.Admin, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
     }
 
     private async Task EnsureClientsAsync(CancellationToken cancellationToken)

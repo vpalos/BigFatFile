@@ -38,6 +38,23 @@
   whole codebase, not just Svelte (where ~400 lines is a smell and 600 forces a split).
   Code is written for humans first: prefer the structure a reader follows over the one a
   writer found convenient.
+- **Folder structure.** Ask the founder before deciding any file or folder structure: a
+  new folder, a move, or the place of a new file when it is not already settled. Suggest
+  options; never pick one in silence.
+    - A folder never holds a long flat list of files with unrelated jobs, such as
+      endpoint definitions next to implementation files and helpers.
+    - All endpoints live in one folder tree meant for endpoints, so a reader can see how
+      the API spec is put together. An endpoint outside it needs a very strong reason.
+    - Controllers and models:
+        - endpoint files are the controllers: the routes, their spec text and handlers
+          of a few lines;
+        - SQL on the product's tables lives in `Models/`, one static `<Concept>Model`
+          class per concept, such as `TenantModel`;
+        - each model method takes the connection to run on, and returns the model's own
+          records; the endpoint builds the API records from them;
+        - a rule about one concept goes into its model; a flow across several concepts,
+          such as sign-in, stays in its own folder and calls the models.
+    - Choose the structure that stays simple as the code grows.
 - **Code comments**: no comment is the default. Write one only when a reader would act
   wrongly without it. When you do, use simple, clear language, why not what. Short
   sentences, one idea each, everyday words; never dense prose or packed clauses. One
@@ -47,6 +64,9 @@
   changelog dates (operational cutoffs the code still acts on are the one exception),
   roadmap phase numbers, restating the next line, `@param` lines that echo the name,
   jokes, anthropomorphism.
+- **Enum docs.** The summary of an enum in the API lists its values as a Markdown list,
+  one line per value: `/// - <c>value</c>: what it means.` The list reads well in the
+  code, and the spec shows it as a list.
 - **Mechanisms are explained in docs, not comments.** How a subsystem works as a whole
   (its layers, state machine, flows, corners to watch) lives in a readable doc under
   `bff-ops/docs/architecture/` in bullets and clear lines (`TRANSFER-ENGINE.md` is the

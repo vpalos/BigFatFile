@@ -1,7 +1,7 @@
 using System.Reflection;
 using BigFatFile.Abstractions.Features;
 using BigFatFile.Abstractions.Modules;
-using BigFatFile.Server.Account;
+using BigFatFile.Server.Api.Endpoints;
 using BigFatFile.Server.Api;
 using BigFatFile.Server.Auth;
 using BigFatFile.Server.Configuration;
@@ -57,6 +57,7 @@ internal static class OriginHost
             .AddApi()
             .AddHealth()
             .AddSingleton<DatabaseMigrations>()
+            .AddSingleton<DatabaseRoles>()
             .AddScoped<DevSeed>();
 
         var features = new LicenceFeatureGate();
@@ -87,18 +88,7 @@ internal static class OriginHost
         app.UseAuthorization();
         app.UseAntiforgery();
 
-        app.MapHealth();
-        app.MapMetrics();
-        app.MapApiDocs();
-        app.MapConnectEndpoints();
-        app.MapAccountEndpoints();
-        app.MapAccountApi();
-        app.MapApiV1();
-        app.MapJobDashboard();
-        foreach (var loaded in modules)
-        {
-            loaded.Module.MapEndpoints(app.MapGroup("/api/" + loaded.Module.Name));
-        }
+        app.MapEndpoints(modules);
 
         return app;
     }

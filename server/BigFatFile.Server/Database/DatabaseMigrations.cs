@@ -4,7 +4,8 @@ using Npgsql;
 
 namespace BigFatFile.Server.Database;
 
-internal sealed class DatabaseMigrations(NpgsqlDataSource dataSource, ModuleCatalog modules, ILogger<DatabaseMigrations> logger)
+internal sealed class DatabaseMigrations(
+    [FromKeyedServices(DatabaseServices.Owner)] NpgsqlDataSource dataSource, ModuleCatalog modules, ILogger<DatabaseMigrations> logger)
 {
     public IReadOnlyList<MigrationFile> Files =>
     [

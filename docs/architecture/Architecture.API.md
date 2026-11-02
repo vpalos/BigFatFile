@@ -6,10 +6,13 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 ## 1. One API
 
 - One prefix, `/api/v1`, one OpenAPI specification, one version line.
-- The chunk-level endpoints (upload sessions, manifests, chunks) are ordinary endpoints
-  under the `transfer` tag, marked "advanced" in the reference. They are gated by the
-  same `files.*` scopes as the file-level endpoints; what separates them is a tag, not
-  a prefix or a second specification.
+- The transfer endpoints all live under the `nodes` prefix and tag:
+    - the file-level ones: create, upload as one stream, download;
+    - the chunk-level ones: upload sessions, manifests, chunks;
+    - both are gated by the same `files.*` scopes;
+    - what separates the chunk-level ones is an "Advanced" badge on each operation in
+      the reference, from the spec's `x-badges` extension; not a prefix, a tag or a
+      second specification.
 - The committed `openapi.json` is the contract:
     - designed and reviewed as a diff before a feature is implemented;
         - every build of the Server writes `api/openapi.json` from the code, so an
@@ -19,9 +22,17 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
         - the TypeScript types in `@bigfatfile/client` are generated from it, with the
           same CI check;
     - served by every instance at `/api/docs` with "try it" against that instance.
-- Tags group the endpoints: `auth`, `tenant`, `drives`, `nodes`, `files`, `transfer`,
-  `changes`, `permissions`, `shares`, `sends`, `requests`, `metadata`, `apps`,
-  `webhooks`, `admin`, `mirror`, `public`, `meta`.
+- Every route of the Origin is mapped in one place in the Server:
+    - that place makes each route group, with its path, its tag and whether the spec
+      includes it;
+    - so it shows how the spec is put together, and the modules' routes are added
+      there too.
+- Tags group the endpoints:
+    - an endpoint's tag is the first segment of its path after `/api/v1`:
+      `/api/v1/account/me` is `account`, `/api/v1/tenants/{id}` is `tenants`;
+    - each group in the endpoint map sets its tag, and no endpoint sets its own;
+    - a test fails when a tag is not the first segment of its path, and another when a
+      path of the spec is outside `/api/v1`.
 
 ## 2. Conventions
 
@@ -48,22 +59,36 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
       code;
     - an error that ASP.NET Core writes without a code, such as a 404 for an unknown
       address, gets the generic code for its status.
-- Pagination: cursor-based everywhere (`cursor`, `limit`, `nextCursor`); no offsets.
-- Idempotency: an `Idempotency-Key` header on every request that creates something, so
-  a retried request does not create it twice.
-- Concurrency: `If-Match` with the node version on every change to a node; a stale
-  version gets `412`.
-- Rate limits: per App and per tenant, reported in `RateLimit-*` headers; limits are
-  plan settings.
-- Trace context: `traceparent` accepted and propagated.
-- IDs are UUIDv7 strings; times are ISO 8601 in UTC; sizes are bytes.
+- Parameters with a fixed set of values, such as the provider in
+  `/api/v1/account/external/{provider}`:
+    - the spec lists the values, as an enum;
+    - any other value gets 400 with the code `bad_request`;
+    - a test fails when a path, query or header parameter is a plain C# enum, because
+      ASP.NET Core would read it by its C# name and would also accept any number.
+- Pagination:
+    - cursor-based everywhere (`cursor`, `limit`, `nextCursor`); no offsets.
+- Idempotency:
+    - an `Idempotency-Key` header on every request that creates something;
+    - this prevents a retried request from creating something twice.
+- Concurrency:
+    - `If-Match` with the node version on every change to a node;
+    - a stale version gets `412`.
+- Rate limits:
+    - per App and per tenant, reported in `RateLimit-*` headers;
+    - limits are plan settings.
+- Trace context:
+    - `traceparent` accepted and propagated.
+- Other general conventions:
+    - IDs are UUIDv7 strings;
+    - times are ISO 8601 in UTC;
+    - sizes are bytes.
 
 ## 3. Authentication
 
 - Bearer JWT (ES256, keys at the JWKS endpoint) issued by the Origin's OpenIddict
   server; the web app on the same origin uses a session cookie instead.
 - Every write operation that uses the session cookie sends the `X-CSRF-Token` header,
-  with the token from `GET /account/csrf`; bearer requests do not need it.
+  with the token from `GET /api/v1/account/csrf`; bearer requests do not need it.
 - A token carries: the user (if any), the App, the tenant it is scoped to, the granted
   scopes.
 - Flows:
@@ -116,9 +141,11 @@ permissions apply on top.
     - `GET /connect/authorize`, `POST /connect/token` (all grant types above),
       `POST /connect/revoke`, `POST /connect/introspect`;
     - `GET /connect/userinfo`.
-- Account (outside `/api/v1`, `auth` tag): the JSON endpoints behind the web app's
-  account screens; same origin and session cookie only, no scope:
-    - `GET /account/options`: the sign-up policy and the external providers;
+- Account (`account` tag):
+    - `GET /account/me` (`openid`): the user, the tenant the caller is scoped to, all
+      their tenants and roles; it accepts a token or the session;
+    - the other endpoints are the JSON endpoints behind the web app's account screens;
+      same origin and session cookie only, no scope;
     - `GET /account/csrf`: the token for the `X-CSRF-Token` header;
     - `POST /account/sign-in`, `POST /account/sign-out`;
     - `PUT /account/tenant`: scopes the session to another of the user's tenants;
@@ -129,9 +156,7 @@ permissions apply on top.
     - `GET /account/external/{provider}`: starts a Google, Microsoft or OpenID Connect
       sign-in;
     - codes and tokens from emails travel in the request body, never in the path.
-- Me and tenants:
-    - `GET /me` (`openid`): the user, the tenant the caller is scoped to, all their
-      tenants and roles;
+- Tenants:
     - `GET /tenants/{id}` (`members.read`): name, plan, settings visible to members;
     - `GET /tenants/{id}/members` (`members.read`), `PATCH .../members/{userId}`,
       `DELETE .../members/{userId}` (`members.manage`);
@@ -148,32 +173,32 @@ permissions apply on top.
     - `GET /nodes/{id}/children` (`files.read`): cursor-paged listing;
     - `GET /nodes/{id}/path` (`files.read`): the ancestors, for breadcrumbs;
     - `GET /nodes/by-path?drive=&path=` (`files.read`);
-    - `POST /nodes` (`files.write`): create a folder;
     - `PATCH /nodes/{id}` (`files.write`, `If-Match`): rename, move;
     - `DELETE /nodes/{id}` (`files.write`, `If-Match`): to trash;
       `POST /nodes/{id}/restore`;
     - `GET /nodes/{id}/versions`, `POST /nodes/{id}/versions/{v}/restore`
       (`files.read` / `files.write`);
     - `GET /search?q=&drive=&metadata=` (`files.read`).
-- Files, file-level transfer (`files` tag):
-    - `POST /files` (`files.write`): name, parent, size; returns an upload ID;
-    - `PUT /files/{uploadId}/content` (`files.write`): the bytes as one stream;
+- Nodes, file-level transfer:
+    - `POST /nodes` (`files.write`): creates a folder, or a file from its name, parent
+      and size; for a file it returns an upload ID;
+    - `PUT /nodes/uploads/{uploadId}/content` (`files.write`): the bytes as one stream;
       `Content-Range` to continue from an offset; the Origin splits the bytes into chunks
       as they arrive;
-    - `GET /files/{uploadId}` (`files.write`): the offset to resume from;
+    - `GET /nodes/uploads/{uploadId}` (`files.write`): the offset to resume from;
     - `GET /nodes/{id}/content` (`files.read`): download with `Range` support;
     - `GET /nodes/{id}/thumbnail`, `GET /nodes/{id}/preview` (`files.read`).
-- Transfer, chunk-level (`transfer` tag, advanced):
-    - `POST /transfer/sessions` (`files.write`): the manifest for a node; returns the
+- Nodes, chunk-level transfer (each with the "Advanced" badge):
+    - `POST /nodes/sessions` (`files.write`): the manifest for a node; returns the
       missing chunk hashes and, on S3 warehouses, a presigned URL per chunk;
-    - `GET /transfer/sessions/{id}` (`files.write`): what is still missing;
-    - `PUT /transfer/sessions/{id}/chunks/{hash}` (`files.write`): one chunk;
-    - `POST /transfer/sessions/{id}/complete` (`files.write`, `If-Match`);
-    - `DELETE /transfer/sessions/{id}` (`files.write`): abandon;
+    - `GET /nodes/sessions/{id}` (`files.write`): what is still missing;
+    - `PUT /nodes/sessions/{id}/chunks/{hash}` (`files.write`): one chunk;
+    - `POST /nodes/sessions/{id}/complete` (`files.write`, `If-Match`);
+    - `DELETE /nodes/sessions/{id}` (`files.write`): abandon;
     - `GET /nodes/{id}/manifest` (`files.read`): the manifest with a grant (or presigned
       URL) per chunk;
-    - `GET /transfer/chunks/{hash}` (`files.read` with a grant, or `tenant.mirror`);
-    - `POST /transfer/chunks/exists` (`files.read` with grants, or `tenant.mirror`):
+    - `GET /nodes/chunks/{hash}` (`files.read` with a grant, or `tenant.mirror`);
+    - `POST /nodes/chunks/exists` (`files.read` with grants, or `tenant.mirror`):
       which of these chunks the tenant already has.
 - Changes:
     - `GET /changes?since=&limit=&subtree=` (`events.read`): the change log from a
@@ -222,11 +247,12 @@ permissions apply on top.
       ID, the same format as the daily warehouse snapshot;
     - `PUT /replicas/{id}/status`: lag, completeness, last verification (the Replica
       reports about itself);
-    - the change feed, `GET /nodes/{id}/versions` and the `transfer` endpoints, used with
-      this scope.
+    - the change feed, `GET /nodes/{id}/versions` and the chunk-level `nodes` endpoints,
+      used with this scope.
 - Meta (no scope):
     - `GET /meta`: API version, server version, chunker parameters, limits, enabled
-      features;
+      features, and in `account` the sign-up policy, whether password sign-in is on, and
+      the external providers;
     - `GET /openapi.json`;
     - `GET /api/docs` (outside `/api/v1`);
     - `GET /health` (outside `/api/v1`): `status` (`healthy`, `degraded` or `unhealthy`)
@@ -236,8 +262,8 @@ permissions apply on top.
 ## 6. What the SDKs add on top
 
 - `files.upload(folder, input)`: a seekable input of known size goes through the
-  `transfer` endpoints (delta, deduplication, parallel upload); a stream of unknown
-  length goes through `POST /files`. The App's call is the same either way.
+  chunk-level endpoints (delta, deduplication, parallel upload); a stream of unknown
+  length goes through the file-level upload. The App's call is the same either way.
 - `files.download(id)`: assembles the file from its chunks when the runtime can stream to
   disk; otherwise `GET /nodes/{id}/content`.
 - Pagination, retries, `Idempotency-Key`, `If-Match` and token refresh are handled by

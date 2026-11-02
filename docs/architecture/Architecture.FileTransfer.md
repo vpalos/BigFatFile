@@ -5,19 +5,19 @@ chunk-level endpoints, the tenant-wide scope used by mirroring Apps such as the 
 sends, and the transport layer. All of it is one API (`Architecture.API.md`); there
 are no private endpoints.
 
-## 1. File-level transfer (`files` tag)
+## 1. File-level transfer
 
 - What Apps use regularly. File level only: no chunks, hashes or sessions appear in it.
 - Upload: one sequential stream, resumable by offset:
-    1. `POST /files` with name, parent and size; the Origin returns an upload ID.
-    2. `PUT /files/{id}/content` streams the bytes. The Origin runs the chunker from
+    1. `POST /nodes` with name, parent and size; the Origin returns an upload ID.
+    2. `PUT /nodes/uploads/{id}/content` streams the bytes. The Origin runs the chunker from
        Contracts on the bytes as they arrive and writes chunks straight to the
        warehouse; there is no intermediate object and no background job.
     3. The Origin attaches the manifest when the last byte arrives; `If-Match` applies as
        for every change.
 - Resume:
     - the Origin records the byte offset after the last completed chunk;
-    - `GET /files/{id}/upload` returns that offset; the client continues from there;
+    - `GET /nodes/uploads/{id}` returns that offset; the client continues from there;
     - the Origin keeps only the chunker's carry-over buffer per open upload, at most one
       maximum chunk (8 MiB).
 - What this path gives and does not give:
@@ -26,7 +26,7 @@ are no private endpoints.
       tenant already has; those are chunk-level features (section 2);
     - the bytes pass through the Origin, at about 1 GB/s per core for chunking and
       hashing; inbound traffic, not outbound.
-- Download: `GET /files/{id}/content` with range support; the Origin maps the range to
+- Download: `GET /nodes/{id}/content` with range support; the Origin maps the range to
   chunks and streams only what is requested. Previews and playback (PDF, video) always
   use this.
 - The Origin (or the Replica on the LAN) serves share links to drive files the same way;
@@ -34,18 +34,18 @@ are no private endpoints.
 - The SDKs choose the tier: a seekable input of known size goes through the Transfer
   Protocol; a stream of unknown length goes through this path. An App never picks.
 
-## 2. Chunk-level transfer (`transfer` tag)
+## 2. Chunk-level transfer
 
-- The chunk-level endpoints, marked "advanced" in the reference; consumed through the
-  SDKs; documented as "use the SDK unless you are writing one". This is where delta,
-  deduplication and client-side assembly live.
+- The chunk-level endpoints, each with an "Advanced" badge in the reference; consumed
+  through the SDKs; documented as "use the SDK unless you are writing one". This is
+  where delta, deduplication and client-side assembly live.
 - Uploads use an upload session shaped like S3 multipart:
-    1. `POST /transfer/sessions` with the manifest; the Origin returns the chunks the tenant does
+    1. `POST /nodes/sessions` with the manifest; the Origin returns the chunks the tenant does
        not have and, on S3, a presigned URL for each.
     2. The client uploads the missing chunks in parallel, one request each, to the Origin
-       (`PUT /transfer/sessions/{id}/chunks/{hash}`) or directly to storage; the Origin verifies
+       (`PUT /nodes/sessions/{id}/chunks/{hash}`) or directly to storage; the Origin verifies
        each chunk's hash on receipt.
-    3. `POST /transfer/sessions/{id}/complete` attaches the manifest to the node, with `If-Match` on
+    3. `POST /nodes/sessions/{id}/complete` attaches the manifest to the node, with `If-Match` on
        the node's version.
 - Resume is automatic:
     - a restarted client repeats step 1 and is told what is still missing;
@@ -58,7 +58,7 @@ are no private endpoints.
     - the Origin moves no bytes on S3;
     - errors are caught per chunk so resume is also per chunk.
 - Chunks by hash, part of this protocol:
-    - `GET /transfer/chunks/{hash}` and `POST /transfer/chunks/exists`;
+    - `GET /nodes/chunks/{hash}` and `POST /nodes/chunks/exists`;
     - a hash alone grants nothing: the caller presents a grant;
     - fetching the manifest of a node that the caller may read returns a grant for each
       chunk, valid for a few minutes; on S3 the grant is the presigned URL itself;

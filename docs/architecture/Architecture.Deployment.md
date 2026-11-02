@@ -65,7 +65,12 @@ and updated on each platform.
 - The server validates its configuration at startup and names the variable that is
   wrong.
 - Server environment variables:
-    - `BFF_DATABASE`: the PostgreSQL connection string; required;
+    - `BFF_DATABASE` (required): the PostgreSQL connection string that requests use;
+        - this user must not own the tables, be a superuser or bypass row-level security;
+        - the Origin creates this user at startup when it is missing, if the owner may
+          create users;
+    - `BFF_DATABASE_OWNER` (required): the connection string of the user that owns the tables, for
+      administrative operations (e.g. migrations, job queue etc.);
     - `BFF_MODULES_PATH`: the modules folder; default `/app/modules`;
     - `BFF_DEV_SEED`: `true` creates the demo tenant, user and clients; refused unless
       `ASPNETCORE_ENVIRONMENT` is `Development`;

@@ -1,7 +1,7 @@
 using BigFatFile.Contracts.Api;
 using BigFatFile.Server.Auth;
 
-namespace BigFatFile.Server.Api;
+namespace BigFatFile.Server.Api.Errors;
 
 /// <param name="Description">What the error means and what a client should do. The spec shows it with each response that can return the error.</param>
 internal sealed record ApiError(int Status, string Code, string Title, string Description)
@@ -14,7 +14,7 @@ internal static class ApiErrors
 {
     public static readonly ApiError BadRequest = new(400, ErrorCodes.BadRequest,
         "The request is not valid.",
-        "The server could not read the request, for example because its JSON body is malformed or a required parameter is missing. Fix the request before sending it again.");
+        "The server could not read the request. For example, its JSON body is malformed, a required parameter is missing, or a parameter has a value that the spec does not list. Fix the request before sending it again.");
 
     public static readonly ApiError InvalidFields = new(400, ErrorCodes.InvalidFields,
         "Some fields are not valid.",
@@ -50,7 +50,7 @@ internal static class ApiErrors
 
     public static readonly ApiError CsrfTokenInvalid = new(400, ErrorCodes.CsrfTokenInvalid,
         $"The {AuthServices.CsrfHeader} header is missing or wrong.",
-        $"A write operation that uses the session cookie must send the `{AuthServices.CsrfHeader}` header, with the token from `GET /account/csrf`. Get a new token after signing in or out, because each token belongs to one user.");
+        $"A write operation that uses the session cookie must send the `{AuthServices.CsrfHeader}` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.");
 
     public static readonly ApiError UserRequired = new(403, ErrorCodes.UserRequired,
         "This endpoint needs a signed-in user.",
@@ -82,7 +82,7 @@ internal static class ApiErrors
 
     public static readonly ApiError EmailNotConfirmed = new(403, ErrorCodes.EmailNotConfirmed,
         "The email address is not confirmed yet.",
-        "Open the link in the confirmation email first. `POST /account/resend-confirmation` sends the email again.");
+        "Open the link in the confirmation email first. `POST /api/v1/account/resend-confirmation` sends the email again.");
 
     public static readonly ApiError LockedOut = new(403, ErrorCodes.LockedOut,
         $"The account is locked for {AuthServices.LockoutMinutes} minutes, because of too many wrong passwords.",

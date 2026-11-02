@@ -17,8 +17,7 @@ internal static class HealthServices
     /// <c>GET /health</c>: <c>{"status": "healthy", "timestamp": "..."}</c>, with 503 when a
     /// check fails. Which check failed goes to the log, not to the response.
     /// </summary>
-    public static void MapHealth(this IEndpointRouteBuilder endpoints) =>
-        endpoints.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = WriteResponseAsync });
+    public static HealthCheckOptions EndpointOptions { get; } = new() { ResponseWriter = WriteResponseAsync };
 
     private static async Task WriteResponseAsync(HttpContext context, HealthReport report)
     {

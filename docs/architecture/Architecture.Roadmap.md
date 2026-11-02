@@ -69,6 +69,7 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 - Accounts:
     - sign-up with email and password, email verification and password reset, through
       MailKit;
+    - `BFF_SIGN_UP`, and `BFF_PASSWORD_SIGN_IN` to turn password sign-in off;
     - Google and Microsoft sign-in;
     - the operator's one OpenID Connect provider.
 - Tenants:
@@ -129,7 +130,7 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 - Upload sessions: the missing chunks, presigned URLs on S3, a hash check on every
   chunk, completion with `If-Match`.
 - Manifest downloads with chunk grants.
-- `POST /transfer/chunks/exists`.
+- `POST /nodes/chunks/exists`.
 - The chunker and hasher in WebAssembly, built from the reference crates, passing the
   shared test vectors.
 - The transfer engines in both SDKs: parallel chunks over several connections, the

@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.RateLimiting;
-using BigFatFile.Server.Api;
+using BigFatFile.Server.Api.Errors;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace BigFatFile.Server.Auth;

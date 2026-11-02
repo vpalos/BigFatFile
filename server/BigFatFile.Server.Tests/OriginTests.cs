@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using BigFatFile.Contracts.Account;
 using BigFatFile.Contracts.Api;
 using BigFatFile.Contracts.Chunking;
 using BigFatFile.Server.Auth;
@@ -42,6 +43,53 @@ public sealed class OriginTests(Origin origin) : IClassFixture<Origin>
         Assert.Equal(ApiVersion.Current, meta!.ApiVersion);
         Assert.Equal(ChunkerParameters.AverageSize, meta.Chunker.AverageSize);
         Assert.Empty(meta.Features);
+    }
+
+    [Fact]
+    public async Task MetaReportsTheAccountOptions()
+    {
+        using var client = origin.CreateClient();
+
+        var meta = await client.GetFromJsonAsync<Meta>("/api/v1/meta", Cancellation);
+
+        Assert.Equal(SignUpPolicy.Invitation, meta!.Account.SignUp);
+        Assert.True(meta.Account.Password);
+        Assert.Empty(meta.Account.Providers);
+    }
+
+    [Fact]
+    public async Task EveryPathOfTheSpecIsUnderApiV1()
+    {
+        using var client = origin.CreateClient();
+        var spec = JsonNode.Parse(await client.GetStringAsync("/api/v1/openapi.json", Cancellation))!;
+
+        var outside = spec["paths"]!.AsObject().Select(path => path.Key).Where(path => !path.StartsWith("/api/v1/")).ToList();
+
+        Assert.Empty(outside);
+    }
+
+    [Fact]
+    public async Task EveryTagIsTheFirstSegmentOfItsPath()
+    {
+        using var client = origin.CreateClient();
+        var spec = JsonNode.Parse(await client.GetStringAsync("/api/v1/openapi.json", Cancellation))!;
+        string[] methods = ["get", "put", "post", "delete", "options", "head", "patch", "trace"];
+
+        var wrong = new List<string>();
+        foreach (var (path, operations) in spec["paths"]!.AsObject().Where(path => path.Key.StartsWith("/api/v1/")))
+        {
+            var segment = path["/api/v1/".Length..].Split('/')[0];
+            foreach (var (method, operation) in operations!.AsObject().Where(entry => methods.Contains(entry.Key)))
+            {
+                string[] tags = [.. operation!["tags"]?.AsArray().Select(tag => tag!.GetValue<string>()) ?? []];
+                if (tags is not [var tag] || tag != segment)
+                {
+                    wrong.Add($"{method.ToUpperInvariant()} {path}: [{string.Join(", ", tags)}], expected [{segment}]");
+                }
+            }
+        }
+
+        Assert.Empty(wrong);
     }
 
     [Fact]
@@ -87,7 +135,7 @@ public sealed class OriginTests(Origin origin) : IClassFixture<Origin>
         var files = await connection.QueryAsync<string>(
             "SELECT prefix || '_' || lpad(number::text, 4, '0') || '_' || name || '.sql' FROM schema_migrations ORDER BY prefix, number");
 
-        Assert.Equal(["core_0001_auth.sql", "core_0002_tenants.sql", "core_0003_server_keys.sql"], files);
+        Assert.Equal(["core_0001_auth.sql", "core_0002_tenants.sql", "core_0003_server_keys.sql", "core_0004_tenant_isolation.sql"], files);
     }
 
     /// <summary>

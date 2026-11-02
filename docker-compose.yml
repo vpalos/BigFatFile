@@ -1,5 +1,6 @@
 # The reference deployment: the Origin and PostgreSQL (fixed version).
-# Copy .env.example to .env and set POSTGRES_PASSWORD before the first start.
+# Copy .env.example to .env and set POSTGRES_PASSWORD and BFF_DATABASE_PASSWORD before the
+# first start.
 
 name: bigfatfile
 
@@ -8,7 +9,8 @@ services:
     image: ghcr.io/vpalos/bigfatfile:${BFF_IMAGE_TAG:-edge}
     restart: unless-stopped
     environment:
-      BFF_DATABASE: Host=db;Database=bigfatfile;Username=bigfatfile;Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      BFF_DATABASE: Host=db;Database=bigfatfile;Username=bigfatfile_app;Password=${BFF_DATABASE_PASSWORD:?set BFF_DATABASE_PASSWORD in .env}
+      BFF_DATABASE_OWNER: Host=db;Database=bigfatfile;Username=bigfatfile;Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     ports:
       - "${BFF_PORT:-8080}:8080"
     # BBR needs the tcp_bbr kernel module on the host (Architecture.Deployment.md, section 1).

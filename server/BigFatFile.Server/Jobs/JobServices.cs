@@ -1,3 +1,4 @@
+using BigFatFile.Server.Database;
 using Hangfire;
 using Hangfire.Dashboard;
 using Hangfire.PostgreSql;
@@ -11,8 +12,8 @@ internal static class JobServices
 
     public static IServiceCollection AddJobs(this IServiceCollection services, bool runServer)
     {
-        // Hangfire uses the server's data source, so its connections get the same settings
-        // and the same tracing rules.
+        // Hangfire uses the owner's data source: it creates its own tables, and jobs work
+        // across tenants. Its connections get the same settings and tracing rules as the others.
         services.AddHangfire((provider, configuration) => configuration
             .UseSimpleAssemblyNameTypeSerializer()
             .UseRecommendedSerializerSettings()
@@ -28,18 +29,18 @@ internal static class JobServices
         return services;
     }
 
-    public static void MapJobDashboard(this IEndpointRouteBuilder endpoints) =>
-        endpoints.MapHangfireDashboard("/admin/jobs", new DashboardOptions
-        {
-            Authorization = [new OperatorOnly()],
-            AppPath = "/",
-        });
+    public static DashboardOptions DashboardOptions() => new()
+    {
+        Authorization = [new OperatorOnly()],
+        AppPath = "/",
+    };
 
     // Resolves the data source on first use. When the build runs the app to write the
     // OpenAPI document, the app also maps the dashboard, but there is no database then.
     private sealed class DataSourceConnectionFactory(IServiceProvider provider) : IConnectionFactory
     {
-        public NpgsqlConnection GetOrCreateConnection() => provider.GetRequiredService<NpgsqlDataSource>().CreateConnection();
+        public NpgsqlConnection GetOrCreateConnection() =>
+            provider.GetRequiredKeyedService<NpgsqlDataSource>(DatabaseServices.Owner).CreateConnection();
     }
 
     private sealed class OperatorOnly : IDashboardAuthorizationFilter

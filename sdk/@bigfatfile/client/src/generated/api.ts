@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/account/options": {
+    "/api/v1/account/me": {
         parameters: {
             query?: never;
             header?: never;
@@ -12,13 +12,13 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get account options
-         * @description Returns what the sign-in and sign-up screens offer on this server.
+         * Get the signed-in user
+         * @description Returns the user that the token or session belongs to, and:
          *
-         *     - `signUp` says whether anyone can create an account, or only people with an invitation.
-         *     - `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.
+         *     - `tenantId`: the tenant that the token or session works in;
+         *     - `tenants`: every tenant the user is a member of, with the user's role in each.
          */
-        get: operations["getAccountOptions"];
+        get: operations["getMe"];
         put?: never;
         post?: never;
         delete?: never;
@@ -27,7 +27,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/csrf": {
+    "/api/v1/account/csrf": {
         parameters: {
             query?: never;
             header?: never;
@@ -51,7 +51,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/sign-in": {
+    "/api/v1/account/sign-in": {
         parameters: {
             query?: never;
             header?: never;
@@ -73,7 +73,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/sign-out": {
+    "/api/v1/account/sign-out": {
         parameters: {
             query?: never;
             header?: never;
@@ -93,7 +93,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/tenant": {
+    "/api/v1/account/tenant": {
         parameters: {
             query?: never;
             header?: never;
@@ -113,7 +113,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/sign-up": {
+    "/api/v1/account/sign-up": {
         parameters: {
             query?: never;
             header?: never;
@@ -137,7 +137,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/confirm-email": {
+    "/api/v1/account/confirm-email": {
         parameters: {
             query?: never;
             header?: never;
@@ -161,7 +161,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/resend-confirmation": {
+    "/api/v1/account/resend-confirmation": {
         parameters: {
             query?: never;
             header?: never;
@@ -183,7 +183,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/forgot-password": {
+    "/api/v1/account/forgot-password": {
         parameters: {
             query?: never;
             header?: never;
@@ -205,7 +205,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/reset-password": {
+    "/api/v1/account/reset-password": {
         parameters: {
             query?: never;
             header?: never;
@@ -225,7 +225,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/external/{provider}": {
+    "/api/v1/account/external/{provider}": {
         parameters: {
             query?: never;
             header?: never;
@@ -233,10 +233,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Sign in with an external account
+         * Sign in with an external account (OAuth)
          * @description Sends the browser to the sign-in page of another service, such as Google or Microsoft. When the person has signed in there, the browser comes back to `returnUrl`, which must be a path on this server.
          *
-         *     - `provider` is a `key` from `GET /account/options`.
+         *     - `provider` is a `key` from `account.providers` in `GET /api/v1/meta`.
          *     - The web app opens this address as a page in the browser, not with a fetch call, because the browser must follow the redirects.
          */
         get: operations["signInExternally"];
@@ -248,7 +248,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/invitations/lookup": {
+    "/api/v1/account/invitations/lookup": {
         parameters: {
             query?: never;
             header?: never;
@@ -271,7 +271,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/invitations/accept": {
+    "/api/v1/account/invitations/accept": {
         parameters: {
             query?: never;
             header?: never;
@@ -305,34 +305,15 @@ export interface paths {
          *     - the API version and the server version;
          *     - the parameters of the chunker, which splits files into chunks for transfer;
          *     - the Unicode version used to normalise file names before they are compared;
-         *     - the licensed features that are turned on.
+         *     - the licensed features that are turned on;
+         *     - `account`: what the sign-in and sign-up flows offer:
+         *         - `signUp` says whether anyone can create an account, or only people with an invitation;
+         *         - `password` says whether people can sign in and sign up with an email address and a password;
+         *         - `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.
          *
          *     It needs no token.
          */
         get: operations["getMeta"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get the signed-in user
-         * @description Returns the user that the token or session belongs to, and:
-         *
-         *     - `tenantId`: the tenant that the token or session works in;
-         *     - `tenants`: every tenant the user is a member of, with the user's role in each.
-         */
-        get: operations["getMe"];
         put?: never;
         post?: never;
         delete?: never;
@@ -457,9 +438,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description What the sign-in and sign-up screens offer on this server. */
+        /** @description What the sign-in and sign-up flows offer on this server. */
         AccountOptions: {
             signUp: components["schemas"]["SignUpPolicy"];
+            /** @description Whether people can sign in, and sign up, with an email address and a password. When it is false, they use the external providers only. */
+            password: boolean;
             /** @description The external accounts a person can sign in with, in display order. */
             providers: components["schemas"]["SignInProvider"][];
         };
@@ -482,6 +465,13 @@ export interface components {
         EmailRequest: {
             email: string;
         };
+        /**
+         * @description - `google`: a Google account.
+         *     - `microsoft`: a Microsoft account.
+         *     - `oidc`: an account at the one OpenID Connect provider that the server's operator set up, such as Keycloak or Authentik.
+         * @enum {unknown}
+         */
+        ExternalProvider: "google" | "microsoft" | "oidc";
         HttpValidationProblemDetails: {
             /** @description Identifies the error, as a URN: `urn:bigfatfile:problem:` followed by the code. */
             type: string;
@@ -562,6 +552,8 @@ export interface components {
             nameKeyUnicodeVersion: string;
             /** @description The licensed features that are on. */
             features: string[];
+            /** @description What the sign-in and sign-up flows offer on this server. */
+            account: components["schemas"]["AccountOptions"];
         };
         MetaChunker: {
             algorithm: string;
@@ -620,8 +612,8 @@ export interface components {
             password: string;
         };
         SignInProvider: {
-            /** @description The provider's path segment in `/account/external/{provider}`. */
-            key: string;
+            /** @description The provider's path segment in `/api/v1/account/external/{provider}`. */
+            key: components["schemas"]["ExternalProvider"];
             /** @description The name to show on the button. */
             name: string;
         };
@@ -635,12 +627,14 @@ export interface components {
             tenantId?: null | string;
         };
         /**
-         * @description `confirmation_sent`: a confirmation email is on its way. It is also the answer when the address already has an account, so the response does not reveal which addresses do. `signed_in`: the invitation proved the address, the account exists and its session has started.
+         * @description - `confirmation_sent`: a confirmation email is on its way. It is also the answer when the address already has an account, so the response does not reveal which addresses do.
+         *     - `signed_in`: the invitation proved the address, the account exists and its session has started.
          * @enum {unknown}
          */
         SignUpOutcome: "confirmation_sent" | "signed_in";
         /**
-         * @description `invitation`: only people with an invitation can create an account. `open`: anyone can create an account, and gets a new tenant of their own.
+         * @description - `invitation`: only people with an invitation can create an account.
+         *     - `open`: anyone can create an account, and gets a new tenant of their own.
          * @enum {unknown}
          */
         SignUpPolicy: "invitation" | "open";
@@ -668,7 +662,10 @@ export interface components {
             createdAt: string;
         };
         /**
-         * @description What a member may do in a tenant; node permissions apply on top. `admin` manages members, invitations and the tenant's settings. `guest` is an outside person who sees only what is shared with them.
+         * @description What a member may do in a tenant. Node permissions apply on top.
+         *     - `admin`: manages members, invitations and the tenant's settings.
+         *     - `member`: a member without the rights of an admin.
+         *     - `guest`: an outside person who sees only what is shared with them.
          * @enum {unknown}
          */
         TenantRole: "admin" | "member" | "guest";
@@ -684,7 +681,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    getAccountOptions: {
+    getMe: {
         parameters: {
             query?: never;
             header?: never;
@@ -699,7 +696,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccountOptions"];
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /**
+             * @description - `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.
+             *     - `user_required`: This endpoint needs a signed-in user. The token belongs to an App, not to a user. An App gets such a token for itself, with client credentials. Use a token that a user signed in for.
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
         };
@@ -754,7 +772,7 @@ export interface operations {
                 };
             };
             /**
-             * @description - `email_not_confirmed`: The email address is not confirmed yet. Open the link in the confirmation email first. `POST /account/resend-confirmation` sends the email again.
+             * @description - `email_not_confirmed`: The email address is not confirmed yet. Open the link in the confirmation email first. `POST /api/v1/account/resend-confirmation` sends the email again.
              *     - `locked_out`: The account is locked for 5 minutes, because of too many wrong passwords. The lock starts after 10 wrong passwords in a row. During the lock, even the right password gets this answer. Try again when the lock ends.
              */
             403: {
@@ -801,7 +819,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
+            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1010,7 +1028,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                provider: string;
+                provider: components["schemas"]["ExternalProvider"];
             };
             cookie?: never;
         };
@@ -1023,7 +1041,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, this server has no provider with that key. */
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, this server has not set up that provider. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1123,47 +1141,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Meta"];
-                };
-            };
-        };
-    };
-    getMe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Me"];
-                };
-            };
-            /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /**
-             * @description - `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.
-             *     - `user_required`: This endpoint needs a signed-in user. The token belongs to an App, not to a user. An App gets such a token for itself, with client credentials. Use a token that a user signed in for.
-             */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
         };

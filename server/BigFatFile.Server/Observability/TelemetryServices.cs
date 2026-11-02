@@ -41,9 +41,6 @@ internal static class TelemetryServices
         }
     }
 
-    public static void MapMetrics(this IEndpointRouteBuilder endpoints) =>
-        endpoints.MapPrometheusScrapingEndpoint("/metrics");
-
     private static bool IsProbe(PathString path) =>
         path.StartsWithSegments("/health") || path.StartsWithSegments("/metrics");
 }

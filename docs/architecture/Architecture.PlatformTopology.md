@@ -27,8 +27,8 @@ Core topology: Origin Server <-> Replica Server <=> Apps (Clients).
         - the one public API (`Architecture.API.md`); the SDKs call its chunk-level endpoints for the Apps.
     - a BFF App has:
         - level:
-            - file-level Apps use the `files` endpoints (high-level);
-            - chunk-level Apps use the `transfer` endpoints directly (low-level);
+            - file-level Apps use the file-level `nodes` endpoints (high-level);
+            - chunk-level Apps use the chunk-level `nodes` endpoints directly (low-level);
         - scope:
             - user-scoped Apps act on what their user may see;
             - tenant-scoped Apps require `tenant.mirror` scope and see all the tenant's data.
@@ -360,7 +360,7 @@ Designed for Apps rather than discovered by them. Our own clients use these.
 ## 5. Public API
 
 - The one public API of the Origin, `/api/v1`: conventions, authentication, scopes and
-  the endpoint list; the chunk-level endpoints are part of it under an "advanced" tag.
+  the endpoint list; the chunk-level endpoints are part of it, with an "Advanced" badge.
 - [Architecture.API.md](Architecture.API.md)
 
 ## 6. SDKs and UI packages

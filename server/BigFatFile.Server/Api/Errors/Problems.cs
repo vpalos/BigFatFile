@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace BigFatFile.Server.Api;
+namespace BigFatFile.Server.Api.Errors;
 
 /// <summary>Problem responses (RFC 9457) built from the definitions in <see cref="ApiErrors"/>.</summary>
 internal static class Problems

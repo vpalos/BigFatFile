@@ -1,4 +1,4 @@
-namespace BigFatFile.Server.Api;
+namespace BigFatFile.Server.Api.Errors;
 
 /// <param name="Note">What this endpoint adds to the error's description, as full sentences.</param>
 internal sealed record ApiErrorMetadata(ApiError Error, string? Note);

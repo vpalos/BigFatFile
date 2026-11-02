@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using BigFatFile.Server.Auth;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -7,7 +8,7 @@ using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
-namespace BigFatFile.Server.Auth;
+namespace BigFatFile.Server.Api.Endpoints;
 
 /// <summary>
 /// The parts of the OpenID Connect endpoints that need BigFatFile's own decisions. OpenIddict
@@ -15,9 +16,8 @@ namespace BigFatFile.Server.Auth;
 /// </summary>
 internal static class ConnectEndpoints
 {
-    public static void MapConnectEndpoints(this IEndpointRouteBuilder endpoints)
+    public static void MapConnectEndpoints(this IEndpointRouteBuilder connect)
     {
-        var connect = endpoints.MapGroup("/connect").ExcludeFromDescription();
         connect.MapMethods("/authorize", [HttpMethods.Get, HttpMethods.Post], AuthorizeAsync);
         connect.MapPost("/token", TokenAsync).DisableAntiforgery();
         connect.MapMethods("/userinfo", [HttpMethods.Get, HttpMethods.Post], UserInfoAsync).DisableAntiforgery();
@@ -49,10 +49,11 @@ internal static class ConnectEndpoints
         // consent screen, so a client that needs one is refused.
         if (await applications.GetConsentTypeAsync(application) != ConsentTypes.Implicit)
         {
-            return Forbid(Errors.ConsentRequired, "This client needs a consent screen, which this server does not have yet.");
+            return Forbid(OpenIddictConstants.Errors.ConsentRequired, "This client needs a consent screen, which this server does not have yet.");
         }
 
         var identity = await CreateUserIdentityAsync(users, user);
+        identity.SetClaim(TenantClaims.TenantId, session.Principal!.GetClaim(TenantClaims.TenantId));
         identity.SetScopes(request.GetScopes());
         identity.SetResources(await scopes.ListResourcesAsync(identity.GetScopes()).ToListAsync());
         identity.SetDestinations(DestinationsOf);
@@ -77,10 +78,11 @@ internal static class ConnectEndpoints
             // The user may have been locked or deleted since the code or refresh token was issued.
             if (user is null || !await signIn.CanSignInAsync(user))
             {
-                return Forbid(Errors.InvalidGrant, "The user can no longer sign in.");
+                return Forbid(OpenIddictConstants.Errors.InvalidGrant, "The user can no longer sign in.");
             }
 
             var identity = await CreateUserIdentityAsync(users, user);
+            identity.SetClaim(TenantClaims.TenantId, granted.Principal!.GetClaim(TenantClaims.TenantId));
             identity.SetScopes(granted.Principal!.GetScopes());
             identity.SetResources(granted.Principal!.GetResources());
             identity.SetDestinations(DestinationsOf);
@@ -101,7 +103,7 @@ internal static class ConnectEndpoints
             return Results.SignIn(new ClaimsPrincipal(identity), authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
-        return Forbid(Errors.UnsupportedGrantType, "This grant type is not supported.");
+        return Forbid(OpenIddictConstants.Errors.UnsupportedGrantType, "This grant type is not supported.");
     }
 
     private static async Task<IResult> UserInfoAsync(HttpContext context, UserManager<BffUser> users)
@@ -113,7 +115,7 @@ internal static class ConnectEndpoints
             return Results.Challenge(
                 new AuthenticationProperties(new Dictionary<string, string?>
                 {
-                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidToken,
+                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = OpenIddictConstants.Errors.InvalidToken,
                     [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The token's user no longer exists.",
                 }),
                 [OpenIddictServerAspNetCoreDefaults.AuthenticationScheme]);

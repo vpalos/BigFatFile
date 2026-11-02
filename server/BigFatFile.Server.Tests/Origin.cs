@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Npgsql;
 
 namespace BigFatFile.Server.Tests;
 
@@ -8,7 +9,15 @@ public class Origin(Postgres postgres) : IAsyncLifetime
 {
     private WebApplicationFactory<Program>? factory;
 
+    /// <summary>The owner's connection string. Row-level security does not apply to it.</summary>
     public string ConnectionString { get; private set; } = "";
+
+    /// <summary>The connection string that requests use. The server creates this user at startup.</summary>
+    public string AppConnectionString => new NpgsqlConnectionStringBuilder(ConnectionString)
+    {
+        Username = "bigfatfile_app",
+        Password = "bigfatfile-app-test",
+    }.ConnectionString;
 
     protected virtual string ModulesPath => Path.Combine(AppContext.BaseDirectory, "no-modules");
 
@@ -22,7 +31,8 @@ public class Origin(Postgres postgres) : IAsyncLifetime
         ConnectionString = await postgres.CreateDatabaseAsync();
         factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder => builder
             .UseEnvironment("Development")
-            .UseSetting("BFF_DATABASE", ConnectionString)
+            .UseSetting("BFF_DATABASE", AppConnectionString)
+            .UseSetting("BFF_DATABASE_OWNER", ConnectionString)
             .UseSetting("BFF_DEV_SEED", "true")
             .UseSetting("BFF_MODULES_PATH", ModulesPath));
         factory.CreateClient().Dispose();

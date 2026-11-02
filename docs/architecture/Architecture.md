@@ -76,7 +76,10 @@ docs/       architecture documents, developer docs
       jobs, SDKs, licensed modules and the developer experience.
 - [API](Architecture.API.md):
     - the one public API, `/api/v1`: conventions, authentication, scopes and the
-      endpoint list; the chunk-level endpoints are part of it under an "advanced" tag.
+      endpoint list; the chunk-level endpoints are part of it, with an "Advanced" badge.
+- [Tenancy](Architecture.Tenancy.md):
+    - tenants, tenant isolation (scoping and row-level security), permissions and
+      authentication.
 - [Data Model](Architecture.DataModel.md):
     - the file tree, file versioning, the change log and the audit log.
 - [File storage](Architecture.FileStorage.md):
@@ -88,9 +91,6 @@ docs/       architecture documents, developer docs
       explorer (OS) integration, and how file changes are detected on each platform.
 - [Client synchronization](Architecture.ClientSynchronization.md):
     - how clients learn about changes, the client sync loop and conflict handling.
-- [Tenancy](Architecture.Tenancy.md):
-    - tenants, tenant isolation (scoping and row-level security), permissions and
-      authentication.
 - [Deployment](Architecture.Deployment.md):
     - how the Origin, the Replica, the desktop client and the CLI are packaged, installed
       and updated on each platform, and how images are signed.

@@ -17,19 +17,38 @@ Apps authenticate.
 
 - Application-level scoping (first layer):
     - every tenant-owned table carries `tenant_id`, used to filter all queries;
+    - the `/tenants/{id}` endpoints answer 404 unless the ID is the tenant of the session
+      or token and the user is still a member of it;
     - a set of isolation tests calls every endpoint with another tenant's IDs and
       expects 404s.
 - Row-level security (second layer):
-    - simple predicates, one policy per table:
-        - `tenant_id = current_setting('app.tenant_id', true)::uuid`
-    - request handling opens a transaction and first runs:
-        - `SET LOCAL app.tenant_id = '<id>'`
-        - the setting is local (it ends with the transaction), so a reused connection
-          never carries a tenant into the next request;
-    - the application connects as a role that does not own the tables, because table
-      owners bypass row-level security;
-    - cross-tenant work (GC, billing, admin tasks) runs with `BYPASSRLS`;
-    - predicates are kept simple so the planner can use the `(tenant_id, …)` indexes.
+    - two database users:
+        - requests connect as the user in `BFF_DATABASE`, which owns nothing, because
+          table owners skip row-level security;
+        - migrations and the job queue connect as the owner, in `BFF_DATABASE_OWNER`;
+        - cross-tenant work (GC, billing, admin tasks) runs as the owner;
+        - at startup the Origin creates the request user if it is missing, and grants it
+          its rights;
+        - the Origin refuses to start when row-level security would not apply to the
+          request user;
+    - each request has one transaction, which first sets two values:
+        - `app.tenant_id`, the tenant of the session or token;
+        - `app.user_id`, the signed-in user;
+        - both are local to the transaction, so a reused connection never carries them
+          into the next request;
+        - nothing is saved until the handler commits;
+        - the code that runs SQL never opens a connection of its own; it runs on the
+          connection it is given, because a query on another connection would run
+          without the tenant and the user set;
+    - one policy per table, with a simple predicate:
+        - `tenant_id = app_tenant_id()`;
+        - `app_tenant_id()` and `app_user_id()` read the two values, and return null when
+          they are not set;
+        - predicates are kept simple so the planner can use the `(tenant_id, …)` indexes;
+    - memberships and tenants are also visible to their user, in every tenant:
+        - `/api/v1/account/me` lists the user's tenants, and sign-in chooses one of them;
+        - this second policy is for reading only, so a membership changes only inside its
+          own tenant.
 
 ## 3. Permissions
 
@@ -54,6 +73,13 @@ Apps authenticate.
     - `BFF_SIGN_UP` sets who may sign up:
         - `invitation`, the default: only invited addresses can create an account;
         - `open`: anyone can, and gets a new tenant of their own; the cloud runs this;
+    - `BFF_PASSWORD_SIGN_IN` turns signing in and signing up with a password on or off:
+        - `true`, the default;
+        - `false`: people sign in only through the external providers, and the password
+          endpoints refuse: sign-in, sign-up, forgot password and reset password;
+        - `GET /api/v1/meta` reports it in `account.password`;
+        - the Origin refuses to start with it off and no external provider set up,
+          because nobody could sign in;
     - the operator is the account whose address is `BFF_OPERATOR_EMAIL`, once the
       address is confirmed:
         - the operator can open the job dashboard and create tenants;
@@ -76,6 +102,10 @@ Apps authenticate.
         - each node counts on its own, so in cluster mode the limit applies per node;
         - behind a reverse proxy, the Origin sees only the proxy's address, so all
           clients share one limit.
+- Two-factor sign-in:
+    - it is not built yet;
+    - password sign-in refuses an account that has it turned on, because Identity's
+      password check does not ask for the second step.
 - Libraries:
     - ASP.NET Core Identity for accounts (password hashing, email confirmation, lockout,
       two-factor, passkeys);
@@ -103,7 +133,11 @@ Apps authenticate.
         - they are stored unencrypted, like the Data Protection keys: whoever can read
           the database can sign tokens.
 - Tenant scope:
-    - a session and a token are each scoped to one tenant, chosen at sign-in;
+    - a session and a token are each scoped to one tenant, in the `tenant_id` claim;
+    - sign-in chooses the tenant that the user signed in to last, or else the user's
+      oldest membership;
+    - a token gets the tenant of the session that authorized it;
+    - the session keeps its tenant when the security stamp check rebuilds it;
     - a user with several tenants picks one; the web app switches tenant by asking for a
       new session cookie, so every open tab switches with it;
     - every request finds its tenant in the same place, the signed-in principal.
@@ -111,7 +145,7 @@ Apps authenticate.
     - the screens are sign-in, sign-up, email confirmation, password reset and
       invitations;
     - the authorization endpoint sends a browser there, and the pages call the
-      `/account` endpoints (`Architecture.API.md`, section 5);
+      `/api/v1/account` endpoints (`Architecture.API.md`, section 5);
     - links in emails carry their code after `#`, which browsers never send to a server,
       so the codes stay out of request logs.
 - On first sign-in the Origin finds or creates the user, links the external account, and

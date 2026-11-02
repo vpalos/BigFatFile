@@ -1,8 +1,10 @@
 using BigFatFile.Contracts.Api;
+using BigFatFile.Server.Api.Errors;
+using BigFatFile.Server.Api.Parameters;
 using BigFatFile.Server.Auth;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace BigFatFile.Server.Api;
+namespace BigFatFile.Server.Api.Endpoints;
 
 internal static class InvitationEndpoints
 {

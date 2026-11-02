@@ -12,6 +12,7 @@ internal static class StartupTasks
     {
         app.Services.GetRequiredService<OriginSettings>().Validate();
         await app.Services.GetRequiredService<DatabaseMigrations>().RunAsync(cancellationToken);
+        await app.Services.GetRequiredService<DatabaseRoles>().PrepareAsync(cancellationToken);
     }
 
     public static async Task PrepareAsync(WebApplication app, CancellationToken cancellationToken)

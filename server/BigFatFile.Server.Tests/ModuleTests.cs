@@ -25,7 +25,7 @@ public sealed class ModuleTests(OriginWithSampleModule origin) : IClassFixture<O
 
         var prefixes = await connection.QueryAsync<string>("SELECT prefix FROM schema_migrations ORDER BY applied_at, number");
 
-        Assert.Equal(["core", "core", "core", "sample"], prefixes);
+        Assert.Equal(["core", "core", "core", "core", "sample"], prefixes);
         Assert.Equal(0, await connection.ExecuteScalarAsync<long>("SELECT COUNT(*) FROM sample_notes"));
     }
 

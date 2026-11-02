@@ -7,6 +7,7 @@ namespace BigFatFile.Server.Configuration;
 internal sealed class OriginSettings
 {
     public const string DatabaseKey = "BFF_DATABASE";
+    public const string DatabaseOwnerKey = "BFF_DATABASE_OWNER";
     public const string ModulesPathKey = "BFF_MODULES_PATH";
     public const string DevSeedKey = "BFF_DEV_SEED";
 
@@ -17,7 +18,16 @@ internal sealed class OriginSettings
         Database = configuration[DatabaseKey] ?? "";
         if (string.IsNullOrWhiteSpace(Database))
         {
-            errors.Add($"{DatabaseKey} is not set. It is the PostgreSQL connection string, for example " +
+            errors.Add($"{DatabaseKey} is not set. It is the PostgreSQL connection string that the server " +
+                       "uses for requests, for example \"Host=db;Database=bigfatfile;Username=bigfatfile_app;Password=...\". " +
+                       "Its user must not own the tables.");
+        }
+
+        DatabaseOwner = configuration[DatabaseOwnerKey] ?? "";
+        if (string.IsNullOrWhiteSpace(DatabaseOwner))
+        {
+            errors.Add($"{DatabaseOwnerKey} is not set. It is the PostgreSQL connection string of the user that " +
+                       "owns the tables, for migrations and the job queue, for example " +
                        "\"Host=db;Database=bigfatfile;Username=bigfatfile;Password=...\".");
         }
 
@@ -32,6 +42,8 @@ internal sealed class OriginSettings
     }
 
     public string Database { get; }
+
+    public string DatabaseOwner { get; }
 
     public string ModulesPath { get; }
 
