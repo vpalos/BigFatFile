@@ -3,7 +3,9 @@ using Npgsql;
 
 namespace BigFatFile.Origin.Models;
 
-/// <summary>The SQL for the <c>tenants</c> table.</summary>
+/// <summary>
+/// The SQL for the <c>tenants</c> table.
+/// </summary>
 internal static class TenantModel
 {
     public sealed record Row(Guid Id, string Name, DateTimeOffset CreatedAt);

@@ -4,12 +4,16 @@ using Npgsql;
 
 namespace BigFatFile.Origin.Models;
 
-/// <summary>The SQL for tenant memberships, the <c>tenant_members</c> table.</summary>
+/// <summary>
+/// The SQL for tenant memberships, the <c>tenant_members</c> table.
+/// </summary>
 internal static class MemberModel
 {
     public sealed record UserTenant(Guid TenantId, string TenantName, TenantRole Role);
 
-    /// <summary>The user's tenants, with the user's role in each, ordered by name.</summary>
+    /// <summary>
+    /// The user's tenants, with the user's role in each, ordered by name.
+    /// </summary>
     public static async Task<IReadOnlyList<UserTenant>> ListTenantsOfUserAsync(
         NpgsqlConnection connection, Guid userId, CancellationToken cancellationToken)
     {
