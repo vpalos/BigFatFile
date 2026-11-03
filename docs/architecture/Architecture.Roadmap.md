@@ -223,6 +223,9 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 
 - Apps as first-class objects: registration, scopes, installation per tenant, the
   developer role and page.
+- The client-credentials flow, for an App that acts as itself:
+    - the token gets its tenant from the App's installation in that tenant;
+    - the flow stays off until then, because a token without a tenant reaches nothing.
 - Webhooks, custom metadata, App-managed folders.
 - `@bigfatfile/ui` as Svelte and web components; `BigFatFile.Testing`.
 - `docs/developers/` with the quickstart and one guide per primitive; `examples/`.

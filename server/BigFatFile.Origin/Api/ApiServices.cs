@@ -101,28 +101,19 @@ internal static class ApiServices
         Description = "The web app's session, on the same origin only. Write operations that use it must also send the X-CSRF-Token header, with the token from GET /api/v1/account/csrf. A write operation without that header gets 400 with the code csrf_token_invalid.",
     };
 
-    private static OpenApiSecurityScheme OAuthScheme()
+    private static OpenApiSecurityScheme OAuthScheme() => new()
     {
-        var scopes = BffScopes.Descriptions.ToDictionary();
-        return new OpenApiSecurityScheme
+        Type = SecuritySchemeType.OAuth2,
+        Description = "Tokens from this server's OpenID Connect endpoints. The web app on the same origin uses its session cookie instead.",
+        Flows = new OpenApiOAuthFlows
         {
-            Type = SecuritySchemeType.OAuth2,
-            Description = "Tokens from this server's OpenID Connect endpoints. The web app on the same origin uses its session cookie instead.",
-            Flows = new OpenApiOAuthFlows
+            AuthorizationCode = new OpenApiOAuthFlow
             {
-                AuthorizationCode = new OpenApiOAuthFlow
-                {
-                    AuthorizationUrl = new Uri("/connect/authorize", UriKind.Relative),
-                    TokenUrl = new Uri("/connect/token", UriKind.Relative),
-                    RefreshUrl = new Uri("/connect/token", UriKind.Relative),
-                    Scopes = scopes,
-                },
-                ClientCredentials = new OpenApiOAuthFlow
-                {
-                    TokenUrl = new Uri("/connect/token", UriKind.Relative),
-                    Scopes = scopes,
-                },
+                AuthorizationUrl = new Uri("/connect/authorize", UriKind.Relative),
+                TokenUrl = new Uri("/connect/token", UriKind.Relative),
+                RefreshUrl = new Uri("/connect/token", UriKind.Relative),
+                Scopes = BffScopes.Descriptions.ToDictionary(),
             },
-        };
-    }
+        },
+    };
 }

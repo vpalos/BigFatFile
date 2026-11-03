@@ -68,19 +68,6 @@ internal static partial class SignIn
         return await token.Content.ReadFromJsonAsync<JsonElement>();
     }
 
-    public static async Task<JsonElement> ClientCredentialsAsync(HttpClient client, string scope)
-    {
-        var token = await client.PostAsync("/connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["grant_type"] = "client_credentials",
-            ["client_id"] = DevelopmentSeed.AppClientId,
-            ["client_secret"] = DevelopmentSeed.AppClientSecret,
-            ["scope"] = scope,
-        }));
-        Assert.Equal(HttpStatusCode.OK, token.StatusCode);
-        return await token.Content.ReadFromJsonAsync<JsonElement>();
-    }
-
     private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     [GeneratedRegex("name=\"__RequestVerificationToken\" value=\"([^\"]+)\"")]

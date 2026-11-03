@@ -14,7 +14,7 @@ namespace BigFatFile.Origin.Database.Seeds;
 /// This data is seeded when <c>BFF_DEVELOPMENT_SEED=true</c> (only during development):
 /// - a demo tenant;
 /// - a demo user;
-/// - two ready-made clients.
+/// - a ready-made client for the CLI.
 /// </summary>
 internal sealed class DevelopmentSeed(
     UserManager<BffUser> users,
@@ -36,18 +36,11 @@ internal sealed class DevelopmentSeed(
     public const string CliClientId = "bff-dev-cli";
     public const string CliRedirectUri = "http://127.0.0.1:53682/callback";
 
-    /// <summary>
-    /// A confidential client for an App acting as itself:
-    /// - client credentials.
-    /// </summary>
-    public const string AppClientId = "bff-dev-app";
-    public const string AppClientSecret = "bff-dev-app-secret";
-
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         var user = await EnsureUserAsync();
         await EnsureTenantAsync(user, cancellationToken);
-        await EnsureClientsAsync(cancellationToken);
+        await EnsureCliClientAsync(cancellationToken);
         logger.LogWarning("Development seeding is ON ({Email}).", UserEmail);
     }
 
@@ -85,7 +78,7 @@ internal sealed class DevelopmentSeed(
         await transaction.CommitAsync(cancellationToken);
     }
 
-    private async Task EnsureClientsAsync(CancellationToken cancellationToken)
+    private async Task EnsureCliClientAsync(CancellationToken cancellationToken)
     {
         if (await applications.FindByClientIdAsync(CliClientId, cancellationToken) is null)
         {
@@ -112,24 +105,6 @@ internal sealed class DevelopmentSeed(
             }
 
             await applications.CreateAsync(cli, cancellationToken);
-        }
-
-        if (await applications.FindByClientIdAsync(AppClientId, cancellationToken) is null)
-        {
-            var app = new OpenIddictApplicationDescriptor
-            {
-                ClientId = AppClientId,
-                ClientSecret = AppClientSecret,
-                DisplayName = "Development App",
-                ClientType = ClientTypes.Confidential,
-                Permissions = { Permissions.Endpoints.Token, Permissions.GrantTypes.ClientCredentials },
-            };
-            foreach (var scope in BffScopes.Api)
-            {
-                app.Permissions.Add(BffScopes.Permission(scope));
-            }
-
-            await applications.CreateAsync(app, cancellationToken);
         }
     }
 

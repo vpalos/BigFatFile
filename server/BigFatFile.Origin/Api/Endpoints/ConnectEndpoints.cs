@@ -61,12 +61,7 @@ internal static class ConnectEndpoints
         return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
-    private static async Task<IResult> TokenAsync(
-        HttpContext context,
-        UserManager<BffUser> users,
-        SignInManager<BffUser> signIn,
-        IOpenIddictApplicationManager applications,
-        IOpenIddictScopeManager scopes)
+    private static async Task<IResult> TokenAsync(HttpContext context, UserManager<BffUser> users, SignInManager<BffUser> signIn)
     {
         var request = context.GetOpenIddictServerRequest()
             ?? throw new InvalidOperationException("OpenIddict did not attach the token request.");
@@ -88,19 +83,6 @@ internal static class ConnectEndpoints
                 granted.Principal!.GetClaim(TenantClaims.TenantId),
                 granted.Principal!.GetScopes(),
                 granted.Principal!.GetResources());
-            return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-        }
-
-        if (request.IsClientCredentialsGrantType())
-        {
-            var application = await applications.FindByClientIdAsync(request.ClientId!)
-                ?? throw new InvalidOperationException("OpenIddict accepted a request from an unknown client.");
-
-            var principal = TokenIdentity.ForApp(
-                request.ClientId!,
-                await applications.GetDisplayNameAsync(application),
-                request.GetScopes(),
-                await scopes.ListResourcesAsync(request.GetScopes()).ToListAsync());
             return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 

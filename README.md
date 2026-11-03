@@ -36,14 +36,10 @@ The design is explained in detail in `docs/architecture`.
 - Seeded data:
     - tenant "Demo";
     - user `demo@bigfatfile.local` (password `bigfatfile-demo`, admin of tenant "Demo");
-    - two clients:
-        - `bff-dev-cli`:
-            - public client;
-            - authorization code is obtained via PKCE;
-            - redirected to `http://127.0.0.1:53682/callback`;
-        - `bff-dev-app`:
-            - confidential client;
-            - secret is `bff-dev-app-secret`.
+    - client `bff-dev-cli`:
+        - public client;
+        - authorization code is obtained via PKCE;
+        - redirected to `http://127.0.0.1:53682/callback`.
 
 ## 3. Debugging
 

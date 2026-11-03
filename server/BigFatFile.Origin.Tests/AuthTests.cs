@@ -175,15 +175,19 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
     }
 
     [Fact]
-    public async Task AnAppTokenIsNotAUser()
+    public async Task TheTokenEndpointRefusesClientCredentials()
     {
         using var client = origin.CreateClient();
-        var tokens = await SignIn.ClientCredentialsAsync(client, BffScopes.FilesRead);
 
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokens.GetProperty("access_token").GetString());
-        var response = await client.GetAsync("/api/v1/account/me", TestContext.Current.CancellationToken);
+        var response = await client.PostAsync("/connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["grant_type"] = "client_credentials",
+            ["client_id"] = DevelopmentSeed.CliClientId,
+        }), TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+        Assert.Equal("unsupported_grant_type", body.GetProperty("error").GetString());
     }
 
     [Fact]

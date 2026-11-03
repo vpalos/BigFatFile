@@ -26,15 +26,6 @@ internal static class TokenIdentity
         return Finish(identity, scopes, resources);
     }
 
-    /// <summary>A client-credentials token belongs to the App, so its subject is the client ID.</summary>
-    public static ClaimsPrincipal ForApp(string clientId, string? name, IEnumerable<string> scopes, IEnumerable<string> resources)
-    {
-        var identity = NewIdentity();
-        identity.SetClaim(Claims.Subject, clientId)
-            .SetClaim(Claims.Name, name);
-        return Finish(identity, scopes, resources);
-    }
-
     private static ClaimsIdentity NewIdentity() =>
         new(TokenValidationParameters.DefaultAuthenticationType, Claims.Name, Claims.Role);
 

@@ -11,7 +11,7 @@ internal static class TenantClaims
     public static Guid? TenantOf(ClaimsPrincipal? principal) =>
         Guid.TryParse(principal?.FindFirstValue(TenantId), out var id) ? id : null;
 
-    /// <summary>The signed-in user. A client-credentials token belongs to an App, whose subject is its client ID, so it has no user.</summary>
+    /// <summary>The signed-in user.</summary>
     public static Guid? UserOf(ClaimsPrincipal? principal) =>
         Guid.TryParse(principal?.FindFirstValue(Claims.Subject), out var id) ? id : null;
 }

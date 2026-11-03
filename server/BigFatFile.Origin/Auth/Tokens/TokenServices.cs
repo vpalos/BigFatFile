@@ -35,8 +35,7 @@ internal static class TokenServices
 
                 options.AllowAuthorizationCodeFlow()
                     .RequireProofKeyForCodeExchange()
-                    .AllowRefreshTokenFlow()
-                    .AllowClientCredentialsFlow();
+                    .AllowRefreshTokenFlow();
 
                 options.RegisterScopes([.. BffScopes.All]);
 
