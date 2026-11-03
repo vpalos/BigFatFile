@@ -1,6 +1,7 @@
 using BigFatFile.Origin.Auth.Tokens;
 using BigFatFile.Origin.Database;
 using BigFatFile.Origin.Database.Seeds;
+using BigFatFile.Origin.Server.Machine;
 
 namespace BigFatFile.Origin.Server;
 

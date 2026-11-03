@@ -9,7 +9,6 @@ using BigFatFile.Origin.Database;
 using BigFatFile.Origin.Database.Seeds;
 using BigFatFile.Origin.Jobs;
 using BigFatFile.Origin.Modules;
-using BigFatFile.Origin.Server.Features;
 using BigFatFile.Origin.Server.Health;
 using BigFatFile.Origin.Server.Observability;
 using Microsoft.Extensions.Logging.Console;
