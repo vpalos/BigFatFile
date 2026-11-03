@@ -49,7 +49,7 @@ internal sealed class DevSeed(
         var user = await EnsureUserAsync();
         await EnsureTenantAsync(user, cancellationToken);
         await EnsureClientsAsync(cancellationToken);
-        logger.LogWarning("Development seed is on: {Email} signs in with the published demo password", UserEmail);
+        logger.LogWarning("Development seeding is ON ({Email}).", UserEmail);
     }
 
     private async Task<BffUser> EnsureUserAsync()

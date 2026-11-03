@@ -6,7 +6,10 @@ namespace BigFatFile.Server.Database;
 
 internal static class DatabaseServices
 {
-    /// <summary>The key of the owner's data source, for migrations and the job queue. Requests use the unkeyed one.</summary>
+    /// <summary>
+    /// The key of the owner's data source, for migrations and the job queue.
+    /// Requests use the unkeyed one.
+    /// </summary>
     public const string Owner = "owner";
 
     public static IServiceCollection AddDatabase(this IServiceCollection services) =>

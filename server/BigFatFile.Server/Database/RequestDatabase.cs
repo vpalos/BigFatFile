@@ -8,7 +8,8 @@ namespace BigFatFile.Server.Database;
 /// user, so row-level security shows only their rows. Nothing is saved until a handler
 /// calls <see cref="CommitAsync"/>.
 /// </summary>
-internal sealed class RequestDatabase(NpgsqlDataSource dataSource, IHttpContextAccessor http) : IAsyncDisposable
+internal sealed class RequestDatabase(NpgsqlDataSource dataSource, IHttpContextAccessor http)
+    : IAsyncDisposable
 {
     private NpgsqlConnection? connection;
     private NpgsqlTransaction? transaction;
@@ -20,7 +21,10 @@ internal sealed class RequestDatabase(NpgsqlDataSource dataSource, IHttpContextA
             var principal = http.HttpContext?.User;
             connection = await dataSource.OpenConnectionAsync(cancellationToken);
             transaction = await TenantScope.BeginAsync(
-                connection, TenantClaims.TenantOf(principal), TenantClaims.UserOf(principal), cancellationToken);
+                connection,
+                TenantClaims.TenantOf(principal),
+                TenantClaims.UserOf(principal),
+                cancellationToken);
         }
 
         return connection;

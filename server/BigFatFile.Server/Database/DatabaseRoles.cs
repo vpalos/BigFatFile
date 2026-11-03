@@ -6,7 +6,7 @@ namespace BigFatFile.Server.Database;
 
 /// <summary>
 /// Prepares the user in <c>BFF_DATABASE</c>, which requests connect as. It runs as the owner,
-/// after the migrations, and stops startup when row-level security would not apply to that user.
+/// after the migrations, and stops startup when RLS would not apply to that user.
 /// </summary>
 internal sealed class DatabaseRoles(
     OriginSettings settings,
@@ -28,9 +28,10 @@ internal sealed class DatabaseRoles(
             if (!await connection.ExecuteScalarAsync<bool>("SELECT row_security_active('tenant_members')"))
             {
                 throw new InvalidOperationException(
-                    $"{OriginSettings.DatabaseKey} connects as {appLogin.Username}, and row-level security does not apply to that user: " +
-                    "it is a superuser, it may bypass row-level security, or it owns the tables. " +
-                    $"Use a user that does none of these; {OriginSettings.DatabaseOwnerKey} is the one that owns the tables.");
+                    $"{OriginSettings.DatabaseKey} connects as {appLogin.Username}, which does not obey RLS (row-level security). " +
+                    $"It either is a superuser, is allowed to bypass RLS or owns the tables. " +
+                    $"You must use a user that does none of those. " +
+                    $"{OriginSettings.DatabaseOwnerKey} is the one that owns the tables.");
             }
         }
     }
