@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BigFatFile.Contracts.Api;
-using BigFatFile.Origin.Server.Development;
+using BigFatFile.Origin.Database.Seeds;
 using Dapper;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -25,7 +25,7 @@ public sealed class TenantIsolationTests(Origin origin, Postgres postgres) : ICl
     {
         var otherTenant = await TestData.CreateTenantAsync(origin, "Other");
         using var browser = origin.CreateClient();
-        await SignIn.SignInWithPasswordAsync(browser, DevSeed.UserEmail, DevSeed.UserPassword);
+        await SignIn.SignInWithPasswordAsync(browser, DevelopmentSeed.UserEmail, DevelopmentSeed.UserPassword);
         var ownTenant = (await browser.GetFromJsonAsync<Me>("/api/v1/account/me", Cancellation))!.TenantId!.Value;
 
         var endpoints = origin.Factory.Services.GetRequiredService<EndpointDataSource>().Endpoints
@@ -65,12 +65,12 @@ public sealed class TenantIsolationTests(Origin origin, Postgres postgres) : ICl
     public async Task TheSessionsOwnTenantIsServed()
     {
         using var browser = origin.CreateClient();
-        await SignIn.SignInWithPasswordAsync(browser, DevSeed.UserEmail, DevSeed.UserPassword);
+        await SignIn.SignInWithPasswordAsync(browser, DevelopmentSeed.UserEmail, DevelopmentSeed.UserPassword);
         var me = await browser.GetFromJsonAsync<Me>("/api/v1/account/me", Cancellation);
 
         var tenant = await browser.GetFromJsonAsync<Tenant>($"/api/v1/tenants/{me!.TenantId}", Cancellation);
 
-        Assert.Equal(DevSeed.TenantName, tenant!.Name);
+        Assert.Equal(DevelopmentSeed.TenantName, tenant!.Name);
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public sealed class TenantIsolationTests(Origin origin, Postgres postgres) : ICl
         await using var factory = origin.Factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
             services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero)));
         using var browser = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });
-        await SignIn.SignInWithPasswordAsync(browser, DevSeed.UserEmail, DevSeed.UserPassword);
+        await SignIn.SignInWithPasswordAsync(browser, DevelopmentSeed.UserEmail, DevelopmentSeed.UserPassword);
 
         var refreshed = await browser.GetAsync("/api/v1/account/me", Cancellation);
         var me = await browser.GetFromJsonAsync<Me>("/api/v1/account/me", Cancellation);

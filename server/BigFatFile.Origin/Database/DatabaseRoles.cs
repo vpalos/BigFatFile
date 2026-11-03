@@ -1,4 +1,4 @@
-using BigFatFile.Origin.Server.Configuration;
+using BigFatFile.Origin.Server;
 using Dapper;
 using Npgsql;
 

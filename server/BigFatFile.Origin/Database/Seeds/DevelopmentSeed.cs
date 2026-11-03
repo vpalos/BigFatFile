@@ -1,7 +1,6 @@
 using BigFatFile.Contracts.Api;
 using BigFatFile.Origin.Auth.Tokens;
 using BigFatFile.Origin.Auth.Users;
-using BigFatFile.Origin.Database;
 using BigFatFile.Origin.Jobs;
 using BigFatFile.Origin.Models;
 using Microsoft.AspNetCore.Identity;
@@ -9,21 +8,21 @@ using Npgsql;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
-namespace BigFatFile.Origin.Server.Development;
+namespace BigFatFile.Origin.Database.Seeds;
 
 /// <summary>
-/// This data is seeded when <c>BFF_DEV_SEED=true</c> (only during development):
+/// This data is seeded when <c>BFF_DEVELOPMENT_SEED=true</c> (only during development):
 /// - a demo tenant;
 /// - a demo user;
 /// - two ready-made clients.
 /// </summary>
-internal sealed class DevSeed(
+internal sealed class DevelopmentSeed(
     UserManager<BffUser> users,
     RoleManager<IdentityRole<Guid>> roles,
     IOpenIddictApplicationManager applications,
     // Creating a tenant is outside any one tenant, so it runs as the owner.
     [FromKeyedServices(DatabaseServices.Owner)] NpgsqlDataSource dataSource,
-    ILogger<DevSeed> logger)
+    ILogger<DevelopmentSeed> logger)
 {
     public const string UserEmail = "demo@bigfatfile.local";
     public const string UserPassword = "bigfatfile-demo";

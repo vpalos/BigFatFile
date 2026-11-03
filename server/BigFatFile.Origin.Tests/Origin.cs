@@ -33,7 +33,7 @@ public class Origin(Postgres postgres) : IAsyncLifetime
             .UseEnvironment("Development")
             .UseSetting("BFF_DATABASE", AppConnectionString)
             .UseSetting("BFF_DATABASE_OWNER", ConnectionString)
-            .UseSetting("BFF_DEV_SEED", "true")
+            .UseSetting("BFF_DEVELOPMENT_SEED", "true")
             .UseSetting("BFF_MODULES_PATH", ModulesPath));
         factory.CreateClient().Dispose();
     }

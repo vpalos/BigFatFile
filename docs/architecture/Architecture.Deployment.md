@@ -72,7 +72,7 @@ and updated on each platform.
     - `BFF_DATABASE_OWNER` (required): the connection string of the user that owns the tables, for
       administrative operations (e.g. migrations, job queue etc.);
     - `BFF_MODULES_PATH`: the modules folder; default `/app/modules`;
-    - `BFF_DEV_SEED`: `true` creates the demo tenant, user and clients; refused unless
+    - `BFF_DEVELOPMENT_SEED`: `true` creates the demo tenant, user and clients; refused unless
       `ASPNETCORE_ENVIRONMENT` is `Development`;
     - `OTEL_*`: the standard OpenTelemetry variables (`Architecture.Observability.md`).
 - The cloud and paying dedicated instances run the licensed image with a licence key;

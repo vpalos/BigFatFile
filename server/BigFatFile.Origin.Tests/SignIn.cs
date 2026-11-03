@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using BigFatFile.Origin.Server.Development;
+using BigFatFile.Origin.Database.Seeds;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace BigFatFile.Origin.Tests;
@@ -42,8 +42,8 @@ internal static partial class SignIn
 
         var authorize = await browser.GetAsync(QueryHelpers.AddQueryString("/connect/authorize", new Dictionary<string, string?>
         {
-            ["client_id"] = DevSeed.CliClientId,
-            ["redirect_uri"] = DevSeed.CliRedirectUri,
+            ["client_id"] = DevelopmentSeed.CliClientId,
+            ["redirect_uri"] = DevelopmentSeed.CliRedirectUri,
             ["response_type"] = "code",
             ["scope"] = scope,
             ["state"] = "test-state",
@@ -52,15 +52,15 @@ internal static partial class SignIn
         }));
         Assert.Equal(HttpStatusCode.Redirect, authorize.StatusCode);
         var callback = authorize.Headers.Location!;
-        Assert.StartsWith(DevSeed.CliRedirectUri, callback.ToString());
+        Assert.StartsWith(DevelopmentSeed.CliRedirectUri, callback.ToString());
         var query = QueryHelpers.ParseQuery(callback.Query);
         Assert.Equal("test-state", query["state"].ToString());
 
         var token = await browser.PostAsync("/connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["grant_type"] = "authorization_code",
-            ["client_id"] = DevSeed.CliClientId,
-            ["redirect_uri"] = DevSeed.CliRedirectUri,
+            ["client_id"] = DevelopmentSeed.CliClientId,
+            ["redirect_uri"] = DevelopmentSeed.CliRedirectUri,
             ["code"] = query["code"].ToString(),
             ["code_verifier"] = verifier,
         }));
@@ -73,8 +73,8 @@ internal static partial class SignIn
         var token = await client.PostAsync("/connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["grant_type"] = "client_credentials",
-            ["client_id"] = DevSeed.AppClientId,
-            ["client_secret"] = DevSeed.AppClientSecret,
+            ["client_id"] = DevelopmentSeed.AppClientId,
+            ["client_secret"] = DevelopmentSeed.AppClientSecret,
             ["scope"] = scope,
         }));
         Assert.Equal(HttpStatusCode.OK, token.StatusCode);

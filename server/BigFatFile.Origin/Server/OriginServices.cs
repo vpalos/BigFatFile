@@ -6,10 +6,9 @@ using BigFatFile.Origin.Api.Endpoints;
 using BigFatFile.Origin.Auth;
 using BigFatFile.Origin.Auth.SignIn;
 using BigFatFile.Origin.Database;
+using BigFatFile.Origin.Database.Seeds;
 using BigFatFile.Origin.Jobs;
 using BigFatFile.Origin.Modules;
-using BigFatFile.Origin.Server.Configuration;
-using BigFatFile.Origin.Server.Development;
 using BigFatFile.Origin.Server.Features;
 using BigFatFile.Origin.Server.Health;
 using BigFatFile.Origin.Server.Observability;
@@ -59,7 +58,7 @@ internal static class OriginServices
             .AddHealth()
             .AddSingleton<DatabaseMigrations>()
             .AddSingleton<DatabaseRoles>()
-            .AddScoped<DevSeed>();
+            .AddScoped<DevelopmentSeed>();
 
         var features = new LicenceFeatureGate();
         builder.Services.AddSingleton(features).AddSingleton<IFeatureGate>(features);

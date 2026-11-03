@@ -6,7 +6,7 @@ using System.Text.Json;
 using BigFatFile.Contracts.Api;
 using BigFatFile.Origin.Auth.Tokens;
 using BigFatFile.Origin.Auth.Users;
-using BigFatFile.Origin.Server.Development;
+using BigFatFile.Origin.Database.Seeds;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,8 +32,8 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
 
         var response = await browser.GetAsync(QueryHelpers.AddQueryString("/connect/authorize", new Dictionary<string, string?>
         {
-            ["client_id"] = DevSeed.CliClientId,
-            ["redirect_uri"] = DevSeed.CliRedirectUri,
+            ["client_id"] = DevelopmentSeed.CliClientId,
+            ["redirect_uri"] = DevelopmentSeed.CliRedirectUri,
             ["response_type"] = "code",
             ["scope"] = "openid",
             ["code_challenge"] = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
@@ -48,7 +48,7 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
     public async Task ACliSignsInWithPkceAndCallsMe()
     {
         using var browser = origin.CreateClient();
-        await SignIn.SignInWithPasswordAsync(browser, DevSeed.UserEmail, DevSeed.UserPassword);
+        await SignIn.SignInWithPasswordAsync(browser, DevelopmentSeed.UserEmail, DevelopmentSeed.UserPassword);
         var tokens = await SignIn.AuthorizationCodeAsync(browser, "openid profile email offline_access files.read");
 
         var accessToken = tokens.GetProperty("access_token").GetString()!;
@@ -59,9 +59,9 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
         api.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         var me = await api.GetFromJsonAsync<Me>("/api/v1/account/me", TestContext.Current.CancellationToken);
 
-        Assert.Equal(DevSeed.UserEmail, me!.Email);
+        Assert.Equal(DevelopmentSeed.UserEmail, me!.Email);
         var tenant = Assert.Single(me.Tenants);
-        Assert.Equal((DevSeed.TenantName, TenantRole.Admin), (tenant.Name, tenant.Role));
+        Assert.Equal((DevelopmentSeed.TenantName, TenantRole.Admin), (tenant.Name, tenant.Role));
         Assert.Equal(tenant.Id, me.TenantId);
     }
 
@@ -69,14 +69,14 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
     public async Task ARefreshTokenGivesANewAccessToken()
     {
         using var browser = origin.CreateClient();
-        await SignIn.SignInWithPasswordAsync(browser, DevSeed.UserEmail, DevSeed.UserPassword);
+        await SignIn.SignInWithPasswordAsync(browser, DevelopmentSeed.UserEmail, DevelopmentSeed.UserPassword);
         var tokens = await SignIn.AuthorizationCodeAsync(browser, "openid offline_access");
 
         using var client = origin.CreateClient();
         var refreshed = await client.PostAsync("/connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["grant_type"] = "refresh_token",
-            ["client_id"] = DevSeed.CliClientId,
+            ["client_id"] = DevelopmentSeed.CliClientId,
             ["refresh_token"] = tokens.GetProperty("refresh_token").GetString()!,
         }), TestContext.Current.CancellationToken);
 
@@ -93,8 +93,8 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
 
         var response = await browser.PostAsync("/account/sign-in", new FormUrlEncodedContent(new Dictionary<string, string>
         {
-            ["email"] = DevSeed.UserEmail,
-            ["password"] = DevSeed.UserPassword,
+            ["email"] = DevelopmentSeed.UserEmail,
+            ["password"] = DevelopmentSeed.UserPassword,
         }), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -104,7 +104,7 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
     public async Task SigningOutNeedsTheCsrfToken()
     {
         using var browser = origin.CreateClient();
-        await SignIn.SignInWithPasswordAsync(browser, DevSeed.UserEmail, DevSeed.UserPassword);
+        await SignIn.SignInWithPasswordAsync(browser, DevelopmentSeed.UserEmail, DevelopmentSeed.UserPassword);
 
         var response = await browser.PostAsync("/api/v1/account/sign-out", null, TestContext.Current.CancellationToken);
 
@@ -116,7 +116,7 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
     public async Task SigningOutEndsTheSession()
     {
         using var browser = origin.CreateClient();
-        await SignIn.SignInWithPasswordAsync(browser, DevSeed.UserEmail, DevSeed.UserPassword);
+        await SignIn.SignInWithPasswordAsync(browser, DevelopmentSeed.UserEmail, DevelopmentSeed.UserPassword);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/account/sign-out");
         request.Headers.Add("X-CSRF-Token", await SignIn.CsrfTokenAsync(browser));
@@ -130,11 +130,11 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
     public async Task TheSessionCookieAlsoReachesTheApi()
     {
         using var browser = origin.CreateClient();
-        await SignIn.SignInWithPasswordAsync(browser, DevSeed.UserEmail, DevSeed.UserPassword);
+        await SignIn.SignInWithPasswordAsync(browser, DevelopmentSeed.UserEmail, DevelopmentSeed.UserPassword);
 
         var me = await browser.GetFromJsonAsync<Me>("/api/v1/account/me", TestContext.Current.CancellationToken);
 
-        Assert.Equal(DevSeed.UserEmail, me!.Email);
+        Assert.Equal(DevelopmentSeed.UserEmail, me!.Email);
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
         var response = await browser.PostAsync("/account/sign-in", new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["__RequestVerificationToken"] = WebUtility.HtmlDecode(token),
-            ["email"] = DevSeed.UserEmail,
+            ["email"] = DevelopmentSeed.UserEmail,
             ["password"] = "not the password",
         }), TestContext.Current.CancellationToken);
 

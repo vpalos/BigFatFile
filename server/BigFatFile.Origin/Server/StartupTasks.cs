@@ -1,7 +1,6 @@
 using BigFatFile.Origin.Auth.Tokens;
 using BigFatFile.Origin.Database;
-using BigFatFile.Origin.Server.Configuration;
-using BigFatFile.Origin.Server.Development;
+using BigFatFile.Origin.Database.Seeds;
 
 namespace BigFatFile.Origin.Server;
 
@@ -23,10 +22,10 @@ internal static class StartupTasks
         await MigrateAsync(app, cancellationToken);
         await app.Services.GetRequiredService<ServerKeys>().LoadAsync(cancellationToken);
 
-        if (app.Services.GetRequiredService<OriginSettings>().DevSeed)
+        if (app.Services.GetRequiredService<OriginSettings>().DevelopmentSeed)
         {
             await using var scope = app.Services.CreateAsyncScope();
-            await scope.ServiceProvider.GetRequiredService<DevSeed>().RunAsync(cancellationToken);
+            await scope.ServiceProvider.GetRequiredService<DevelopmentSeed>().RunAsync(cancellationToken);
         }
     }
 }

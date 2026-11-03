@@ -6,7 +6,7 @@ using BigFatFile.Contracts.Account;
 using BigFatFile.Contracts.Api;
 using BigFatFile.Contracts.Chunking;
 using BigFatFile.Origin.Auth.Users;
-using BigFatFile.Origin.Server.Development;
+using BigFatFile.Origin.Database.Seeds;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -200,7 +200,7 @@ public sealed class OriginTests(Origin origin, Postgres postgres) : IClassFixtur
         Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync("/admin/jobs", Cancellation)).StatusCode);
 
         using var browser = origin.CreateClient();
-        await SignIn.SignInWithPasswordAsync(browser, DevSeed.UserEmail, DevSeed.UserPassword);
+        await SignIn.SignInWithPasswordAsync(browser, DevelopmentSeed.UserEmail, DevelopmentSeed.UserPassword);
         Assert.Equal(HttpStatusCode.OK, (await browser.GetAsync("/admin/jobs", Cancellation)).StatusCode);
     }
 

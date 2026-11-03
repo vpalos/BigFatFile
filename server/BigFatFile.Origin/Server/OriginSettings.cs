@@ -1,4 +1,4 @@
-namespace BigFatFile.Origin.Server.Configuration;
+namespace BigFatFile.Origin.Server;
 
 /// <summary>
 /// The server's own settings, read from <c>BFF_*</c> environment variables (or any other
@@ -9,7 +9,7 @@ internal sealed class OriginSettings
     public const string DatabaseKey = "BFF_DATABASE";
     public const string DatabaseOwnerKey = "BFF_DATABASE_OWNER";
     public const string ModulesPathKey = "BFF_MODULES_PATH";
-    public const string DevSeedKey = "BFF_DEV_SEED";
+    public const string DevelopmentSeedKey = "BFF_DEVELOPMENT_SEED";
 
     private readonly List<string> errors = [];
 
@@ -33,10 +33,10 @@ internal sealed class OriginSettings
 
         ModulesPath = ModulesPathFrom(configuration);
 
-        DevSeed = ReadBool(configuration, DevSeedKey);
-        if (DevSeed && !environment.IsDevelopment())
+        DevelopmentSeed = ReadBool(configuration, DevelopmentSeedKey);
+        if (DevelopmentSeed && !environment.IsDevelopment())
         {
-            errors.Add($"{DevSeedKey} creates a demo user with a published password, so it works only " +
+            errors.Add($"{DevelopmentSeedKey} creates a demo user with a published password, so it works only " +
                        "when ASPNETCORE_ENVIRONMENT is Development.");
         }
     }
@@ -47,7 +47,7 @@ internal sealed class OriginSettings
 
     public string ModulesPath { get; }
 
-    public bool DevSeed { get; }
+    public bool DevelopmentSeed { get; }
 
     public static OriginSettings Read(IConfiguration configuration, IHostEnvironment environment) =>
         new(configuration, environment);
