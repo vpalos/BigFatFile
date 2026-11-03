@@ -51,6 +51,12 @@ internal static class BffScopes
         [TenantMirror] = "Every chunk and the whole change feed of the tenant, for mirroring and backup Apps.",
     };
 
+    /// <summary>The scopes that the session cookie does not satisfy. Only a token can carry them.</summary>
+    public static IReadOnlySet<string> TokenOnly { get; } = new HashSet<string> { TenantMirror };
+
+    /// <summary>The scopes whose endpoints only an admin of the tenant may call, with a token or the session cookie.</summary>
+    public static IReadOnlySet<string> AdminOnly { get; } = new HashSet<string> { MembersManage, TenantAdmin };
+
     public static IReadOnlyList<string> Api { get; } = [.. Descriptions.Keys.Except(Standard)];
 
     public static IEnumerable<string> All => Standard.Concat(Api);

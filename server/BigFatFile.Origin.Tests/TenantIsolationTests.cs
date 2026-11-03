@@ -91,6 +91,21 @@ public sealed class TenantIsolationTests(Origin origin, Postgres postgres) : ICl
     }
 
     [Fact]
+    public async Task AnAdminOnlyScopeNeedsAnAdmin()
+    {
+        var userId = await TestData.CreateUserAsync(origin, "member@bigfatfile.local");
+        var tenantId = await TestData.CreateTenantAsync(origin, "Members", userId);
+        using var browser = origin.CreateClient();
+        await SignIn.SignInWithPasswordAsync(browser, "member@bigfatfile.local", TestData.Password);
+
+        var response = await browser.GetAsync($"/api/v1/tenants/{tenantId}/invitations", Cancellation);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Cancellation));
+        Assert.Equal(ErrorCodes.AdminRequired, problem.RootElement.GetProperty("code").GetString());
+    }
+
+    [Fact]
     public async Task SignInChoosesTheTenantUsedLast()
     {
         var userId = await TestData.CreateUserAsync(origin, "two-tenants@bigfatfile.local");

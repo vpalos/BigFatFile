@@ -109,6 +109,10 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 - Scopes are coarse and readable.
 - An App asks for a set; the tenant administrator sees and grants it, or the user does
   for a user-scoped App.
+- The web app's session cookie carries no scopes:
+    - it satisfies every scope except `tenant.mirror`, which only a token can carry.
+- `members.manage` and `tenant.admin` also need the user to be an admin of the tenant:
+    - anyone else gets 403 with the code `admin_required`, with a token or the cookie.
 - Files:
     - `files.read`: list, read metadata, download; manifests and chunk grants;
     - `files.write`: create, upload, rename, move, trash, restore; chunked uploads.

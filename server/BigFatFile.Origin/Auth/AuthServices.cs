@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using BigFatFile.Origin.Auth.Tokens;
 using BigFatFile.Origin.Auth.Users;
 using Microsoft.AspNetCore.Identity;
@@ -14,6 +15,10 @@ internal static class AuthServices
     public const string SessionPolicy = "session";
 
     public const string CsrfHeader = "X-CSRF-Token";
+
+    /// <summary>True when the user comes from the session cookie, not from a bearer token.</summary>
+    public static bool UsesSession(ClaimsPrincipal user) =>
+        user.Identity is { IsAuthenticated: true } identity && identity.AuthenticationType == IdentityConstants.ApplicationScheme;
 
     /// <param name="persistKeys">False only while the build writes the OpenAPI document, when there is no database.</param>
     public static IServiceCollection AddAuth(this IServiceCollection services, bool persistKeys)

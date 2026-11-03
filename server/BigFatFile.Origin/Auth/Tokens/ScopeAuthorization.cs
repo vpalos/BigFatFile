@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using OpenIddict.Abstractions;
 
 namespace BigFatFile.Origin.Auth.Tokens;
@@ -28,15 +27,10 @@ internal sealed class ScopeRequirementHandler : AuthorizationHandler<ScopeRequir
 {
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ScopeRequirement requirement)
     {
-        var identity = context.User.Identity;
-        if (identity?.IsAuthenticated != true)
-        {
-            return Task.CompletedTask;
-        }
-
         // The web app on the same origin uses the session cookie, which carries no scopes.
-        // It may do whatever its user may do.
-        if (identity.AuthenticationType == IdentityConstants.ApplicationScheme || context.User.HasScope(requirement.Scope))
+        // It may do whatever its user may do, except what only a token may do.
+        var bySession = AuthServices.UsesSession(context.User) && !BffScopes.TokenOnly.Contains(requirement.Scope);
+        if (bySession || (context.User.Identity?.IsAuthenticated == true && context.User.HasScope(requirement.Scope)))
         {
             context.Succeed(requirement);
         }

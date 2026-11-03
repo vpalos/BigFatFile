@@ -1,12 +1,14 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using BigFatFile.Contracts.Api;
 using BigFatFile.Origin.Auth.Tokens;
 using BigFatFile.Origin.Auth.Users;
 using BigFatFile.Origin.Database.Seeds;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -188,6 +190,19 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
         Assert.Equal("unsupported_grant_type", body.GetProperty("error").GetString());
+    }
+
+    [Theory]
+    [InlineData(BffScopes.FilesRead, true)]
+    [InlineData(BffScopes.TenantMirror, false)]
+    public async Task TheSessionSatisfiesEveryScopeButTheTokenOnlyOnes(string scope, bool satisfied)
+    {
+        var session = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Name, "someone")], IdentityConstants.ApplicationScheme));
+        var context = new AuthorizationHandlerContext([new ScopeRequirement(scope)], session, resource: null);
+
+        await new ScopeRequirementHandler().HandleAsync(context);
+
+        Assert.Equal(satisfied, context.HasSucceeded);
     }
 
     [Fact]

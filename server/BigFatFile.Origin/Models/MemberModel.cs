@@ -30,11 +30,15 @@ internal static class MemberModel
         return [.. rows.Select(row => new UserTenant(row.TenantId, row.TenantName, Enum.Parse<TenantRole>(row.Role, ignoreCase: true)))];
     }
 
-    public static Task<bool> ExistsAsync(NpgsqlConnection connection, Guid tenantId, Guid userId, CancellationToken cancellationToken) =>
-        connection.ExecuteScalarAsync<bool>(new CommandDefinition(
-            "SELECT EXISTS (SELECT 1 FROM tenant_members WHERE tenant_id = @TenantId AND user_id = @UserId)",
+    /// <returns>The user's role in the tenant, or null when the user is not a member of it.</returns>
+    public static async Task<TenantRole?> RoleOfAsync(NpgsqlConnection connection, Guid tenantId, Guid userId, CancellationToken cancellationToken)
+    {
+        var role = await connection.QueryFirstOrDefaultAsync<string>(new CommandDefinition(
+            "SELECT role FROM tenant_members WHERE tenant_id = @TenantId AND user_id = @UserId",
             new { TenantId = tenantId, UserId = userId },
             cancellationToken: cancellationToken));
+        return role is null ? null : Enum.Parse<TenantRole>(role, ignoreCase: true);
+    }
 
     /// <returns>The tenant that the user signed in to last, or else the oldest membership; null when the user is a member of none.</returns>
     public static Task<Guid?> LastSignedInTenantAsync(NpgsqlConnection connection, Guid userId, CancellationToken cancellationToken) =>

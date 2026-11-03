@@ -75,8 +75,9 @@ internal static class ApiServices
                     });
                 }
 
-                // The scope handler lets the session cookie through, so every scoped endpoint also accepts it.
-                if (scopes.Count > 0 || policies.Contains(AuthServices.SessionPolicy))
+                // The scope handler lets the session cookie through, except for token-only scopes.
+                var session = scopes.Count > 0 && !scopes.Any(BffScopes.TokenOnly.Contains);
+                if (session || policies.Contains(AuthServices.SessionPolicy))
                 {
                     operation.Security ??= [];
                     operation.Security.Add(new OpenApiSecurityRequirement
