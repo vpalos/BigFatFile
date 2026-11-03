@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using BigFatFile.Origin.Configuration;
+using BigFatFile.Origin.Server.Configuration;
 using Npgsql;
 
 namespace BigFatFile.Origin.Database;

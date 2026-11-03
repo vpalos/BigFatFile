@@ -1,9 +1,9 @@
 using BigFatFile.Origin.Auth.Tokens;
-using BigFatFile.Origin.Configuration;
 using BigFatFile.Origin.Database;
-using BigFatFile.Origin.Development;
+using BigFatFile.Origin.Server.Configuration;
+using BigFatFile.Origin.Server.Development;
 
-namespace BigFatFile.Origin.Hosting;
+namespace BigFatFile.Origin.Server;
 
 /// <summary>
 /// What runs between building the app and serving the first request, in this order.

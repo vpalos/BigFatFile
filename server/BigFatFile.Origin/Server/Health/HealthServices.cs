@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Npgsql;
 
-namespace BigFatFile.Origin.Health;
+namespace BigFatFile.Origin.Server.Health;
 
 internal static class HealthServices
 {

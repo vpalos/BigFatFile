@@ -2,8 +2,8 @@ using BigFatFile.Contracts.Account;
 using BigFatFile.Contracts.Api;
 using BigFatFile.Contracts.Chunking;
 using BigFatFile.Contracts.Names;
-using BigFatFile.Origin.Features;
-using BigFatFile.Origin.Hosting;
+using BigFatFile.Origin.Server;
+using BigFatFile.Origin.Server.Features;
 
 namespace BigFatFile.Origin.Api.Endpoints;
 
@@ -12,7 +12,7 @@ internal static class MetaEndpoints
     public static void MapMetaEndpoints(this IEndpointRouteBuilder meta) =>
         meta.MapGet("", (LicenceFeatureGate features) => new Meta(
                 ApiVersion.Current,
-                OriginHost.ServerVersion,
+                OriginServices.ServerVersion,
                 new MetaChunker(
                     ChunkerParameters.Algorithm,
                     ChunkerParameters.MinSize,

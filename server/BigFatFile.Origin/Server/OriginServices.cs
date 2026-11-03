@@ -5,22 +5,22 @@ using BigFatFile.Origin.Api;
 using BigFatFile.Origin.Api.Endpoints;
 using BigFatFile.Origin.Auth;
 using BigFatFile.Origin.Auth.SignIn;
-using BigFatFile.Origin.Configuration;
 using BigFatFile.Origin.Database;
-using BigFatFile.Origin.Development;
-using BigFatFile.Origin.Features;
-using BigFatFile.Origin.Health;
 using BigFatFile.Origin.Jobs;
 using BigFatFile.Origin.Modules;
-using BigFatFile.Origin.Observability;
+using BigFatFile.Origin.Server.Configuration;
+using BigFatFile.Origin.Server.Development;
+using BigFatFile.Origin.Server.Features;
+using BigFatFile.Origin.Server.Health;
+using BigFatFile.Origin.Server.Observability;
 using Microsoft.Extensions.Logging.Console;
 
-namespace BigFatFile.Origin.Hosting;
+namespace BigFatFile.Origin.Server;
 
-internal static class OriginHost
+internal static class OriginServices
 {
     public static string ServerVersion { get; } =
-        typeof(OriginHost).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
+        typeof(OriginServices).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
 
     /// <summary>
     /// True while the build runs the app with a mock server to write <c>api/openapi.json</c>.

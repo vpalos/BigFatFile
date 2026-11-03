@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using BigFatFile.Origin.Development;
+using BigFatFile.Origin.Server.Development;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace BigFatFile.Origin.Tests;

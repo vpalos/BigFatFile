@@ -1,4 +1,4 @@
-namespace BigFatFile.Origin.Health;
+namespace BigFatFile.Origin.Server.Health;
 
 /// <summary>
 /// <c>health</c>: asks the running server for <c>/health</c> and exits with 0 when it is

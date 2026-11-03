@@ -1,6 +1,6 @@
 using BigFatFile.Abstractions.Features;
 
-namespace BigFatFile.Origin.Features;
+namespace BigFatFile.Origin.Server.Features;
 
 /// <summary>
 /// Answers from the licence. This build reads no licence, so every reserved key is off.

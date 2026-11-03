@@ -6,7 +6,7 @@ using BigFatFile.Contracts.Account;
 using BigFatFile.Contracts.Api;
 using BigFatFile.Contracts.Chunking;
 using BigFatFile.Origin.Auth.Users;
-using BigFatFile.Origin.Development;
+using BigFatFile.Origin.Server.Development;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

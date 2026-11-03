@@ -6,7 +6,7 @@ using System.Text.Json;
 using BigFatFile.Contracts.Api;
 using BigFatFile.Origin.Auth.Tokens;
 using BigFatFile.Origin.Auth.Users;
-using BigFatFile.Origin.Development;
+using BigFatFile.Origin.Server.Development;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;

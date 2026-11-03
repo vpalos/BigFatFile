@@ -9,7 +9,7 @@ using Npgsql;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
-namespace BigFatFile.Origin.Development;
+namespace BigFatFile.Origin.Server.Development;
 
 /// <summary>
 /// This data is seeded when <c>BFF_DEV_SEED=true</c> (only during development):

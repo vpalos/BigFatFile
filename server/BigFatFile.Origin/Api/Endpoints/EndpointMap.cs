@@ -1,7 +1,7 @@
 using BigFatFile.Origin.Api.Errors;
-using BigFatFile.Origin.Health;
 using BigFatFile.Origin.Jobs;
 using BigFatFile.Origin.Modules;
+using BigFatFile.Origin.Server.Health;
 using Hangfire;
 using Scalar.AspNetCore;
 

@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BigFatFile.Contracts.Api;
-using BigFatFile.Origin.Development;
+using BigFatFile.Origin.Server.Development;
 using Dapper;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;

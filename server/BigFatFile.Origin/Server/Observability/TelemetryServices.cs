@@ -5,7 +5,7 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
-namespace BigFatFile.Origin.Observability;
+namespace BigFatFile.Origin.Server.Observability;
 
 internal static class TelemetryServices
 {

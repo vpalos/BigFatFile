@@ -1,4 +1,4 @@
-namespace BigFatFile.Origin.Hosting;
+namespace BigFatFile.Origin.Server;
 
 /// <summary>
 /// Warns when the server's network does not use BBR. Uploads over lossy links need BBR

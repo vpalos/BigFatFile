@@ -1,4 +1,4 @@
-namespace BigFatFile.Origin.Configuration;
+namespace BigFatFile.Origin.Server.Configuration;
 
 /// <summary>
 /// The server's own settings, read from <c>BFF_*</c> environment variables (or any other
