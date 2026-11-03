@@ -49,7 +49,7 @@ apps/       BFF Apps provided alongside the core:
             BigFatFile.Replica
 
 server/     the Origin server (mostly the "core"):
-            BigFatFile.Server
+            BigFatFile.Origin
             BigFatFile.Abstractions
 
 modules/    the module template, open-core modules

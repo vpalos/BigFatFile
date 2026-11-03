@@ -15,14 +15,14 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
       second specification.
 - The committed `openapi.json` is the contract:
     - designed and reviewed as a diff before a feature is implemented;
-        - every build of the Server writes `api/openapi.json` from the code, so an
+        - every build of the Origin writes `api/openapi.json` from the code, so an
           endpoint stub is enough to produce the diff;
         - CI fails when the committed file differs from what the build writes;
     - the source of the SDK types;
         - the TypeScript types in `@bigfatfile/client` are generated from it, with the
           same CI check;
     - served by every instance at `/api/docs` with "try it" against that instance.
-- Every route of the Origin is mapped in one place in the Server:
+- Every route of the Origin is mapped in one place:
     - that place makes each route group, with its path, its tag and whether the spec
       includes it;
     - so it shows how the spec is put together, and the modules' routes are added
@@ -49,7 +49,7 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
         - `code`, which a client branches on;
         - `traceId`, the ID of the request's trace;
         - `errors`, only for field errors;
-    - each error is defined once in the Server, with its status, code, title and
+    - each error is defined once in the Origin, with its status, code, title and
       description:
         - the spec's example bodies and its list of every error are built from these
           definitions;

@@ -5,8 +5,8 @@
   </Folder>
   <Folder Name="/server/">
     <Project Path="server/BigFatFile.Abstractions/BigFatFile.Abstractions.csproj" />
-    <Project Path="server/BigFatFile.Server.Tests.SampleModule/BigFatFile.Server.Tests.SampleModule.csproj" />
-    <Project Path="server/BigFatFile.Server.Tests/BigFatFile.Server.Tests.csproj" />
-    <Project Path="server/BigFatFile.Server/BigFatFile.Server.csproj" />
+    <Project Path="server/BigFatFile.Origin.Tests.SampleModule/BigFatFile.Origin.Tests.SampleModule.csproj" />
+    <Project Path="server/BigFatFile.Origin.Tests/BigFatFile.Origin.Tests.csproj" />
+    <Project Path="server/BigFatFile.Origin/BigFatFile.Origin.csproj" />
   </Folder>
 </Solution>

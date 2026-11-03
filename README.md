@@ -51,7 +51,7 @@ Run a separate Origin server at the command line, for active debugging.
 Requires the dev Docker Compose infrastructure to be up.
 
 ```sh
-dotnet run --project server/BigFatFile.Server
+dotnet run --project server/BigFatFile.Origin
 ```
 
 - published at: http://localhost:5080
@@ -72,7 +72,7 @@ pnpm --filter @bigfatfile/example-sign-in start
     - `dotnet build BigFatFile.slnx`, then...
     - `dotnet test --solution BigFatFile.slnx`;
     - the tests start PostgreSQL in Docker through Testcontainers;
-    - every build of the Server rewrites `api/openapi.json`.
+    - every build of the Origin rewrites `api/openapi.json`.
 - TypeScript:
     - `pnpm install`
     - `pnpm generate` (generates types from `api/openapi.json`)

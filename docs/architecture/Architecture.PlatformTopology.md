@@ -47,7 +47,7 @@ Licensed modules are (by exception) kept in a separate repository.
 
 ### Binaries
 
-#### **BigFatFile.Server** (.NET), aka the Origin:
+#### **BigFatFile.Origin** (.NET), aka the Origin:
 
 - The same image runs/serves:
     - the API, the web UI and the real-time hub;
@@ -262,7 +262,7 @@ BigFatFile.Contracts
         |              ^     ^     ^
         |              |     |     +-- licensed modules (private repository)
         |              |     +-- open-core modules (modules/)
-        |              +-- BigFatFile.Server (the Origin) --> api/openapi.json
+        |              +-- BigFatFile.Origin --> api/openapi.json
         |
 BigFatFile.Client <-- BigFatFile.Testing
         ^

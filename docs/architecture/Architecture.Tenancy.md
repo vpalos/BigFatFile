@@ -158,7 +158,7 @@ Apps authenticate.
       those two libraries; all BigFatFile tables stay on Dapper;
     - the SQL for those tables is generated once from EF and committed as ordinary
       core scripts; EF's own migrations never run;
-        - the Server's `print-auth-schema` command prints what the current packages
+        - the Origin's `print-auth-schema` command prints what the current packages
           expect;
         - a test selects every column the EF model maps; after a package update that
           changes the model, the test fails until a new core script matches it;

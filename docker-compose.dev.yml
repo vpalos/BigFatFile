@@ -11,7 +11,7 @@ services:
       - dotnet
       - watch
       - run
-      - --project=server/BigFatFile.Server
+      - --project=server/BigFatFile.Origin
       - --no-launch-profile
       - --non-interactive
       - --property:OpenApiGenerateDocuments=false
