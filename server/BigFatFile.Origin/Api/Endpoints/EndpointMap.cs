@@ -24,7 +24,7 @@ internal static class EndpointMap
         app.MapGroup("/connect").ExcludeFromDescription().MapConnectEndpoints();
         app.MapGroup("/account").ExcludeFromDescription().MapSignInFormEndpoints();
 
-        var api = app.MapGroup("/api/v1");
+        var api = app.MapGroup("/api/v1").RequireCsrfToken();
         api.MapGroup("/meta").WithTags("meta").MapMetaEndpoints();
         api.MapGroup("/account").WithTags("account").MapAccountEndpoints();
 

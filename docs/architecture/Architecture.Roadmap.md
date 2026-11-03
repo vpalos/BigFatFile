@@ -65,7 +65,7 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 
 #### M1.1. Accounts and tenants
 
-- Status: steps 1 and 2 are done.
+- Status: steps 1, 2 and 7 are done.
 - Steps, in order:
     1. The API spec, with every endpoint of M1.1 as a stub.
     2. Tenant isolation:

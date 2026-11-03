@@ -70,8 +70,8 @@ internal static class AccountEndpoints
             .RequireAuthorization(AuthServices.SessionPolicy);
     }
 
-    private static Ok<CsrfToken> GetCsrfToken(HttpContext context) =>
-        throw new NotImplementedException();
+    private static Ok<CsrfToken> GetCsrfToken(HttpContext context, IAntiforgery antiforgery) =>
+        TypedResults.Ok(new CsrfToken(antiforgery.GetAndStoreTokens(context).RequestToken!));
 
     private static async Task<Results<Ok<Me>, ProblemHttpResult>> GetMeAsync(
         ClaimsPrincipal principal, UserManager<BffUser> users, RequestDatabase database, CancellationToken cancellationToken)
@@ -252,19 +252,11 @@ internal static class AccountEndpoints
             .WithDescription("""
                 Ends the session and removes the session cookie. The request must send the `X-CSRF-Token` header.
                 """)
-            .ProducesError(ApiErrors.CsrfTokenInvalid)
             .RequireAuthorization(AuthServices.SessionPolicy);
     }
 
-    private static async Task<Results<NoContent, ProblemHttpResult>> SignOutAsync(
-        HttpContext context, IAntiforgery antiforgery, SignInManager<BffUser> signIn)
+    private static async Task<NoContent> SignOutAsync(SignInManager<BffUser> signIn)
     {
-        // The antiforgery middleware refuses only requests to endpoints that bind form fields.
-        if (!await antiforgery.IsRequestValidAsync(context))
-        {
-            return Problems.Of(ApiErrors.CsrfTokenInvalid);
-        }
-
         await signIn.SignOutAsync();
         return TypedResults.NoContent();
     }

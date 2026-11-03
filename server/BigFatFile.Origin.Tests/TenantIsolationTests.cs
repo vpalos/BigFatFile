@@ -58,6 +58,11 @@ public sealed class TenantIsolationTests(Origin origin, Postgres postgres) : ICl
             request.Content = JsonContent.Create(new { });
         }
 
+        if (method is not "GET")
+        {
+            request.Headers.Add("X-CSRF-Token", await SignIn.CsrfTokenAsync(browser));
+        }
+
         return await browser.SendAsync(request, Cancellation);
     }
 

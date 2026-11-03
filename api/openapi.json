@@ -155,6 +155,27 @@
           "204": {
             "description": "No Content"
           },
+          "400": {
+            "description": "`csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "404": {
             "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of that tenant.",
             "content": {
@@ -205,6 +226,27 @@
         "responses": {
           "204": {
             "description": "No Content"
+          },
+          "400": {
+            "description": "`csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "`wrong_credentials`: The email address or the password is wrong. The answer does not say which one is wrong, so that it does not reveal which addresses have accounts.",
@@ -385,13 +427,22 @@
             }
           },
           "400": {
-            "description": "`invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field. For example, a password shorter than 12 characters.",
+            "description": "- `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.\n- `invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field. For example, a password shorter than 12 characters.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/HttpValidationProblemDetails"
                 },
                 "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
                   "invalid_fields": {
                     "value": {
                       "type": "urn:bigfatfile:problem:invalid_fields",
@@ -457,13 +508,22 @@
             "description": "No Content"
           },
           "400": {
-            "description": "`invalid_code`: The code is wrong or has expired. Ask for a new email: a new confirmation email, or a new password reset email. It is also the answer when the user ID is unknown.",
+            "description": "- `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.\n- `invalid_code`: The code is wrong or has expired. Ask for a new email: a new confirmation email, or a new password reset email. It is also the answer when the user ID is unknown.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 },
                 "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
                   "invalid_code": {
                     "value": {
                       "type": "urn:bigfatfile:problem:invalid_code",
@@ -522,6 +582,27 @@
         "responses": {
           "202": {
             "description": "Accepted"
+          },
+          "400": {
+            "description": "`csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -547,6 +628,27 @@
         "responses": {
           "202": {
             "description": "Accepted"
+          },
+          "400": {
+            "description": "`csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -574,13 +676,22 @@
             "description": "No Content"
           },
           "400": {
-            "description": "- `invalid_code`: The code is wrong or has expired. Ask for a new email: a new confirmation email, or a new password reset email.\n- `invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field. For example, a new password shorter than 12 characters.",
+            "description": "- `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.\n- `invalid_code`: The code is wrong or has expired. Ask for a new email: a new confirmation email, or a new password reset email.\n- `invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field. For example, a new password shorter than 12 characters.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/HttpValidationProblemDetails"
                 },
                 "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
                   "invalid_code": {
                     "value": {
                       "type": "urn:bigfatfile:problem:invalid_code",
@@ -681,6 +792,27 @@
               }
             }
           },
+          "400": {
+            "description": "`csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "404": {
             "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the token is unknown, has expired, was revoked or was already accepted.",
             "content": {
@@ -726,6 +858,27 @@
         "responses": {
           "204": {
             "description": "No Content"
+          },
+          "400": {
+            "description": "`csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the token is unknown, has expired, was revoked or was already accepted.",
@@ -1057,6 +1210,27 @@
               }
             }
           },
+          "400": {
+            "description": "`csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "`authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again.",
             "content": {
@@ -1192,6 +1366,27 @@
         "responses": {
           "204": {
             "description": "No Content"
+          },
+          "400": {
+            "description": "`csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "`authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again.",
@@ -1472,13 +1667,22 @@
             }
           },
           "400": {
-            "description": "`invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field.",
+            "description": "- `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.\n- `invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field.",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/HttpValidationProblemDetails"
                 },
                 "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
                   "invalid_fields": {
                     "value": {
                       "type": "urn:bigfatfile:problem:invalid_fields",
@@ -1634,6 +1838,27 @@
         "responses": {
           "204": {
             "description": "No Content"
+          },
+          "400": {
+            "description": "`csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "csrf_token_invalid": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:csrf_token_invalid",
+                      "title": "The X-CSRF-Token header is missing or wrong.",
+                      "status": 400,
+                      "code": "csrf_token_invalid",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "`authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again.",

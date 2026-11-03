@@ -115,6 +115,41 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
     }
 
     [Fact]
+    public async Task AWriteOperationWithTheSessionNeedsTheCsrfToken()
+    {
+        using var browser = origin.CreateClient();
+        await SignIn.SignInWithPasswordAsync(browser, DevelopmentSeed.UserEmail, DevelopmentSeed.UserPassword);
+        var me = await browser.GetFromJsonAsync<Me>("/api/v1/account/me", TestContext.Current.CancellationToken);
+
+        var response = await browser.DeleteAsync($"/api/v1/tenants/{me!.TenantId}/invitations/{Guid.CreateVersion7()}", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+        Assert.Equal(ErrorCodes.CsrfTokenInvalid, problem.GetProperty("code").GetString());
+    }
+
+    [Fact]
+    public async Task AWriteOperationWithATokenNeedsNoCsrfToken()
+    {
+        using var browser = origin.CreateClient();
+        await SignIn.SignInWithPasswordAsync(browser, DevelopmentSeed.UserEmail, DevelopmentSeed.UserPassword);
+        var me = await browser.GetFromJsonAsync<Me>("/api/v1/account/me", TestContext.Current.CancellationToken);
+        var tokens = await SignIn.AuthorizationCodeAsync(browser, "openid members.manage");
+        var path = $"/api/v1/tenants/{me!.TenantId}/invitations/{Guid.CreateVersion7()}";
+
+        using var withHeader = new HttpRequestMessage(HttpMethod.Delete, path);
+        withHeader.Headers.Add("X-CSRF-Token", await SignIn.CsrfTokenAsync(browser));
+        var bySession = await browser.SendAsync(withHeader, TestContext.Current.CancellationToken);
+
+        using var api = origin.CreateClient();
+        api.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokens.GetProperty("access_token").GetString());
+        var byToken = await api.DeleteAsync(path, TestContext.Current.CancellationToken);
+
+        Assert.NotEqual(HttpStatusCode.BadRequest, bySession.StatusCode);
+        Assert.Equal(bySession.StatusCode, byToken.StatusCode);
+    }
+
+    [Fact]
     public async Task SigningOutEndsTheSession()
     {
         using var browser = origin.CreateClient();

@@ -782,6 +782,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
             /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the user is not a member of that tenant. */
             404: {
                 headers: {
@@ -812,6 +821,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
             /** @description `wrong_credentials`: The email address or the password is wrong. The answer does not say which one is wrong, so that it does not reveal which addresses have accounts. */
             401: {
@@ -907,7 +925,10 @@ export interface operations {
                     "application/json": components["schemas"]["SignUpResult"];
                 };
             };
-            /** @description `invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field. For example, a password shorter than 12 characters. */
+            /**
+             * @description - `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.
+             *     - `invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field. For example, a password shorter than 12 characters.
+             */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -947,7 +968,10 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `invalid_code`: The code is wrong or has expired. Ask for a new email: a new confirmation email, or a new password reset email. It is also the answer when the user ID is unknown. */
+            /**
+             * @description - `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.
+             *     - `invalid_code`: The code is wrong or has expired. Ask for a new email: a new confirmation email, or a new password reset email. It is also the answer when the user ID is unknown.
+             */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -987,6 +1011,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     forgotPassword: {
@@ -1008,6 +1041,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
         };
     };
@@ -1032,7 +1074,8 @@ export interface operations {
                 content?: never;
             };
             /**
-             * @description - `invalid_code`: The code is wrong or has expired. Ask for a new email: a new confirmation email, or a new password reset email.
+             * @description - `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.
+             *     - `invalid_code`: The code is wrong or has expired. Ask for a new email: a new confirmation email, or a new password reset email.
              *     - `invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field. For example, a new password shorter than 12 characters.
              */
             400: {
@@ -1094,6 +1137,15 @@ export interface operations {
                     "application/json": components["schemas"]["InvitationPreview"];
                 };
             };
+            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
             /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the token is unknown, has expired, was revoked or was already accepted. */
             404: {
                 headers: {
@@ -1124,6 +1176,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
             /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. Here, the token is unknown, has expired, was revoked or was already accepted. */
             404: {
@@ -1267,6 +1328,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
             /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
             401: {
                 headers: {
@@ -1331,6 +1401,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Member"];
+                };
+            };
+            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
@@ -1455,7 +1534,10 @@ export interface operations {
                     "application/json": components["schemas"]["Invitation"];
                 };
             };
-            /** @description `invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field. */
+            /**
+             * @description - `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user.
+             *     - `invalid_fields`: Some fields are not valid. The `errors` field lists what is wrong with each field.
+             */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1523,6 +1605,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description `csrf_token_invalid`: The X-CSRF-Token header is missing or wrong. A write operation that uses the session cookie must send the `X-CSRF-Token` header, with the token from `GET /api/v1/account/csrf`. Get a new token after signing in or out, because each token belongs to one user. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
             /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
             401: {

@@ -3,14 +3,14 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
+using BigFatFile.Contracts.Account;
 using BigFatFile.Origin.Database.Seeds;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace BigFatFile.Origin.Tests;
 
 /// <summary>The steps a CLI goes through: sign in in the browser, then authorization code with PKCE.</summary>
-internal static partial class SignIn
+internal static class SignIn
 {
     public static async Task SignInWithPasswordAsync(HttpClient browser, string email, string password)
     {
@@ -28,12 +28,9 @@ internal static partial class SignIn
             ["returnUrl"] = "/",
         }));
 
-    /// <summary>The request token of the browser's antiforgery cookie, as the sign-in form carries it.</summary>
-    public static async Task<string> CsrfTokenAsync(HttpClient browser)
-    {
-        var form = await browser.GetStringAsync("/account/sign-in");
-        return WebUtility.HtmlDecode(AntiforgeryField().Match(form).Groups[1].Value);
-    }
+    /// <summary>A token for the browser's current user. The sign-in form accepts it too.</summary>
+    public static async Task<string> CsrfTokenAsync(HttpClient browser) =>
+        (await browser.GetFromJsonAsync<CsrfToken>("/api/v1/account/csrf"))!.Token;
 
     public static async Task<JsonElement> AuthorizationCodeAsync(HttpClient browser, string scope)
     {
@@ -69,7 +66,4 @@ internal static partial class SignIn
     }
 
     private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-
-    [GeneratedRegex("name=\"__RequestVerificationToken\" value=\"([^\"]+)\"")]
-    private static partial Regex AntiforgeryField();
 }
