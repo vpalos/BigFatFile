@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json.Nodes;
 using BigFatFile.Abstractions.Features;
 using BigFatFile.Origin.Database;
 using BigFatFile.Origin.Models;
@@ -15,9 +16,20 @@ public sealed class ModuleTests(OriginWithSampleModule origin) : IClassFixture<O
     {
         using var client = origin.CreateClient();
 
-        var text = await client.GetStringAsync("/api/sample/hello", TestContext.Current.CancellationToken);
+        var text = await client.GetStringAsync("/api/v1/sample/hello", TestContext.Current.CancellationToken);
 
         Assert.Equal("hello from the sample module", text);
+    }
+
+    [Fact]
+    public async Task TheSpecListsTheModulesEndpoints()
+    {
+        using var client = origin.CreateClient();
+
+        var spec = JsonNode.Parse(await client.GetStringAsync("/api/v1/openapi.json", TestContext.Current.CancellationToken))!;
+
+        var tags = spec["paths"]?["/api/v1/sample/hello"]?["get"]?["tags"]?.AsArray().Select(tag => tag!.GetValue<string>());
+        Assert.Equal(["sample"], tags);
     }
 
     [Fact]

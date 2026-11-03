@@ -12,7 +12,10 @@ namespace BigFatFile.Abstractions.Modules;
 /// </summary>
 public interface IBffModule
 {
-    /// <summary>The lowercase name, and also the module's prefix: <c>/api/&lt;name&gt;/</c>.</summary>
+    /// <summary>
+    /// The lowercase name. It is also the module's prefix, <c>/api/v1/&lt;name&gt;/</c>, and the tag
+    /// of its endpoints. It cannot be the name of a core group, such as <c>account</c>.
+    /// </summary>
     string Name { get; }
 
     /// <summary>
@@ -23,6 +26,6 @@ public interface IBffModule
 
     void ConfigureServices(IServiceCollection services, BffModuleContext context);
 
-    /// <param name="endpoints">A route group already prefixed with <c>/api/&lt;name&gt;</c>.</param>
+    /// <param name="endpoints">A route group already prefixed with <c>/api/v1/&lt;name&gt;</c>.</param>
     void MapEndpoints(IEndpointRouteBuilder endpoints);
 }

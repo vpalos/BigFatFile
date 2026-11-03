@@ -389,7 +389,7 @@ Designed for Apps rather than discovered by them. Our own clients use these.
     - implements `IBffModule`:
         - `Name`, `RequiredCoreVersion`;
         - `ConfigureServices`: registers its services and the core interfaces it implements;
-        - `MapEndpoints`: its endpoints under `/api/<module-prefix>/`;
+        - `MapEndpoints`: its endpoints under `/api/v1/<name>/`, in the one spec;
     - migrations:
         - `V<number>__<name>.sql` scripts, embedded from a `Migrations` folder next to the
           class that implements `IBffModule`;

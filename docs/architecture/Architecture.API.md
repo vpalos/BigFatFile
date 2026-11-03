@@ -26,7 +26,10 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
     - that place makes each route group, with its path, its tag and whether the spec
       includes it;
     - so it shows how the spec is put together, and the modules' routes are added
-      there too.
+      there too;
+    - a module's routes are under `/api/v1/<module name>`:
+        - their tag is the module's name;
+        - a module cannot take the name of a core group, such as `account`.
 - Tags group the endpoints:
     - an endpoint's tag is the first segment of its path after `/api/v1`:
       `/api/v1/account/me` is `account`, `/api/v1/tenants/{id}` is `tenants`;

@@ -25,11 +25,18 @@ internal static class EndpointMap
         app.MapGroup("/account").ExcludeFromDescription().MapSignInFormEndpoints();
 
         var api = app.MapGroup("/api/v1").RequireCsrfToken();
-        api.MapGroup("/meta").WithTags("meta").MapMetaEndpoints();
-        api.MapGroup("/account").WithTags("account").MapAccountEndpoints();
+        var groups = new HashSet<string>(StringComparer.Ordinal);
 
-        var tenant = api.MapGroup("/tenants/{id:guid}")
-            .WithTags("tenants")
+        // The name of each group under /api/v1 is the first segment of its paths, and also their tag.
+        RouteGroupBuilder Group(string name) =>
+            groups.Add(name)
+                ? api.MapGroup("/" + name).WithTags(name)
+                : throw new InvalidOperationException($"The group /api/v1/{name} is mapped twice. A module cannot have the name of a core group.");
+
+        Group("meta").MapMetaEndpoints();
+        Group("account").MapAccountEndpoints();
+
+        var tenant = Group("tenants").MapGroup("/{id:guid}")
             .ProducesError(ApiErrors.AuthenticationRequired)
             .ProducesError(ApiErrors.Forbidden)
             .RequireTenantAccess();
@@ -39,7 +46,7 @@ internal static class EndpointMap
 
         foreach (var loaded in modules)
         {
-            loaded.Module.MapEndpoints(app.MapGroup("/api/" + loaded.Module.Name));
+            loaded.Module.MapEndpoints(Group(loaded.Module.Name));
         }
     }
 }
