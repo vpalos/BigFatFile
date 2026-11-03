@@ -10,8 +10,6 @@ CREATE FUNCTION app_tenant_id() RETURNS uuid LANGUAGE sql STABLE
 CREATE FUNCTION app_user_id() RETURNS uuid LANGUAGE sql STABLE
     AS $$ SELECT NULLIF(current_setting('app.user_id', true), '')::uuid $$;
 
-ALTER TABLE tenant_members ADD COLUMN last_signed_in_at timestamptz;
-
 -- A user reads their own memberships in every tenant, but changes memberships only in the
 -- request's tenant.
 ALTER TABLE tenant_members ENABLE ROW LEVEL SECURITY;

@@ -135,7 +135,7 @@ public sealed class OriginTests(Origin origin, Postgres postgres) : IClassFixtur
         var files = await connection.QueryAsync<string>(
             "SELECT name FROM schema_migrations_core WHERE type = 0 ORDER BY id");
 
-        Assert.Equal(["V0001__auth.sql", "V0002__tenants.sql", "V0003__server_keys.sql", "V0004__tenant_isolation.sql"], files);
+        Assert.Equal(["V0001__auth.sql", "V0002__tenants.sql", "V0003__server_keys.sql", "V0004__tenant_isolation.sql", "V0005__last_sign_in.sql"], files);
     }
 
     /// <summary>
