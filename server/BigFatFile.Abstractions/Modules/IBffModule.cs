@@ -8,6 +8,7 @@ namespace BigFatFile.Abstractions.Modules;
 /// It's mandatory that the class needs a public constructor without any parameters.
 /// The SQL scripts embedded from the Migrations folder next to the class run after the
 /// core's own scripts, with <see cref="Name"/> as their prefix.
+/// Startup fails when the module embeds an SQL script anywhere else.
 /// </summary>
 public interface IBffModule
 {

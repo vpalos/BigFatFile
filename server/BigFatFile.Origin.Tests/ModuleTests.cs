@@ -1,5 +1,7 @@
 using System.Net;
 using BigFatFile.Abstractions.Features;
+using BigFatFile.Origin.Database;
+using BigFatFile.Origin.Models;
 using BigFatFile.Origin.Modules;
 using Dapper;
 using Npgsql;
@@ -30,6 +32,19 @@ public sealed class ModuleTests(OriginWithSampleModule origin) : IClassFixture<O
 
         Assert.True(coreFinished <= sampleStarted);
         Assert.Equal(0, await connection.ExecuteScalarAsync<long>("SELECT COUNT(*) FROM sample_notes"));
+    }
+
+    [Fact]
+    public void TheCoreFindsItsScriptsInItsMigrationsFolder() =>
+        Assert.Equal("BigFatFile.Origin.Database.Migrations.", DatabaseMigrations.ScriptFilter(typeof(DatabaseMigrations)));
+
+    [Fact]
+    public void AScriptOutsideTheMigrationsFolderStopsStartup()
+    {
+        // The Models namespace has no Migrations folder, so every script of the assembly is outside it.
+        var error = Assert.Throws<InvalidOperationException>(() => DatabaseMigrations.ScriptFilter(typeof(TenantModel)));
+
+        Assert.Contains("BigFatFile.Origin.Database.Migrations.V0001__auth.sql", error.Message);
     }
 
     [Fact]

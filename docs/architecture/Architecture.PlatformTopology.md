@@ -394,6 +394,7 @@ Designed for Apps rather than discovered by them. Our own clients use these.
         - `V<number>__<name>.sql` scripts, embedded from a `Migrations` folder next to the
           class that implements `IBffModule`;
             - the Origin finds them by that class's namespace plus `.Migrations`;
+            - startup fails when the module embeds a `.sql` file anywhere else;
         - the module's `Name` is its prefix (for example, `V0001__tenant_providers.sql` is
           recorded in `schema_migrations_sso`);
         - run by the Origin at startup, after the core's scripts;
