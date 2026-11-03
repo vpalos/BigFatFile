@@ -4,32 +4,29 @@ using BigFatFile.Server.Hosting;
 using Microsoft.EntityFrameworkCore;
 
 var command = args.FirstOrDefault();
-if (command == "health")
-{
-    return await HealthCommand.RunAsync();
-}
-
-var app = command switch
-{
-    "migrate" => OriginHost.Build(args[1..]),
-    "print-auth-schema" => OriginHost.Build(args[1..], logToStandardError: true),
-    _ => OriginHost.Build(args),
-};
 
 switch (command)
 {
-    case "migrate":
-        await StartupTasks.MigrateAsync(app, CancellationToken.None);
-        return 0;
+    case "health":
+        return await HealthCommand.RunAsync();
 
-    case "print-auth-schema":
-        await using (var scope = app.Services.CreateAsyncScope())
+    case "migrate":
         {
-            Console.WriteLine(scope.ServiceProvider.GetRequiredService<AuthDbContext>().Database.GenerateCreateScript());
+            var commandApp = OriginHost.Build(args[1..]);
+            await StartupTasks.MigrateAsync(commandApp, CancellationToken.None);
+            return 0;
         }
 
-        return 0;
+    case "print-auth-schema":
+        {
+            var commandApp = OriginHost.Build(args[1..], logToStandardError: true);
+            await using var scope = commandApp.Services.CreateAsyncScope();
+            Console.WriteLine(scope.ServiceProvider.GetRequiredService<AuthDbContext>().Database.GenerateCreateScript());
+            return 0;
+        }
 }
+
+var app = OriginHost.Build(args);
 
 if (!OriginHost.IsGeneratingOpenApiDocument)
 {
@@ -38,5 +35,3 @@ if (!OriginHost.IsGeneratingOpenApiDocument)
 
 await app.RunAsync();
 return 0;
-
-public partial class Program;
