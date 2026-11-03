@@ -135,7 +135,7 @@ public sealed class TenantIsolationTests(Origin origin, Postgres postgres) : ICl
 
         var error = Assert.ThrowsAny<Exception>(() => factory.CreateClient());
 
-        Assert.Contains("row-level security does not apply", error.ToString());
+        Assert.Contains("does not obey RLS (row-level security)", error.ToString());
     }
 
     private async Task<Guid?> SessionTenantAsync(string email)
