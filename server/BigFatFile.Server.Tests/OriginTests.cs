@@ -133,15 +133,15 @@ public sealed class OriginTests(Origin origin, Postgres postgres) : IClassFixtur
         await using var connection = new NpgsqlConnection(origin.ConnectionString);
 
         var files = await connection.QueryAsync<string>(
-            "SELECT prefix || '_' || lpad(number::text, 4, '0') || '_' || name || '.sql' FROM schema_migrations ORDER BY prefix, number");
+            "SELECT name FROM schema_migrations_core WHERE type = 0 ORDER BY id");
 
-        Assert.Equal(["core_0001_auth.sql", "core_0002_tenants.sql", "core_0003_server_keys.sql", "core_0004_tenant_isolation.sql"], files);
+        Assert.Equal(["V0001__auth.sql", "V0002__tenants.sql", "V0003__server_keys.sql", "V0004__tenant_isolation.sql"], files);
     }
 
     /// <summary>
     /// Builds a second database from the EF model, and compares its auth tables with the ones
-    /// that the core_ migrations made. After a package update changes the Identity, OpenIddict
-    /// or Data Protection model, this test fails until a core_ migration makes the same change.
+    /// that the core scripts made. After a package update changes the Identity, OpenIddict
+    /// or Data Protection model, this test fails until a core script makes the same change.
     /// </summary>
     [Fact]
     public async Task TheAuthTablesMatchTheEfModel()

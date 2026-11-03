@@ -1,6 +1,6 @@
 * text=auto eol=lf
 
-# The migrator checksums each SQL file, so its line endings must not depend on the checkout.
+# Evolve checksums each SQL file, so its line endings must not depend on the checkout.
 *.sql text eol=lf
 
 *.png binary

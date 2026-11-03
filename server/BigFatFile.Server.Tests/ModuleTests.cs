@@ -23,9 +23,12 @@ public sealed class ModuleTests(OriginWithSampleModule origin) : IClassFixture<O
     {
         await using var connection = new NpgsqlConnection(origin.ConnectionString);
 
-        var prefixes = await connection.QueryAsync<string>("SELECT prefix FROM schema_migrations ORDER BY applied_at, number");
+        var coreFinished = await connection.ExecuteScalarAsync<DateTime>(
+            "SELECT max(installed_on) FROM schema_migrations_core WHERE type = 0");
+        var sampleStarted = await connection.ExecuteScalarAsync<DateTime>(
+            "SELECT min(installed_on) FROM schema_migrations_sample WHERE type = 0");
 
-        Assert.Equal(["core", "core", "core", "core", "sample"], prefixes);
+        Assert.True(coreFinished <= sampleStarted);
         Assert.Equal(0, await connection.ExecuteScalarAsync<long>("SELECT COUNT(*) FROM sample_notes"));
     }
 

@@ -31,7 +31,6 @@ sdk/        components used to build clients & Apps:
             BigFatFile.Contracts
             BigFatFile.Client
             BigFatFile.Sync
-            BigFatFile.Migrator
             BigFatFile.Testing
             @bigfatfile/client
             @bigfatfile/ui

@@ -9,13 +9,11 @@ WORKDIR /src
 
 COPY global.json Directory.Build.props Directory.Packages.props ./
 COPY sdk/BigFatFile.Contracts/BigFatFile.Contracts.csproj sdk/BigFatFile.Contracts/
-COPY sdk/BigFatFile.Migrator/BigFatFile.Migrator.csproj sdk/BigFatFile.Migrator/
 COPY server/BigFatFile.Abstractions/BigFatFile.Abstractions.csproj server/BigFatFile.Abstractions/
 COPY server/BigFatFile.Server/BigFatFile.Server.csproj server/BigFatFile.Server/
 RUN dotnet restore server/BigFatFile.Server/BigFatFile.Server.csproj --arch $TARGETARCH
 
 COPY sdk/BigFatFile.Contracts/ sdk/BigFatFile.Contracts/
-COPY sdk/BigFatFile.Migrator/ sdk/BigFatFile.Migrator/
 COPY server/BigFatFile.Abstractions/ server/BigFatFile.Abstractions/
 COPY server/BigFatFile.Server/ server/BigFatFile.Server/
 RUN dotnet publish server/BigFatFile.Server/BigFatFile.Server.csproj \

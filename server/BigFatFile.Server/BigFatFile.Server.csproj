@@ -18,12 +18,12 @@
     <ItemGroup>
         <ProjectReference Include="..\BigFatFile.Abstractions\BigFatFile.Abstractions.csproj" />
         <ProjectReference Include="..\..\sdk\BigFatFile.Contracts\BigFatFile.Contracts.csproj" />
-        <ProjectReference Include="..\..\sdk\BigFatFile.Migrator\BigFatFile.Migrator.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Dapper" />
         <PackageReference Include="Npgsql" />
+        <PackageReference Include="Evolve" />
 
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
         <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />

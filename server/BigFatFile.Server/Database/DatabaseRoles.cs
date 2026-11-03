@@ -72,13 +72,22 @@ internal sealed class DatabaseRoles(
     {
         var (role, database) = await connection.QuerySingleAsync<(string Role, string Database)>(new CommandDefinition(
             "SELECT quote_ident(@Name), quote_ident(current_database())", new { Name = name }, cancellationToken: cancellationToken));
+
+        // Also the table of a module that is no longer loaded: the GRANT on all tables
+        // gives it back to the role on every start.
+        var migrationTables = await connection.QueryAsync<string>(new CommandDefinition(
+            "SELECT quote_ident(tablename) FROM pg_tables WHERE schemaname = 'public' AND starts_with(tablename, @Prefix)",
+            new { Prefix = DatabaseMigrations.TablePrefix },
+            cancellationToken: cancellationToken));
+        var revokes = string.Concat(migrationTables.Select(table => $"REVOKE ALL ON {table} FROM {role};\n"));
+
         await connection.ExecuteAsync(new CommandDefinition(
             $"""
             GRANT CONNECT ON DATABASE {database} TO {role};
             GRANT USAGE ON SCHEMA public TO {role};
             GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO {role};
             GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO {role};
-            REVOKE ALL ON schema_migrations FROM {role};
+            {revokes}
             """,
             cancellationToken: cancellationToken));
     }

@@ -88,7 +88,6 @@ pnpm --filter @bigfatfile/example-sign-in start
     - the Origin image on GHCR, for linux/amd64 and linux/arm64, signed with cosign;
     - the NuGet packages:
         - `BigFatFile.Contracts`
-        - `BigFatFile.Migrator`
         - `BigFatFile.Abstractions`
     - the npm package:
         - `@bigfatfile/client`

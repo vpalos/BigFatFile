@@ -157,10 +157,10 @@ Apps authenticate.
     - one small EF Core `DbContext` holds only their tables and is used at runtime by
       those two libraries; all BigFatFile tables stay on Dapper;
     - the SQL for those tables is generated once from EF and committed as ordinary
-      `core_` migration files; EF's own migrations never run;
+      core scripts; EF's own migrations never run;
         - the Server's `print-auth-schema` command prints what the current packages
           expect;
         - a test selects every column the EF model maps; after a package update that
-          changes the model, the test fails until a new `core_` file matches it;
+          changes the model, the test fails until a new core script matches it;
     - row-level security does not apply to these tables; users are global and tenant
       membership is ours.

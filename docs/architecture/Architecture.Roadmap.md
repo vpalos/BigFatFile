@@ -30,11 +30,10 @@ Milestones for v2, in order, each with what it contains and when it counts as do
     - manifest format;
     - name normalisation;
     - the shared test vectors (started).
-- `BigFatFile.Migrator`:
-    - the `core_` migration files;
 - The Origin skeleton:
     - PostgreSQL;
     - Dapper;
+    - schema migrations with Evolve, starting with the core's scripts;
     - Identity and OpenIddict;
     - Hangfire;
     - the module loader with no modules;

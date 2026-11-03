@@ -67,9 +67,28 @@ Licensed modules are (by exception) kept in a separate repository.
         - I avoid hidden behaviors (like EF Core generators);
         - some system components still use EF Core internally (auth) and we keep them as they are;
     - schema migrations:
-        - `core_<number>_<name>.sql` files embedded in the Server assembly;
-        - run at startup by `BigFatFile.Migrator`, under a PostgreSQL advisory lock so
-          concurrent nodes don't race.
+        - a prefix names one set of scripts, such as `core` or `sso`:
+            - its scripts are embedded resources named `V<number>__<name>.sql`, in the
+              `Migrations` folder of the project that owns the tables;
+            - its numbers form their own sequence;
+            - the scripts it has applied are recorded in its own table,
+              `schema_migrations_<prefix>`.
+        - run at startup with Evolve (NuGet `Evolve`, MIT license), once per prefix: first
+          the core, then each loaded module;
+        - each pending script runs in its own transaction;
+        - the run stops, and names the script, when:
+            - a script that was applied has changed since (the checksums are compared on
+              every run);
+            - a pending script has a lower number than a script already applied under the
+              same prefix.
+        - applied scripts that this build does not know are ignored, so an older build
+          keeps running during a rolling deploy;
+        - Evolve's cluster mode takes `pg_advisory_lock`, so nodes that start at the same
+          time apply each script once;
+        - a script whose first line is `-- evolve-tx-off` runs outside a transaction (for
+          `CREATE INDEX CONCURRENTLY` and the like);
+            - such a script holds one statement, because several statements that are sent
+              together run as one implicit transaction.
 - Tenant isolation:
     - application-level scoping;
     - PostgreSQL row-level security (`Architecture.Tenancy.md`, section 2).
@@ -225,31 +244,9 @@ Licensed modules are (by exception) kept in a separate repository.
     - local state, journal, reconciliation, conflict policy, cache and prefetch policy,
       delta detection, the local API;
     - platform-neutral; used by Desktop, Replica and Cli;
-    - its SQLite schema is versioned as `sync_<number>_<name>.sql` files, run by
-      `BigFatFile.Migrator`.
-- **BigFatFile.Migrator**:
-    - our own schema migration runner, on Dapper over `DbConnection`, so it runs on
-      PostgreSQL (Origin) and SQLite (Replica, Desktop);
-    - finds `<prefix>_<number>_<name>.sql` files embedded in the assemblies it is given;
-      each prefix has its own number sequence (`core_`, `sync_`, `sso_`);
-    - records what ran in a `schema_migrations` table with a checksum per file, and
-      refuses to start if an applied file has changed since;
-        - the checksum is taken with line endings normalised to LF, so a Windows
-          checkout gives the same value;
-    - refuses to start in three more cases, naming the file:
-        - an embedded `.sql` resource whose name is not a valid migration name;
-        - a pending file numbered below a file already applied under the same prefix;
-        - an applied number that now belongs to a file with another name;
-    - ignores applied files it does not know, so an older build keeps running during a
-      rolling deploy;
-    - applies pending files in order, each in its own transaction, under a lock:
-      `pg_advisory_lock` on PostgreSQL, `BEGIN IMMEDIATE` on SQLite;
-    - a file starting with `-- no-transaction` runs outside a transaction (for
-      `CREATE INDEX CONCURRENTLY` and the like);
-        - on PostgreSQL such a file holds one statement, because several statements
-          that are sent together run as one implicit transaction;
-    - knows nothing about BFF tables; the SQL files live with the project that owns the
-      tables.
+    - SQLite schema:
+        - migrated with Evolve under the `sync` prefix, the same way as the Origin's schema;
+        - needs no lock, because each SQLite database (Replica, Desktop) has one process.
 - **Licensed modules** (private repository):
     - the modules listed in section 7, one project each;
     - compile against `Abstractions`;
@@ -276,11 +273,6 @@ BigFatFile.Sync
         +-- BigFatFile.Replica
         +-- BigFatFile.Cli
 
-BigFatFile.Migrator
-        ^
-        +-- BigFatFile.Server   (core_ files, PostgreSQL advisory lock)
-        +-- BigFatFile.Sync     (sync_ files, SQLite)
-
 api/openapi.json --> @bigfatfile/client --> @bigfatfile/ui --> apps/web,
                                                               desktop settings UI,
                                                               Replica admin UI
@@ -288,8 +280,6 @@ api/openapi.json --> @bigfatfile/client --> @bigfatfile/ui --> apps/web,
 
 - An arrow points from the dependency to what depends on it; `api/openapi.json` is
   generated from the Origin and is the source of the TypeScript types.
-- `BigFatFile.Migrator` is used by Server (PostgreSQL) and Sync (SQLite); modules only
-  embed their SQL files and do not reference it.
 - These stay in Server and are never shared with clients: domain rules (permissions,
   quotas, plans), database tables, and anything that references ASP.NET or the database.
 
@@ -401,10 +391,12 @@ Designed for Apps rather than discovered by them. Our own clients use these.
         - `ConfigureServices`: registers its services and the core interfaces it implements;
         - `MapEndpoints`: its endpoints under `/api/<module-prefix>/`;
     - migrations:
-        - SQL files embedded in the assembly;
-        - versioned under the module's own prefix and number sequence (for example
-          `sso_0001_tenant_providers.sql`);
-        - run by `BigFatFile.Migrator` at startup, after the core's own files;
+        - `V<number>__<name>.sql` scripts, embedded from a `Migrations` folder next to the
+          class that implements `IBffModule`;
+            - the Origin finds them by that class's namespace plus `.Migrations`;
+        - the module's `Name` is its prefix (for example, `V0001__tenant_providers.sql` is
+          recorded in `schema_migrations_sso`);
+        - run by the Origin at startup, after the core's scripts;
         - may reference core tables, never another module's tables.
 - Modules own their DB tables and API endpoints;
 - Modules reach core data only through the core service (not directly);

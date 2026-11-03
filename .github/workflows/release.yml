@@ -33,7 +33,7 @@ jobs:
       - run: dotnet test --solution BigFatFile.slnx --configuration Release --no-build
       - name: Pack the NuGet packages
         run: |
-          for project in sdk/BigFatFile.Contracts sdk/BigFatFile.Migrator server/BigFatFile.Abstractions; do
+          for project in sdk/BigFatFile.Contracts server/BigFatFile.Abstractions; do
             dotnet pack "$project" --configuration Release --no-build --output artifacts -p:Version=${{ steps.version.outputs.value }}
           done
       - name: Publish to NuGet

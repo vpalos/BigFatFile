@@ -6,8 +6,8 @@ namespace BigFatFile.Abstractions.Modules;
 /// <summary>
 /// A module the Origin loads at startup from the "modules" folder.
 /// It's mandatory that the class needs a public constructor without any parameters.
-/// SQL migrations embedded in the module's assembly are run after the core's own
-/// migrations, using the module's file prefix.
+/// The SQL scripts embedded from the Migrations folder next to the class run after the
+/// core's own scripts, with <see cref="Name"/> as their prefix.
 /// </summary>
 public interface IBffModule
 {
