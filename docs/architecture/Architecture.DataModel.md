@@ -85,7 +85,7 @@ How the tree reaches the bytes:
 
 ```
 nodes ──current──► manifests ──┬── manifest_chunks ──► chunks ──► warehouse: chunks/<hash>
-  │                    ▲        └── object_id ───────► objects ─► warehouse: <key>
+  │                    ▲       └── object_id ────────► objects ─► warehouse: <key>
   └── node_versions ───┘
 ```
 
