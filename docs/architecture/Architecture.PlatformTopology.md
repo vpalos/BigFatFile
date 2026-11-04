@@ -11,8 +11,8 @@ Core topology: Origin Server <-> Replica Server <=> Apps (Clients).
     - the one authoritative copy of a tenant's data;
     - runs in the cloud, on a dedicated instance, or self-hosted;
     - the platform is the Origin alone.
-- **Replica**:
-    - optional (not required) and acts as a full mirror of a tenant on the LAN;
+- **Replica** (optional):
+    - designed to act as a full mirror of a tenant's data on the tenant's LAN;
     - constantly syncs with the Origin upstream;
     - replicates the Origin's API downstream to listening Apps;
     - serves downstream Apps at LAN speed (even when uplink is down);

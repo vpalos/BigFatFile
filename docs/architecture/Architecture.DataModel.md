@@ -70,12 +70,14 @@ permissions, file versions, the change log and the audit log.
     - against `nodes`, the check at start is best-effort (409 if taken) and the check at
       completion is the authoritative one, through the unique index on `nodes`; if the
       name was taken meanwhile, the SDK completes under the conflict-copy name.
-- Completion is one transaction: insert the node (new file) or update it (new version,
-  `If-Match` on `base_version`, `version + 1`), write the manifest, append the
-  change-log row, delete the `uploads` row.
-- An upload with no activity for 24 hours is removed by the sweep job; a pending new
-  file disappears with it. This is the same grace the chunk garbage collector uses, so a
-  chunk is never collected under an upload that could still complete.
+- Completion is one transaction:
+    - insert the node (new file) or update it (new version, `If-Match` on `base_version`, `version + 1`),
+    - write the manifest,
+    - append the change-log row,
+    - delete the `uploads` row.
+- An upload with no activity for 24 hours is removed by the sweep job;
+    - a pending new file disappears with it;
+    - the same 24h grace applies to chunks, so chunks aren't collected for uploads that may still complete.
 
 ## 3. Content
 
@@ -88,20 +90,22 @@ nodes ──current──► manifests ──┬── manifest_chunks ──►
 ```
 
 - `nodes` is the tree:
-    - a file row points at its current content through `manifest_id`; a folder has none;
+    - a file row points at its current content through `manifest_id`;
+    - a folder doesn't have one (NULL);
     - a node knows nothing about chunks or objects, only which manifest is current.
 - `node_versions` is the history:
-    - one row per `(node_id, version)`, with the `manifest_id` of that version, the actor
-      and the time;
-    - `nodes.manifest_id` is a copy of the last row's, so listing a folder never joins
-      the history;
+    - one row per `(node_id, version)`, with the `manifest_id` of that version, the actor and the time;
+    - `nodes.manifest_id` is a copy from the most recent version, to avoid any joins when listing;
     - retention (30 days, a year, legal hold) prunes rows here and nothing else.
 - `manifests` is content, immutable (`Architecture.FileStorage.md`, section 1):
-    - one row per file version that changed the bytes: `chunking`, `size`, `hash`
-      (nullable), and either chunk rows or an `object_id`;
-    - a rename or move creates no manifest; the new version row points at the same one;
+    - one row per file version (with bytes actually changed);
+    - in theory two versions (even two files) could point to the same manifest ID;
+    - columns: `chunking`, `size`, `hash` (nullable) and `object_id` (nullable);
+    - a chunked manifest has no `object_id`; its chunks are rows in `manifest_chunks`;
+    - a whole-object manifest (`chunking: "none"`) has an `object_id` and no rows in `manifest_chunks`;
+    - a rename or move creates no new manifest (the new version reuses it);
     - two nodes may point at one manifest (a saved copy, a restore), which is why a
-      manifest is referenced by ID and never edited.
+      manifest is referenced by ID and never edited (immutable).
 - `manifest_chunks` is the ordered chunk list of a chunked manifest:
     - `(manifest_id, position, hash, size)`;
     - a table rather than JSON inside the manifest, because:
@@ -111,8 +115,7 @@ nodes ──current──► manifests ──┬── manifest_chunks ──►
         - offset-to-chunk mapping is a running sum over `size` in `position` order.
 - `chunks` is the inventory of stored chunks:
     - `(tenant_id, warehouse_id, hash)`, `size`, `created_at`;
-    - one row per distinct chunk per tenant, however many manifests reference it; that
-      is the deduplication;
+    - one row per distinct chunk per tenant, however many manifests reference it (deduplication);
     - its key in the warehouse is derived from the hash, so the row stores no key.
 - `objects` is the inventory of stored whole objects:
     - `(tenant_id, warehouse_id, id)`, `size`, `hash` (nullable), `key`, `created_at`,
@@ -122,25 +125,28 @@ nodes ──current──► manifests ──┬── manifest_chunks ──►
     - the key is stored because it may be anything, which is the one place that is true.
 - The rules that follow:
     - reading a file: `nodes` → `manifests` → either `manifest_chunks` → `chunks` →
-      storage, or `objects` → storage; the node row is never read for bytes;
-    - writing a version: insert `manifests` (with its `manifest_chunks` or `objects`
-      row), insert `node_versions`, update `nodes.manifest_id` and `version`, append
-      `changes`, in one transaction (section 2);
-    - deleting a node moves it under the trash root; its manifests, chunks and objects
-      stay until retention prunes the `node_versions` rows and garbage collection finds
-      the content unreferenced;
+      storage, or `objects` → storage;
+    - the `nodes` row is never read for bytes;
+    - writing a version, in one transaction (section 2):
+        - insert `manifests` (with its `manifest_chunks` or `objects` row),
+        - insert `node_versions`,
+        - update `nodes.manifest_id` and `version`,
+        - append `changes`;
+    - deleting a node moves it under the trash root;
+        - its manifests, chunks and objects stay until retention prunes the `node_versions`
+          rows and garbage collection finds the content unreferenced;
     - garbage collection marks every hash in `manifest_chunks` and every `object_id` in
-      `manifests` reachable from retained `node_versions`, plus what an open `uploads`
-      row pins; it sweeps `chunks` and `objects` rows that are not marked and older than
-      24 hours, deleting their storage; `nodes` is never consulted;
+      `manifests` reachable from retained `node_versions`, plus what an open `uploads` row pins;
+        - it sweeps `chunks` and `objects` rows that are not marked and older than
+          24 hours, deleting their storage (`nodes` is not touched);
     - `tenant_id` is on every one of these tables, so row-level security and the
       per-tenant mark-and-sweep work the same way for all of them.
 
 ## 4. Permissions
 
 What a user may do with a node is decided by rules on folders, found by walking up the
-tree. The policy (why folders and never files) is in `Architecture.Tenancy.md`,
-section 3; this section is how it works.
+tree. The policy (why folders and never files) is in `Architecture.Tenancy.md` (section 3);
+this section is about how it works.
 
 ### Roles
 
@@ -229,7 +235,7 @@ section 3; this section is how it works.
 ### Outside the tenant
 
 - A share link is a rule whose principal is the link: `share_links (tenant_id, token,
-  node_id, role, password_hash, expires_at, created_by)`, with `role` either `viewer`
+node_id, role, password_hash, expires_at, created_by)`, with `role` either `viewer`
   or, for a file request, `uploader` (may add files to that folder and nothing else).
   A request that presents a valid token acts with that one rule and no walk.
 - A guest is a tenant member with the `guest` tenant role: they have access only
