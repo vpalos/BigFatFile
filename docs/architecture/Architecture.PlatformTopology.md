@@ -231,7 +231,8 @@ Licensed modules are (by exception) kept in a separate repository.
     - the transfer engine is separated (`@bigfatfile/client/transfer`),
       so Apps that only read folders can avoid bundling it;
     - after a page reload, resumes a partial upload, using the node ID and the file
-      fingerprint that are kept in `localStorage`.
+      fingerprint that are kept in `localStorage`, keyed by tenant and user: browser
+      storage is per origin, and the next account to sign in does not own the record.
 - **@bigfatfile/ui** (npm):
     - Svelte 5 components wrapped as web components:
         - file browser, uploader, share dialog, file-request form;

@@ -18,6 +18,18 @@
     - data is protected against ransomware;
     - files are versioned, protecting against mistakes and losses;
     - data is encrypted in transit and at rest.
+- File content passes through the Origin:
+    - v1 kept file bytes out of the application tier (browser to storage, with the
+      public pages describing that as a design choice); v2 retires that rule;
+    - the Origin splits uploads into chunks, streams downloads, scans for malware and
+      makes thumbnails, because the desktop drive and the Replica need the content;
+    - chunk-level transfers still go directly to S3 warehouses where possible;
+    - the public pages that describe the v1 behaviour are rewritten at launch
+      (`Architecture.Roadmap.md`, M6).
+- Limits never slow real users:
+    - transfer endpoints are never rate-limited;
+    - abuse controls count and open a ticket before anything blocks
+      (`Architecture.FileTransfer.md`, section 6).
 - Open-source core, plus licensed modules:
     - the core is AGPL and is a complete product for a team;
     - licensed modules that plug into the core (`Architecture.PlatformTopology.md`, section 7).

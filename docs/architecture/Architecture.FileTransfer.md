@@ -37,8 +37,16 @@ are no private endpoints.
 - Download: `GET /nodes/{id}/content` with range support; the Origin maps the range to
   chunks and streams only what is requested. Previews and playback (PDF, video) always
   use this.
-- The Origin (or the Replica on the LAN) serves share links to drive files the same way;
-  a link to several files is served as one streamed zip.
+    - A ranged request must come back `206`; a client accepts a `200` only when it is
+      exactly the whole file (a proxy that strips `Range`), and treats anything else as
+      corruption.
+- The Origin (or the Replica on the LAN) serves share links to drive files the same way.
+- Several files at once:
+    - the browser builds the zip itself, as v1 does: STORED entries, zip64 fields only
+      where a value overflows, no data descriptors, local-time stamps; the whole layout
+      is planned before the first byte, so sizes are known up front;
+    - a streamed zip from the Origin is a fallback to explore for browsers that cannot
+      stream to disk, not something M1 builds.
 - The SDKs choose the tier: a seekable input of known size goes through the Transfer
   Protocol; a stream of unknown length goes through this path. An App never picks.
 
@@ -50,11 +58,13 @@ are no private endpoints.
 - A chunked upload is shaped like S3 multipart, keyed by the node ID:
     1. `POST /nodes` as for a simple upload (skipped for a new version of an existing
        node), then `POST /nodes/{id}/upload` with the manifest; the Origin returns the
-       chunks the tenant does not have and, on S3, a presigned URL for each. On a node
-       already in the tree `If-Match` is required.
-    2. The client uploads the missing chunks in parallel, one request each, to the Origin
-       (`PUT /nodes/{id}/upload/chunks/{hash}`) or directly to storage; the Origin
-       verifies each chunk's hash on receipt.
+       chunks the tenant does not have. On a node already in the tree `If-Match` is
+       required.
+    2. The client uploads the missing chunks in parallel, one request each: to the Origin
+       (`PUT /nodes/{id}/upload/chunks/{hash}`) on a `local` warehouse, or directly to
+       storage on S3, with presigned URLs from `POST /nodes/{id}/upload/grants` asked for
+       in batches of what is about to be sent; the Origin verifies each chunk's hash on
+       receipt.
     3. `POST /nodes/{id}/upload/complete` inserts the node (new file) or bumps its version
        (new version), commits the manifest and appends the change-log row, with
        `If-Match` on the node's version.
@@ -62,20 +72,24 @@ are no private endpoints.
     - a restarted client calls `GET /nodes/{id}/upload`, or repeats step 1 with the same
       manifest, and is told what is still missing;
     - an upload with no activity for 24 hours expires; a pending new file goes with it.
+- Access is checked on every chunk request and every grant, never once at the start:
+    - an upload or download runs for hours; the drive can be trashed under it and a
+      member's access withdrawn, and neither should be found out at the end;
+    - this is why presigned URLs are handed out in small batches with a short expiry,
+      and never one per chunk for the whole file at start.
 - Our own clients (desktop, CLI, Replica) assemble downloads themselves:
-    - `GET /nodes/{id}/manifest` returns the manifest and, on S3, a presigned
-      URL per chunk with a short expiry;
-    - the client fetches the missing chunks in parallel (from the Replica, the Origin or
-      storage), verifies each hash, and writes them at their offsets;
+    - `GET /nodes/{id}/manifest` returns the manifest of the node's current version;
+    - the client fetches the missing chunks in parallel, verifying each hash and writing
+      it at its offsets: `GET /nodes/{id}/chunks/{hash}` from the Origin or the Replica
+      on a `local` warehouse, or from storage on S3 with presigned URLs from
+      `POST /nodes/{id}/chunks/grants`, asked for in batches as the download proceeds;
     - the Origin moves no bytes on S3;
     - errors are caught per chunk so resume is also per chunk.
-- Chunks by hash, part of this protocol:
-    - `GET /nodes/chunks/{hash}` and `POST /nodes/chunks/exists`;
-    - a hash alone grants nothing: the caller presents a grant;
-    - fetching the manifest of a node that the caller may read returns a grant for each
-      chunk, valid for a few minutes; on S3 the grant is the presigned URL itself;
-    - an App holding the `tenant.mirror` scope (section 4) presents that instead; it
-      stands for a grant over every chunk of the tenant;
+- Chunks by hash alone:
+    - a hash grants nothing by itself: a chunk is read through a node the caller may
+      read, and the Origin checks that the hash is in that node's manifest;
+    - `GET /nodes/chunks/{hash}` and `POST /nodes/chunks/exists` take only the
+      `tenant.mirror` scope (section 4), which stands for every chunk of the tenant;
     - chunks never enter the Origin by hash; they arrive only through a chunked upload
       or the file-level upload, so nothing orphaned arrives and garbage collection's
       pinning holds.
@@ -89,8 +103,8 @@ are no private endpoints.
 
 ## 3. Sends (transfers)
 
-- A send (a transfer to recipients outside the system) is stored as whole-file objects,
-  not chunks:
+- A send (a transfer to recipients outside the system) is stored as whole objects, not
+  chunks: each file has a `none` manifest (`Architecture.FileStorage.md`, section 1):
     - a send is immutable, has no versions and needs no delta;
     - most of its traffic is downloads by external recipients on any browser or phone,
       and each of those must be a plain download.
@@ -101,7 +115,8 @@ are no private endpoints.
 - Download:
     - presigned URL from storage on S3 warehouses;
     - on `local` warehouses the Origin streams the object.
-    - multi-file sends (transfers) are downloaded as one streamed zip.
+    - a multi-file send is zipped in the recipient's browser, with the rules of section 1;
+      the streamed zip from the Origin is the same fallback to explore.
 - Expiry deletes the objects.
 
 ## 4. Tenant-wide Apps (`tenant.mirror`)
@@ -184,3 +199,22 @@ are no private endpoints.
 | BBR with `fq`             | about 5.9 MB/s                                     | link speed               |
 
 - Chunk size (4, 16 or 64 MB) made no measurable difference in any row.
+
+## 6. Limits and abuse
+
+- The transfer endpoints (`content`, `upload`, `chunks`) carry no rate limit and no
+  per-transfer ceiling. A limit chosen before real traffic is measured slows real users
+  to defend against something that has not happened.
+- Abuse controls watch before they act:
+    - a job counts downloads per drive and per share link over a seven-day window, never
+      a lifetime total, which only says that a drive is old;
+    - crossing the threshold opens a ticket for a person to read; nothing is refused by
+      the job;
+    - the thresholds are a guess until enough cases have been worked to replace them
+      with measured numbers; each case is recorded for that.
+- Not counted, on purpose: the desktop client, the Replica and any App holding
+  `tenant.mirror`. A mount reads whole folders as a matter of course, so a volume that
+  would be alarming from a browser is ordinary from a drive, and one threshold cannot
+  serve both.
+- The `platform.abuse` licensed module adds the report queue, the takedown workflow and
+  rate limits on public sends; the counting job and the ticket are in the core.

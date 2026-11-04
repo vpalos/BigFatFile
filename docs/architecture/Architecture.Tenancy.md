@@ -8,6 +8,24 @@ Apps authenticate.
 - A tenant is a company or an individual, with users, groups, drives, a warehouse and
   settings (plan, auth providers);
 - One user may belong to several tenants.
+- Members have a tenant role: `admin`, `member` or `guest`:
+    - an administrator manages members, groups, drives and settings, and is owner of
+      every drive;
+    - a member may create drives and see the member list;
+    - a guest has only what rules name them, and sees neither the member list nor the
+      groups.
+- Groups:
+    - a group is a named set of members of the tenant, used as one principal in
+      permission rules ("the accounting team may edit this folder");
+    - administrators create groups and set their members; a member may see the groups
+      they are in;
+    - a group is flat: no groups inside groups, so the permission check stays one join
+      and there are no cycles to detect;
+    - a group that comes from a directory (`sso.groups` licensed module) is read-only in
+      the web UI; the directory is its source and overwrites it on every sync;
+    - deleting a group removes its rules; nothing else refers to it;
+    - the tables and how a group enters the permission check are in
+      `Architecture.DataModel.md`, section 4.
 - Plans:
     - the open core has one unlimited plan;
     - the billing module enforces storage, bandwidth, retention and feature limits
@@ -52,8 +70,16 @@ Apps authenticate.
 
 ## 3. Permissions
 
-- Rules on nodes grant a role (viewer, editor, owner) to a user or a group;
-- The effective permission is the first rule found when walking up the tree from the node;
+- Rules on drives and folders grant a role (viewer, editor, owner) to a user, a group
+  or the whole tenant; the nearest rule above a node decides. The tables and the check
+  are in `Architecture.DataModel.md`, section 4.
+- Never on a single file, a decision carried over from v1:
+    - every row of a listing is visible to everyone who may open the folder, so paged
+      listings are the same for every viewer and can be cached as one;
+    - no per-file exception list to evaluate on every request;
+    - "everyone except this person" cannot be expressed with encryption keys, so this
+      keeps end-to-end encryption possible later;
+    - handing one file to someone is what sends and share links do.
 - External people get access through share links and guest memberships, never through
   anonymous write.
 - Sends (transfers to recipients outside the system):

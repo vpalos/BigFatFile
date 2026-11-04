@@ -258,6 +258,8 @@ Milestones for v2, in order, each with what it contains and when it counts as do
   then for real.
 - Deployment catalogs (Unraid, TrueNAS, CasaOS, Portainer, Coolify) and the package
   repositories.
+- The public pages (Privacy, FAQ, Features, Plans, About) rewritten: file content passes
+  through the Origin, which v1's pages said it did not.
 - Done when: v1 is switched off.
 
 ## 3. After v2.0

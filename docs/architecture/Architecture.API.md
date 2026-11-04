@@ -80,7 +80,9 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
     - a stale version gets `412`.
 - Rate limits:
     - per App and per tenant, reported in `RateLimit-*` headers;
-    - limits are plan settings.
+    - limits are plan settings;
+    - they apply to API calls, not to the transfer endpoints (`content`, `upload`, `chunks`): a slow transfer is a refused product, and abuse is handled by counting
+      and ticketing (`Architecture.FileTransfer.md`, section 6).
 - Trace context:
     - `traceparent` accepted and propagated.
 - Other general conventions:
@@ -117,7 +119,8 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 - `members.manage` and `tenant.admin` also need the user to be an admin of the tenant:
     - anyone else gets 403 with the code `admin_required`, with a token or the cookie.
 - Files:
-    - `files.read`: list, read metadata, download; manifests and chunk grants;
+    - `files.read`: list, read metadata, download; manifests and chunks of the nodes
+      it may read;
     - `files.write`: create, upload, rename, move, trash, restore; chunked uploads.
 - Sharing:
     - `shares.manage`: create and revoke share links on nodes the App may read;
@@ -174,62 +177,101 @@ permissions apply on top.
     - `GET|POST /tenants/{id}/groups`, `PATCH|DELETE .../groups/{groupId}`,
       `PUT .../groups/{groupId}/members` (`members.manage`).
 - Drives:
-    - `GET /drives` (`files.read`): the drives the caller may see, each with its root
-      node and usage;
+    - `GET /drives` (`files.read`):
+        - the drives the caller is allowed to see, each with its root node and usage;
     - `POST /drives`, `PATCH /drives/{id}`, `DELETE /drives/{id}` (`tenant.admin`).
 - Nodes (files and folders as tree entries):
-    - `GET /nodes/{id}` (`files.read`): the node's metadata, without content or
-      manifest; `?ancestors=true` adds the ancestors, for breadcrumbs;
-    - `GET /nodes/{id}/children` (`files.read`): cursor-paged listing of a folder;
-      400 `not_a_folder` for a file;
-    - `POST /nodes/resolve` (`files.read`): the node at a path; `drive` and `path` in
-      the body, because paths can be long;
-    - `PATCH /nodes/{id}` (`files.write`, `If-Match`): rename, move; the new name and
-      parent in the body;
-    - `DELETE /nodes/{id}` (`files.write`, `If-Match`): to trash;
-    - `POST /nodes/{id}/restore` (`files.write`): back from trash;
-    - `GET /nodes/{id}/versions` (`files.read`): the version history;
-    - `POST /nodes/{id}/versions/{v}/restore` (`files.write`): makes an earlier version
-      the current one;
-    - `POST /nodes/search` (`files.read`): full search in the tree; `q`, `drive`, `path`,
-      `metadata` and the other filters in the body;
+    - `GET /nodes/{id}` (`files.read`):
+        - get the node's metadata, without content or manifest;
+        - `?ancestors=true` adds the path ancestors, for breadcrumbs;
+    - `GET /nodes/{id}/children` (`files.read`):
+        - cursor-paged listing of a folder;
+          400 `not_a_folder` for a file;
+    - `POST /nodes/resolve` (`files.read`):
+        - the node at a path;
+        - `drive` and `path` in the body, because paths can be long;
+    - `PATCH /nodes/{id}` (`files.write`, `If-Match`):
+        - rename, move;
+        - the new name and parent are passed in the body;
+    - `DELETE /nodes/{id}` (`files.write`, `If-Match`):
+        - moves node to trash;
+    - `POST /nodes/{id}/restore` (`files.write`):
+        - back from trash;
+    - `GET /nodes/{id}/versions` (`files.read`):
+        - the version history;
+    - `POST /nodes/{id}/versions/{v}/restore` (`files.write`):
+        - makes an earlier version
+          the current one;
+    - `POST /nodes/search` (`files.read`):
+        - full search in the tree; `q`, `drive`, `path`, `metadata` and the other
+          filters are passed in the body;
     - the literal segments (`resolve`, `search`, `chunks`) share the prefix with `{id}`;
-      the ID is routed with a `{id:guid}` constraint, so a literal never binds as an ID.
-- Nodes, uploads. The upload ID is the node ID: the client gives a UUIDv7 at creation,
-  the `uploads` table is keyed by it, and the node keeps that ID once it is in the tree
-  (`Architecture.DataModel.md`, section 2). One upload per node at a time: a second
-  start gets 409 unless it resumes the same one.
-    - `POST /nodes` (`files.write`): creates a folder, or a file to be uploaded; body:
-      `id` (optional, a client UUIDv7), `parent`, `name`, `kind`, `size` (optional);
-      a repeat with the same `id` returns the existing node; a file is not in the tree
-      until its upload completes;
-    - `PUT /nodes/{id}/content` (`files.write`): the simple upload: the bytes as one
-      stream; `Content-Range` to continue from an offset, which needs `size`; the Origin
-      splits the bytes into chunks as they arrive; completes when the received bytes
-      reach `size`, or at the end of the body when no size was given; on a node already
-      in the tree it starts a new version and `If-Match` is required;
-    - `GET /nodes/{id}/upload` (`files.write`): the resume state: the offset for a
-      simple upload, the missing hashes for a chunked one; 404 when no upload is in
-      progress;
-    - `DELETE /nodes/{id}/upload` (`files.write`): abandon; a pending new file is
-      discarded, a node already in the tree is untouched;
-    - `GET /nodes/{id}/content` (`files.read`): download with `Range` support;
-    - `GET /nodes/{id}/thumbnail` (`files.read`): the thumbnail, if there is one.
+        - the ID is routed with a `{id:guid}` constraint, so a literal never binds as an ID.
+- Nodes, uploads:
+    - The upload ID is actually the node ID:
+        - the client gives a UUIDv7 at creation,
+        - the `uploads` table is keyed by it, and...
+        - the node keeps that ID once it's in the tree (`Architecture.DataModel.md`, section 2).
+    - One upload per node at a time:
+        - a second start gets 409 unless it resumes the same one.
+    - `POST /nodes` (`files.write`):
+        - creates a folder, or a file to be uploaded;
+        - body: `id` (optional, a client UUIDv7), `parent`, `name`, `kind`, `size` (optional);
+        - a repeat with the same `id` returns the existing node;
+        - a file is not in the tree until its upload completes;
+    - `PUT /nodes/{id}/content` (`files.write`):
+        - the simple upload: the bytes as one stream;
+        - `Content-Range` to continue from an offset, which needs `size`;
+        - the Origin splits the bytes into chunks as they arrive;
+        - completes when the received bytes reach `size`, or at the end of the body if no
+          size was given (i.e. open-streamed upload);
+        - on a node already in the tree it starts a new version and `If-Match` is required;
+    - `GET /nodes/{id}/upload` (`files.write`):
+        - the resume state:
+            - the offset for a simple upload,
+            - the missing hashes for a chunked one;
+        - 404 when no upload is in progress;
+    - `DELETE /nodes/{id}/upload` (`files.write`):
+        - abandon upload;
+        - a pending new file is discarded;
+        - a node already in the tree is left untouched;
+    - `GET /nodes/{id}/content` (`files.read`):
+        - download with `Range` support;
+    - `GET /nodes/{id}/thumbnail` (`files.read`):
+        - the thumbnail, if there is one.
 - Nodes, chunked uploads (each with the "Advanced" badge):
-    - `POST /nodes/{id}/upload` (`files.write`): starts a chunked upload with the
-      manifest in the body; returns the missing hashes and, on S3 warehouses, a presigned
-      URL per missing chunk; on a node already in the tree it starts a new version and
-      `If-Match` is required;
-    - `PUT /nodes/{id}/upload/chunks/{hash}` (`files.write`): one chunk;
-    - `POST /nodes/{id}/upload/complete` (`files.write`, `If-Match`): for a new file,
-      inserts the node; for a new version, bumps the version; commits the manifest,
-      appends the change-log row and deletes the upload, in one transaction;
-    - `GET /nodes/{id}/manifest` (`files.read`): the manifest with a grant (or presigned
-      URL) per chunk; 400 `not_a_file` for a folder;
-    - `GET /nodes/chunks/{hash}` (`files.read` with a grant, or `tenant.mirror`): one
-      chunk of the tenant's;
-    - `POST /nodes/chunks/exists` (`files.read` with grants, or `tenant.mirror`): which
-      of the hashes in the body the tenant already has.
+    - `POST /nodes/{id}/upload` (`files.write`):
+        - starts a chunked upload with the manifest in the body;
+        - returns the missing hashes;
+        - on a node already in the tree it starts a new version and `If-Match` is required;
+    - `PUT /nodes/{id}/upload/chunks/{hash}` (`files.write`):
+        - one chunk, to a `local` warehouse;
+        - access is checked on every call, not just once at start;
+    - `POST /nodes/{id}/upload/grants` (`files.write`, S3 warehouses):
+        - presigned temporary `PUT` URLs for a batch of up to 64 missing hashes in the body;
+        - the SDK asks for the chunks it is about to send, never for the whole file;
+        - access is checked on every call;
+    - `POST /nodes/{id}/upload/complete` (`files.write`, `If-Match`):
+        - in one transaction:
+            - for a new file, inserts the node;
+            - for a new version, bumps the version;
+            - then:
+                - commits the manifest,
+                - appends the change-log row,
+                - deletes the upload;
+    - `GET /nodes/{id}/manifest` (`files.read`):
+        - the manifest of the node's current version;
+        - returns 400 `not_a_file` for a folder;
+    - `GET /nodes/{id}/chunks/{hash}` (`files.read`):
+        - one chunk of the node's manifest, from a `local` warehouse;
+        - a hash outside that manifest is 404;
+    - `POST /nodes/{id}/chunks/grants` (`files.read`, S3 warehouses):
+        - presigned temporary `GET` URLs for a batch of up to 64 hashes of the node's manifest;
+        - asked for in batches as the download proceeds;
+    - `GET /nodes/chunks/{hash}` (`tenant.mirror`):
+        - any chunk of the tenant, by hash;
+    - `POST /nodes/chunks/exists` (`tenant.mirror`):
+        - which of the hashes in the body the tenant already has.
 - Changes:
     - `GET /changes?since=&limit=&subtree=` (`events.read`): the change log from a
       cursor; `subtree` limits it to a folder;
