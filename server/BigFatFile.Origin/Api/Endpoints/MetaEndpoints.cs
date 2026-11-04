@@ -1,6 +1,6 @@
 using BigFatFile.Contracts.Account;
 using BigFatFile.Contracts.Api;
-using BigFatFile.Contracts.Chunking;
+using BigFatFile.Contracts.Manifests;
 using BigFatFile.Contracts.Names;
 using BigFatFile.Origin.Modules;
 using BigFatFile.Origin.Server;
@@ -13,12 +13,7 @@ internal static class MetaEndpoints
         meta.MapGet("", (LicenceFeatureGate features) => new Meta(
                 ApiVersion.Current,
                 OriginServices.ServerVersion,
-                new MetaChunker(
-                    ChunkerParameters.Algorithm,
-                    ChunkerParameters.MinSize,
-                    ChunkerParameters.AverageSize,
-                    ChunkerParameters.MaxSize,
-                    ChunkerParameters.NormalizationLevel),
+                ManifestChunking.Accepted,
                 NodeNames.UnicodeVersion,
                 features.EnabledKeys,
                 // No setting chooses these yet: the sign-up policy is its default, password
@@ -30,7 +25,7 @@ internal static class MetaEndpoints
                 Returns what a client needs to know about this server before it uses the API:
 
                 - the API version and the server version;
-                - the parameters of the chunker, which splits files into chunks for transfer;
+                - `chunkings`: the chunking parameter sets that this server accepts; a manifest that a client sends must use one of them;
                 - the Unicode version used to normalise file names before they are compared;
                 - the licensed features that are turned on;
                 - `account`: what the sign-in and sign-up flows offer:

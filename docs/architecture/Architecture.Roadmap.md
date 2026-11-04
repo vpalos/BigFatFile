@@ -128,6 +128,12 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 - The chunk store behind `IChunkStore`.
 - Manifests in the database and in the warehouse, in the commit order of
   `Architecture.FileStorage.md`.
+- The content tables (`Architecture.DataModel.md`, section 3):
+    - `node_versions`, `manifests`, `manifest_chunks`, `chunks` and `objects`.
+- Whole objects and `none` manifests:
+    - the switch that turns off chunking on the Origin, per tenant and per upload;
+    - the tenant's default chunking, which may be `none`;
+    - where the API and the data model keep those two, decided in this milestone.
 - File-level upload with inline chunking and offset resume.
 - Downloads with `Range`, for previews and playback.
 - Versions: list and restore.
@@ -140,10 +146,14 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 
 #### M1.4. Chunk-level transfer
 
-- Chunked uploads keyed by the node ID: the missing chunks, presigned URLs on S3, a
-  hash check on every chunk, completion with `If-Match`.
-- Manifest downloads with chunk grants.
-- `POST /nodes/chunks/exists`.
+- Chunked uploads keyed by the node ID:
+    - the missing chunks;
+    - a hash check on every chunk;
+    - presigned `PUT` URLs on S3, in batches, from `POST /nodes/{id}/upload/grants`;
+    - completion with `If-Match`.
+- Manifest downloads:
+    - chunks from the Origin, through `GET /nodes/{id}/chunks/{hash}`;
+    - presigned `GET` URLs on S3, in batches, from `POST /nodes/{id}/chunks/grants`.
 - The chunker and hasher in WebAssembly, built from the reference crates, passing the
   shared test vectors.
 - The transfer engines in both SDKs: parallel chunks over several connections, the
@@ -175,11 +185,12 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 
 #### M1.6. Sharing
 
-- Permission rules on nodes (viewer, editor, owner) and the effective permission.
+- Permission rules on drives and folders (viewer, editor, owner) and the effective
+  permission.
 - Groups, behind `IGroupDirectory`.
 - Guest memberships.
-- Share links: password, expiry, the public endpoints, multi-file links as a streamed
-  zip.
+- Share links: password, expiry, the public endpoints, multi-file links zipped in the
+  browser.
 - Audit entries for permission changes, share-link visits and downloads.
 - Done when:
     - a group with editor rights on a folder works in it, and nobody else sees it;
@@ -237,6 +248,8 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 - The Replica adapter (full mirror, no eviction), pairing, status reporting, the
   `tenant.mirror` scope, bootstrap from the snapshot, token exchange for deferred
   replay; about a week of work once the engine exists.
+- The chunk endpoints by hash, for `tenant.mirror`: `GET /nodes/chunks/{hash}` and
+  `POST /nodes/chunks/exists`.
 - Replica reconcile spans and metrics (lag, outbox depth, verification).
 - Docker image for NAS hosts; the Windows service build.
 - Done when: an office keeps reading and writing with the uplink cut, and the Origin is

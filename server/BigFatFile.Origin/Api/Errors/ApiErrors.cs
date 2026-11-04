@@ -61,6 +61,10 @@ internal static class ApiErrors
         "Only an admin of the tenant can do this.",
         "The user is not an admin of the tenant.");
 
+    public static readonly ApiError MemberRequired = new(403, ErrorCodes.MemberRequired,
+        "A guest of the tenant cannot do this.",
+        "The user is a guest of the tenant. A guest has access only through the permission rules that name them, and sees neither the member list nor the groups.");
+
     public static readonly ApiError LastAdmin = new(409, ErrorCodes.LastAdmin,
         "The tenant must keep at least one admin.",
         "The change would leave the tenant without an admin. Make another member an admin first.");
@@ -111,7 +115,7 @@ internal static class ApiErrors
     public static IReadOnlyList<ApiError> All { get; } =
     [
         .. Generic,
-        CsrfTokenInvalid, UserRequired, AdminRequired, LastAdmin, AlreadyMember, TooManyRequests,
+        CsrfTokenInvalid, UserRequired, AdminRequired, MemberRequired, LastAdmin, AlreadyMember, TooManyRequests,
         SignUpClosed, WrongCredentials, EmailNotConfirmed, LockedOut, InvalidCode, AlreadyConfirmed, WrongAccount,
     ];
 

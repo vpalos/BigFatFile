@@ -29,6 +29,7 @@ internal static class ApiServices
 
             - A token or a session works in one tenant. A request with any other tenant's ID gets 404, the same answer as for a tenant that does not exist.
             - The endpoints that need the `members.manage` scope are for admins only. A user who is not an admin of the tenant gets 403 with the code `admin_required`.
+            - The endpoints that need the `members.read` scope are for members and admins. A guest of the tenant gets 403 with the code `member_required`.
             """,
     };
 

@@ -18,6 +18,7 @@ internal static class MemberEndpoints
             .WithDescription("""
                 Returns the tenant's members, ordered by name, one page at a time.
                 """)
+            .ProducesError(ApiErrors.MemberRequired)
             .ProducesError(ApiErrors.NotFound)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersRead));
 

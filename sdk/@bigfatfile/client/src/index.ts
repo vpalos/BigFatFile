@@ -1,5 +1,5 @@
 export { createBffClient, type BffClient, type BffClientOptions } from "./client.js";
-export { nameKey, nameKeyUnicodeVersion } from "./contracts/nameKey.js";
+export { nameKey, nameKeyUnicodeVersion, normalizeName } from "./contracts/nodeNames.js";
 export type { components, operations, paths } from "./generated/api.js";
 
 import type { components } from "./generated/api.js";

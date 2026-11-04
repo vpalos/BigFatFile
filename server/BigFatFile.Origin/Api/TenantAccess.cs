@@ -12,7 +12,8 @@ namespace BigFatFile.Origin.Api;
 /// Lets a request into the <c>/tenants/{id}</c> endpoints only for the tenant that its session
 /// or token works in, and only while the user is still a member of it. Any other request gets
 /// 404, the same answer as for a tenant that does not exist. An endpoint that needs one of
-/// <see cref="BffScopes.AdminOnly"/> also needs the user to be an admin of the tenant.
+/// <see cref="BffScopes.AdminOnly"/> also needs the user to be an admin of the tenant, and
+/// one that needs one of <see cref="BffScopes.NotForGuests"/> refuses a guest.
 /// </summary>
 internal static class TenantAccess
 {
@@ -31,7 +32,12 @@ internal static class TenantAccess
             return Problems.Of(ApiErrors.NotFound);
         }
 
-        if (role != TenantRole.Admin && NeedsAdmin(http))
+        if (role == TenantRole.Guest && NeedsScopeFrom(http, BffScopes.NotForGuests))
+        {
+            return Problems.Of(ApiErrors.MemberRequired);
+        }
+
+        if (role != TenantRole.Admin && NeedsScopeFrom(http, BffScopes.AdminOnly))
         {
             return Problems.Of(ApiErrors.AdminRequired);
         }
@@ -45,7 +51,7 @@ internal static class TenantAccess
         return await MemberModel.RoleOfAsync(connection, tenantId, userId, http.RequestAborted);
     }
 
-    private static bool NeedsAdmin(HttpContext http) =>
+    private static bool NeedsScopeFrom(HttpContext http, IReadOnlySet<string> scopes) =>
         http.GetEndpoint()?.Metadata.GetOrderedMetadata<IAuthorizeData>()
-            .Any(data => ScopeAuthorization.ScopeOf(data.Policy) is { } scope && BffScopes.AdminOnly.Contains(scope)) == true;
+            .Any(data => ScopeAuthorization.ScopeOf(data.Policy) is { } scope && scopes.Contains(scope)) == true;
 }

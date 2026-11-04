@@ -16,6 +16,7 @@ internal static class TenantEndpoints
             .WithDescription("""
                 Returns the tenant's name, its plan and when it was created.
                 """)
+            .ProducesError(ApiErrors.MemberRequired)
             .ProducesError(ApiErrors.NotFound)
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersRead));
 

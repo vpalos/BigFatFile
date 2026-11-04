@@ -79,7 +79,14 @@ encryption.
 
 ```json
 {
-    "chunking": { "algorithm": "fastcdc", "gear": 1, "min": 1048576, "avg": 4194304, "max": 8388608 },
+    "chunking": {
+        "algorithm": "fastcdc-2020",
+        "gear": 1,
+        "minSize": 1048576,
+        "averageSize": 4194304,
+        "maxSize": 8388608,
+        "normalizationLevel": 1
+    },
     "chunks": [
         { "hash": "blake3:…", "size": 4194304 },
         { "hash": "blake3:…", "size": 2097152 }
@@ -105,6 +112,8 @@ encryption.
   live side by side.
 - `gear` names the GEAR table. A different table cuts differently, so it is one of the
   parameters.
+- `normalizationLevel` is the normalisation level. It selects the boundary masks, so it also
+  moves the cut points.
 - A new version of a file is cut with the parameters of the version it replaces. This
   keeps delta and deduplication working after the defaults change.
 - A file whose parameters are no longer supported is cut with the current defaults
@@ -206,8 +215,8 @@ encryption.
 - Cluster mode requires every warehouse to be shared storage (S3 or a shared
   filesystem); a `local` warehouse on one node's disk fails the check.
 - `local` implementation:
-    - `chunks/<tenant>/ab/cd/<hash>` with two levels of fan-out; `objects/<tenant>/<id>`
-      for sends; `manifests/` and `snapshots/` as in section 1;
+    - `chunks/<tenant>/ab/cd/<hash>` with two levels of fan-out; `objects/<tenant>/<id>`;
+      `manifests/` and `snapshots/` as in section 1;
     - write to a temporary file in the same directory, fsync, rename into place;
     - any local filesystem works; network filesystems work too (nothing locks).
 - `s3` implementation:
@@ -216,15 +225,18 @@ encryption.
 
 ## 3. Garbage collection
 
-- A chunk is garbage when no retained version of the tenant references it.
-- Mark and sweep per tenant: list every referenced hash, list the tenant's chunks,
-  delete what is stored but not referenced.
+- A chunk or a whole object is garbage when no retained version of the tenant
+  references it.
+- Mark and sweep per tenant, for chunks and whole objects in one pass:
+    - list every referenced hash and object ID;
+    - list the tenant's chunks and objects;
+    - delete what is stored but not referenced.
 - A pruned version's warehouse manifest is deleted the same way; an expired send's
   object is deleted when the send expires.
-- Two safeguards for chunks in flight:
-    - an upload in progress pins its chunks until it completes or expires
+- Two safeguards for content in flight:
+    - an upload in progress pins its chunks or its object until it completes or expires
       (`Architecture.DataModel.md`, section 2);
-    - the sweep never deletes a chunk written less than 24 hours ago.
+    - the sweep never deletes a chunk or an object written less than 24 hours ago.
 - Runs as a recurring Hangfire job.
 
 ## 4. Encryption

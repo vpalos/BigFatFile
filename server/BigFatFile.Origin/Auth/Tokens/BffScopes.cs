@@ -34,7 +34,7 @@ internal static class BffScopes
         [Profile] = "The user's name.",
         [Email] = "The user's email address.",
         [OfflineAccess] = "Refresh tokens, to keep access after the access token expires.",
-        [FilesRead] = "List folders, read file metadata, download files, read manifests and chunk grants.",
+        [FilesRead] = "List folders, read file metadata, download files, and read the manifests and chunks of the nodes it may read.",
         [FilesWrite] = "Create, upload, rename, move, trash and restore files, including chunked uploads.",
         [SharesManage] = "Create and revoke share links on nodes the App may read.",
         [SendsManage] = "Create sends.",
@@ -56,6 +56,9 @@ internal static class BffScopes
 
     /// <summary>The scopes whose endpoints only an admin of the tenant may call, with a token or the session cookie.</summary>
     public static IReadOnlySet<string> AdminOnly { get; } = new HashSet<string> { MembersManage, TenantAdmin };
+
+    /// <summary>The scopes whose endpoints a guest of the tenant may not call, with a token or the session cookie.</summary>
+    public static IReadOnlySet<string> NotForGuests { get; } = new HashSet<string> { MembersRead };
 
     public static IReadOnlyList<string> Api { get; } = [.. Descriptions.Keys.Except(Standard)];
 

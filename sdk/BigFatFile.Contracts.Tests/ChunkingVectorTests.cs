@@ -12,13 +12,15 @@ public sealed class ChunkingVectorTests
     [Fact]
     public void ParametersMatchTheVectors()
     {
-        var chunker = Vectors.Load("chunking.json").GetProperty("chunker");
+        var chunking = Vectors.Load("chunking.json").GetProperty("chunking");
+        var expected = ManifestChunking.Default;
 
-        Assert.Equal(ChunkerParameters.Algorithm, chunker.GetProperty("algorithm").GetString());
-        Assert.Equal(ChunkerParameters.MinSize, chunker.GetProperty("minSize").GetInt32());
-        Assert.Equal(ChunkerParameters.AverageSize, chunker.GetProperty("averageSize").GetInt32());
-        Assert.Equal(ChunkerParameters.MaxSize, chunker.GetProperty("maxSize").GetInt32());
-        Assert.Equal(ChunkerParameters.NormalizationLevel, chunker.GetProperty("normalizationLevel").GetInt32());
+        Assert.Equal(expected.Algorithm, chunking.GetProperty("algorithm").GetString());
+        Assert.Equal(expected.Gear, chunking.GetProperty("gear").GetInt32());
+        Assert.Equal(expected.MinSize, chunking.GetProperty("minSize").GetInt32());
+        Assert.Equal(expected.AverageSize, chunking.GetProperty("averageSize").GetInt32());
+        Assert.Equal(expected.MaxSize, chunking.GetProperty("maxSize").GetInt32());
+        Assert.Equal(expected.NormalizationLevel, chunking.GetProperty("normalizationLevel").GetInt32());
     }
 
     [Theory]

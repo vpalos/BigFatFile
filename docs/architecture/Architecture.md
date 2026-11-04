@@ -18,14 +18,6 @@
     - data is protected against ransomware;
     - files are versioned, protecting against mistakes and losses;
     - data is encrypted in transit and at rest.
-- File content passes through the Origin:
-    - v1 kept file bytes out of the application tier (browser to storage, with the
-      public pages describing that as a design choice); v2 retires that rule;
-    - the Origin splits uploads into chunks, streams downloads, scans for malware and
-      makes thumbnails, because the desktop drive and the Replica need the content;
-    - chunk-level transfers still go directly to S3 warehouses where possible;
-    - the public pages that describe the v1 behaviour are rewritten at launch
-      (`Architecture.Roadmap.md`, M6).
 - Limits never slow real users:
     - transfer endpoints are never rate-limited;
     - abuse controls count and open a ticket before anything blocks
@@ -89,11 +81,11 @@ docs/       architecture documents, developer docs
     - the one public API, `/api/v1`: conventions, authentication, scopes and the
       endpoint list; the chunk-level endpoints are part of it, with an "Advanced" badge.
 - [Tenancy](Architecture.Tenancy.md):
-    - tenants, tenant isolation (scoping and row-level security), permissions and
+    - tenants, tenant isolation (scoping and row-level security), groups, permissions and
       authentication.
 - [Data Model](Architecture.DataModel.md):
-    - the file tree, uploads in progress, file versioning, the change log and the audit
-      log.
+    - the file tree, uploads in progress, content, permissions, file versioning, the change
+      log and the audit log.
 - [File storage](Architecture.FileStorage.md):
     - how drive files are stored using CDC, in warehouses.
 - [File transfer](Architecture.FileTransfer.md):

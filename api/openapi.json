@@ -12,7 +12,7 @@
           "meta"
         ],
         "summary": "Get server information",
-        "description": "Returns what a client needs to know about this server before it uses the API:\n\n- the API version and the server version;\n- the parameters of the chunker, which splits files into chunks for transfer;\n- the Unicode version used to normalise file names before they are compared;\n- the licensed features that are turned on;\n- `account`: what the sign-in and sign-up flows offer:\n    - `signUp` says whether anyone can create an account, or only people with an invitation;\n    - `password` says whether people can sign in and sign up with an email address and a password;\n    - `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.\n\nIt needs no token.",
+        "description": "Returns what a client needs to know about this server before it uses the API:\n\n- the API version and the server version;\n- `chunkings`: the chunking parameter sets that this server accepts; a manifest that a client sends must use one of them;\n- the Unicode version used to normalise file names before they are compared;\n- the licensed features that are turned on;\n- `account`: what the sign-in and sign-up flows offer:\n    - `signUp` says whether anyone can create an account, or only people with an invitation;\n    - `password` says whether people can sign in and sign up with an email address and a password;\n    - `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.\n\nIt needs no token.",
         "operationId": "getMeta",
         "responses": {
           "200": {
@@ -982,7 +982,7 @@
             }
           },
           "403": {
-            "description": "`forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.",
+            "description": "- `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.\n- `member_required`: A guest of the tenant cannot do this. The user is a guest of the tenant. A guest has access only through the permission rules that name them, and sees neither the member list nor the groups.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -995,6 +995,15 @@
                       "title": "The token or the session does not allow this.",
                       "status": 403,
                       "code": "forbidden",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
+                  "member_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:member_required",
+                      "title": "A guest of the tenant cannot do this.",
+                      "status": 403,
+                      "code": "member_required",
                       "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
                     }
                   }
@@ -1107,7 +1116,7 @@
             }
           },
           "403": {
-            "description": "`forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.",
+            "description": "- `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.\n- `member_required`: A guest of the tenant cannot do this. The user is a guest of the tenant. A guest has access only through the permission rules that name them, and sees neither the member list nor the groups.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1120,6 +1129,15 @@
                       "title": "The token or the session does not allow this.",
                       "status": 403,
                       "code": "forbidden",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
+                  "member_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:member_required",
+                      "title": "A guest of the tenant cannot do this.",
+                      "status": 403,
+                      "code": "member_required",
                       "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
                     }
                   }
@@ -2096,6 +2114,7 @@
               "csrf_token_invalid",
               "user_required",
               "admin_required",
+              "member_required",
               "last_admin",
               "already_member",
               "too_many_requests",
@@ -2193,6 +2212,58 @@
           }
         }
       },
+      "ManifestChunking": {
+        "required": [
+          "algorithm"
+        ],
+        "type": "object",
+        "properties": {
+          "algorithm": {
+            "type": "string"
+          },
+          "gear": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "The number of the GEAR table.",
+            "format": "int32"
+          },
+          "minSize": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "The smallest chunk, in bytes. Only the last chunk of a file may be smaller.",
+            "format": "int32"
+          },
+          "averageSize": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "The average chunk size the masks aim at, in bytes.",
+            "format": "int32"
+          },
+          "maxSize": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "The largest chunk, in bytes.",
+            "format": "int32"
+          },
+          "normalizationLevel": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "The normalisation level, which selects the boundary masks.",
+            "format": "int32"
+          }
+        },
+        "description": "The chunking that cut a file, recorded in its manifest: the algorithm and its parameters,\nor `none` for a file that is stored as one whole object."
+      },
       "Me": {
         "required": [
           "id",
@@ -2263,7 +2334,7 @@
         "required": [
           "apiVersion",
           "serverVersion",
-          "chunker",
+          "chunkings",
           "nameKeyUnicodeVersion",
           "features",
           "account"
@@ -2276,8 +2347,12 @@
           "serverVersion": {
             "type": "string"
           },
-          "chunker": {
-            "$ref": "#/components/schemas/MetaChunker"
+          "chunkings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ManifestChunking"
+            },
+            "description": "The chunking parameter sets that this server accepts in a manifest."
           },
           "nameKeyUnicodeVersion": {
             "type": "string"
@@ -2295,37 +2370,6 @@
           }
         },
         "description": "What a client needs to know about a server before it talks to it."
-      },
-      "MetaChunker": {
-        "required": [
-          "algorithm",
-          "minSize",
-          "averageSize",
-          "maxSize",
-          "normalizationLevel"
-        ],
-        "type": "object",
-        "properties": {
-          "algorithm": {
-            "type": "string"
-          },
-          "minSize": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "averageSize": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "maxSize": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "normalizationLevel": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
       },
       "MeWithinTenant": {
         "required": [
@@ -2441,6 +2485,7 @@
               "csrf_token_invalid",
               "user_required",
               "admin_required",
+              "member_required",
               "last_admin",
               "already_member",
               "too_many_requests",
@@ -2617,7 +2662,7 @@
           "member",
           "guest"
         ],
-        "description": "What a member may do in a tenant. Node permissions apply on top.\n- `admin`: manages members, invitations and the tenant's settings.\n- `member`: a member without the rights of an admin.\n- `guest`: an outside person who sees only what is shared with them."
+        "description": "What a member may do in a tenant. Permission rules on drives and folders apply on top.\n- `admin`: manages members, groups, drives and the tenant's settings, and is owner of every drive.\n- `member`: may create drives, and sees the member list and the groups they are in.\n- `guest`: has access only through the permission rules that name them, and sees neither the member list nor the groups."
       },
       "UpdateMemberRequest": {
         "required": [
@@ -2645,7 +2690,7 @@
               "profile": "The user's name.",
               "email": "The user's email address.",
               "offline_access": "Refresh tokens, to keep access after the access token expires.",
-              "files.read": "List folders, read file metadata, download files, read manifests and chunk grants.",
+              "files.read": "List folders, read file metadata, download files, and read the manifests and chunks of the nodes it may read.",
               "files.write": "Create, upload, rename, move, trash and restore files, including chunked uploads.",
               "shares.manage": "Create and revoke share links on nodes the App may read.",
               "sends.manage": "Create sends.",
@@ -2683,7 +2728,7 @@
     },
     {
       "name": "tenants",
-      "description": "The tenant, its members and its invitations.\n\n- A token or a session works in one tenant. A request with any other tenant's ID gets 404, the same answer as for a tenant that does not exist.\n- The endpoints that need the `members.manage` scope are for admins only. A user who is not an admin of the tenant gets 403 with the code `admin_required`."
+      "description": "The tenant, its members and its invitations.\n\n- A token or a session works in one tenant. A request with any other tenant's ID gets 404, the same answer as for a tenant that does not exist.\n- The endpoints that need the `members.manage` scope are for admins only. A user who is not an admin of the tenant gets 403 with the code `admin_required`.\n- The endpoints that need the `members.read` scope are for members and admins. A guest of the tenant gets 403 with the code `member_required`."
     }
   ]
 }

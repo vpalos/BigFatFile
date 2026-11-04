@@ -121,8 +121,8 @@ are no private endpoints.
 
 ## 4. Tenant-wide Apps (`tenant.mirror`)
 
-- Everything here is in the one public specification, under the `mirror` tag. What
-  separates it from the rest is a scope, not privacy.
+- Everything here is in the one public specification, under the tags of its paths, such
+  as `snapshot` and `replicas`. What separates it from the rest is a scope, not privacy.
 - The `tenant.mirror` scope:
     - granted deliberately by a tenant administrator to an App that mirrors or backs up
       the whole tenant; the Replica is the first-party App that holds it;

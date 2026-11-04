@@ -16,7 +16,7 @@ export interface paths {
          * @description Returns what a client needs to know about this server before it uses the API:
          *
          *     - the API version and the server version;
-         *     - the parameters of the chunker, which splits files into chunks for transfer;
+         *     - `chunkings`: the chunking parameter sets that this server accepts; a manifest that a client sends must use one of them;
          *     - the Unicode version used to normalise file names before they are compared;
          *     - the licensed features that are turned on;
          *     - `account`: what the sign-in and sign-up flows offer:
@@ -492,7 +492,7 @@ export interface components {
              * @description Identifies the error. A client branches on it.
              * @enum {string}
              */
-            code: "bad_request" | "invalid_fields" | "authentication_required" | "forbidden" | "not_found" | "method_not_allowed" | "request_too_large" | "unsupported_media_type" | "server_error" | "csrf_token_invalid" | "user_required" | "admin_required" | "last_admin" | "already_member" | "too_many_requests" | "sign_up_closed" | "wrong_credentials" | "email_not_confirmed" | "locked_out" | "invalid_code" | "already_confirmed" | "wrong_account";
+            code: "bad_request" | "invalid_fields" | "authentication_required" | "forbidden" | "not_found" | "method_not_allowed" | "request_too_large" | "unsupported_media_type" | "server_error" | "csrf_token_invalid" | "user_required" | "admin_required" | "member_required" | "last_admin" | "already_member" | "too_many_requests" | "sign_up_closed" | "wrong_credentials" | "email_not_confirmed" | "locked_out" | "invalid_code" | "already_confirmed" | "wrong_account";
             /** @description Identifies the request in the server's traces and logs. Give it to the server's operator when you report a problem. */
             traceId?: string;
         };
@@ -522,6 +522,38 @@ export interface components {
             /** @description The token from the invitation email. */
             token: string;
         };
+        /**
+         * @description The chunking that cut a file, recorded in its manifest: the algorithm and its parameters,
+         *     or `none` for a file that is stored as one whole object.
+         */
+        ManifestChunking: {
+            algorithm: string;
+            /**
+             * Format: int32
+             * @description The number of the GEAR table.
+             */
+            gear?: null | number;
+            /**
+             * Format: int32
+             * @description The smallest chunk, in bytes. Only the last chunk of a file may be smaller.
+             */
+            minSize?: null | number;
+            /**
+             * Format: int32
+             * @description The average chunk size the masks aim at, in bytes.
+             */
+            averageSize?: null | number;
+            /**
+             * Format: int32
+             * @description The largest chunk, in bytes.
+             */
+            maxSize?: null | number;
+            /**
+             * Format: int32
+             * @description The normalisation level, which selects the boundary masks.
+             */
+            normalizationLevel?: null | number;
+        };
         /** @description The signed-in user and the tenants they belong to. */
         Me: {
             /** Format: uuid */
@@ -548,23 +580,13 @@ export interface components {
         Meta: {
             apiVersion: string;
             serverVersion: string;
-            chunker: components["schemas"]["MetaChunker"];
+            /** @description The chunking parameter sets that this server accepts in a manifest. */
+            chunkings: components["schemas"]["ManifestChunking"][];
             nameKeyUnicodeVersion: string;
             /** @description The licensed features that are on. */
             features: string[];
             /** @description What the sign-in and sign-up flows offer on this server. */
             account: components["schemas"]["AccountOptions"];
-        };
-        MetaChunker: {
-            algorithm: string;
-            /** Format: int32 */
-            minSize: number;
-            /** Format: int32 */
-            averageSize: number;
-            /** Format: int32 */
-            maxSize: number;
-            /** Format: int32 */
-            normalizationLevel: number;
         };
         MeWithinTenant: {
             /** Format: uuid */
@@ -600,7 +622,7 @@ export interface components {
              * @description Identifies the error. A client branches on it.
              * @enum {string}
              */
-            code: "bad_request" | "invalid_fields" | "authentication_required" | "forbidden" | "not_found" | "method_not_allowed" | "request_too_large" | "unsupported_media_type" | "server_error" | "csrf_token_invalid" | "user_required" | "admin_required" | "last_admin" | "already_member" | "too_many_requests" | "sign_up_closed" | "wrong_credentials" | "email_not_confirmed" | "locked_out" | "invalid_code" | "already_confirmed" | "wrong_account";
+            code: "bad_request" | "invalid_fields" | "authentication_required" | "forbidden" | "not_found" | "method_not_allowed" | "request_too_large" | "unsupported_media_type" | "server_error" | "csrf_token_invalid" | "user_required" | "admin_required" | "member_required" | "last_admin" | "already_member" | "too_many_requests" | "sign_up_closed" | "wrong_credentials" | "email_not_confirmed" | "locked_out" | "invalid_code" | "already_confirmed" | "wrong_account";
             /** @description Identifies the request in the server's traces and logs. Give it to the server's operator when you report a problem. */
             traceId?: string;
         };
@@ -662,10 +684,10 @@ export interface components {
             createdAt: string;
         };
         /**
-         * @description What a member may do in a tenant. Node permissions apply on top.
-         *     - `admin`: manages members, invitations and the tenant's settings.
-         *     - `member`: a member without the rights of an admin.
-         *     - `guest`: an outside person who sees only what is shared with them.
+         * @description What a member may do in a tenant. Permission rules on drives and folders apply on top.
+         *     - `admin`: manages members, groups, drives and the tenant's settings, and is owner of every drive.
+         *     - `member`: may create drives, and sees the member list and the groups they are in.
+         *     - `guest`: has access only through the permission rules that name them, and sees neither the member list nor the groups.
          * @enum {unknown}
          */
         TenantRole: "admin" | "member" | "guest";
@@ -1235,7 +1257,10 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope. */
+            /**
+             * @description - `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.
+             *     - `member_required`: A guest of the tenant cannot do this. The user is a guest of the tenant. A guest has access only through the permission rules that name them, and sees neither the member list nor the groups.
+             */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1289,7 +1314,10 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope. */
+            /**
+             * @description - `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.
+             *     - `member_required`: A guest of the tenant cannot do this. The user is a guest of the tenant. A guest has access only through the permission rules that name them, and sees neither the member list nor the groups.
+             */
             403: {
                 headers: {
                     [name: string]: unknown;

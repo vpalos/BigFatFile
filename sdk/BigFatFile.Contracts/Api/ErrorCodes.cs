@@ -19,6 +19,7 @@ public static class ErrorCodes
     public const string CsrfTokenInvalid = "csrf_token_invalid";
     public const string UserRequired = "user_required";
     public const string AdminRequired = "admin_required";
+    public const string MemberRequired = "member_required";
     public const string LastAdmin = "last_admin";
     public const string AlreadyMember = "already_member";
     public const string TooManyRequests = "too_many_requests";

@@ -1,13 +1,15 @@
 namespace BigFatFile.Contracts.Chunking;
 
 /// <summary>
-/// The fixed parameters of the content-defined chunker.
-/// Implementations must use exactly these values.
-/// The Origin server reports them in <c>GET /api/v1/meta</c>.
+/// The parameters of the content-defined chunker in this library.
+/// Each manifest records them, as <see cref="Manifests.ManifestChunking.Default"/>.
 /// </summary>
 public static class ChunkerParameters
 {
     public const string Algorithm = "fastcdc-2020";
+
+    /// <summary>The number of the GEAR table that the chunker uses. A different table cuts differently.</summary>
+    public const int Gear = 1;
 
     public const int MinSize = 1 * 1024 * 1024;
     public const int AverageSize = 4 * 1024 * 1024;

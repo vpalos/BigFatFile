@@ -8,6 +8,15 @@ public sealed class NameVectorTests
 
     [Theory]
     [MemberData(nameof(VectorNames))]
+    public void NormalizedNameMatchesTheVector(string name)
+    {
+        var vector = Vectors.Find("names.json", name);
+
+        Assert.Equal(vector.GetProperty("normalized").GetString(), NodeNames.Normalize(vector.GetProperty("input").GetString()!));
+    }
+
+    [Theory]
+    [MemberData(nameof(VectorNames))]
     public void KeyMatchesTheVector(string name)
     {
         var vector = Vectors.Find("names.json", name);
@@ -29,6 +38,7 @@ public sealed class NameVectorTests
     [MemberData(nameof(UnpairedSurrogates))]
     public void UnpairedSurrogatesAreRejected(string input)
     {
+        Assert.Throws<ArgumentException>(() => NodeNames.Normalize(input));
         Assert.Throws<ArgumentException>(() => NodeNames.Key(input));
     }
 }

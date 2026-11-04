@@ -110,6 +110,25 @@ public sealed class TenantIsolationTests(Origin origin, Postgres postgres) : ICl
         Assert.Equal(ErrorCodes.AdminRequired, problem.RootElement.GetProperty("code").GetString());
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("/members")]
+    public async Task MembersReadIsNotForGuests(string path)
+    {
+        var email = $"guest{path.Replace('/', '-')}@bigfatfile.local";
+        var userId = await TestData.CreateUserAsync(origin, email);
+        var tenantId = await TestData.CreateTenantAsync(origin, "Guests");
+        await TestData.AddMemberAsync(origin, tenantId, userId, TenantRole.Guest);
+        using var browser = origin.CreateClient();
+        await SignIn.SignInWithPasswordAsync(browser, email, TestData.Password);
+
+        var response = await browser.GetAsync($"/api/v1/tenants/{tenantId}{path}", Cancellation);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Cancellation));
+        Assert.Equal(ErrorCodes.MemberRequired, problem.RootElement.GetProperty("code").GetString());
+    }
+
     [Fact]
     public async Task SignInChoosesTheTenantUsedLast()
     {

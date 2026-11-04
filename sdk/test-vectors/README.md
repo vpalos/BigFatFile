@@ -20,8 +20,8 @@ here is a change to the contract between clients and servers.
             rust:1-slim cargo run --release -- /work/chunking.json
         ```
 
-- `names.json`: name keys (`Architecture.DataModel.md`, section 1).
-    - The expected keys were computed from `CaseFolding.txt` and
+- `names.json`: stored names and name keys (`Architecture.DataModel.md`, section 1).
+    - The expected names and keys were computed from `CaseFolding.txt` and
       Python's `unicodedata`, independently of both implementations.
     - The folding table both implementations use comes from
       `node sdk/unicode/generate-case-folding.mjs`.

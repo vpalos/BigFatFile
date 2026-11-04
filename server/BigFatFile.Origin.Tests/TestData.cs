@@ -36,4 +36,12 @@ public static class TestData
 
         return tenantId;
     }
+
+    public static async Task AddMemberAsync(Origin origin, Guid tenantId, Guid userId, TenantRole role)
+    {
+        var cancellation = TestContext.Current.CancellationToken;
+        await using var connection = new NpgsqlConnection(origin.ConnectionString);
+        await connection.OpenAsync(cancellation);
+        await MemberModel.AddAsync(connection, tenantId, userId, role, cancellation);
+    }
 }

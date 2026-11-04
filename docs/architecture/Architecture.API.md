@@ -9,7 +9,8 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 - The transfer endpoints all live under the `nodes` prefix and tag:
     - the file-level ones: create, upload as one stream, download;
     - the chunk-level ones: chunked uploads, manifests, chunks;
-    - both are gated by the same `files.*` scopes;
+    - both are gated by the same `files.*` scopes, except the two endpoints that read
+      chunks by hash alone, which take `tenant.mirror` (section 5);
     - what separates the chunk-level ones is an "Advanced" badge on each operation in
       the reference, from the spec's `x-badges` extension; not a prefix, a tag or a
       second specification.
@@ -118,6 +119,8 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
     - it satisfies every scope except `tenant.mirror`, which only a token can carry.
 - `members.manage` and `tenant.admin` also need the user to be an admin of the tenant:
     - anyone else gets 403 with the code `admin_required`, with a token or the cookie.
+- `members.read` also needs the user to be a member or an admin of the tenant:
+    - a guest gets 403 with the code `member_required`, with a token or the cookie.
 - Files:
     - `files.read`: list, read metadata, download; manifests and chunks of the nodes
       it may read;
@@ -174,12 +177,20 @@ permissions apply on top.
       `DELETE .../members/{userId}` (`members.manage`);
     - `GET|POST /tenants/{id}/invitations`, `DELETE .../invitations/{invitationId}`
       (`members.manage`); inviting the same address again resends the email;
-    - `GET|POST /tenants/{id}/groups`, `PATCH|DELETE .../groups/{groupId}`,
-      `PUT .../groups/{groupId}/members` (`members.manage`).
+    - `GET /tenants/{id}/groups` (`members.read`):
+        - an admin sees every group;
+        - a member sees only the groups they are in;
+    - `POST /tenants/{id}/groups`, `PATCH|DELETE .../groups/{groupId}`,
+      `PUT .../groups/{groupId}/members` (`members.manage`):
+        - a group that comes from a directory gets 409 `group_read_only`.
 - Drives:
     - `GET /drives` (`files.read`):
         - the drives the caller is allowed to see, each with its root node and usage;
-    - `POST /drives`, `PATCH /drives/{id}`, `DELETE /drives/{id}` (`tenant.admin`).
+    - `POST /drives` (`files.write`):
+        - a guest gets 403 `member_required`;
+    - `PATCH /drives/{id}`, `DELETE /drives/{id}` (`files.write`):
+        - need the `owner` role on the drive's root;
+        - an admin is the owner of every drive (`Architecture.DataModel.md`, section 4).
 - Nodes (files and folders as tree entries):
     - `GET /nodes/{id}` (`files.read`):
         - get the node's metadata, without content or manifest;
@@ -323,9 +334,9 @@ permissions apply on top.
     - the change feed, `GET /nodes/{id}/versions` and the chunk-level `nodes` endpoints,
       used with this scope.
 - Meta (no scope):
-    - `GET /meta`: API version, server version, chunker parameters, limits, enabled
-      features, and in `account` the sign-up policy, whether password sign-in is on, and
-      the external providers;
+    - `GET /meta`: API version, server version, the chunking parameter sets it accepts,
+      limits, enabled features, and in `account` the sign-up policy, whether password
+      sign-in is on, and the external providers;
     - `GET /openapi.json`;
     - `GET /api/docs` (outside `/api/v1`);
     - `GET /health` (outside `/api/v1`): `status` (`healthy`, `degraded` or `unhealthy`)

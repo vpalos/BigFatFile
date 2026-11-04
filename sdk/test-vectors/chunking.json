@@ -1,7 +1,8 @@
 {
-  "chunker": {
+  "chunking": {
     "algorithm": "fastcdc-2020",
     "averageSize": 4194304,
+    "gear": 1,
     "maxSize": 8388608,
     "minSize": 1048576,
     "normalizationLevel": 1

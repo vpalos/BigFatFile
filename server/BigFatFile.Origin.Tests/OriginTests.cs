@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using BigFatFile.Contracts.Account;
 using BigFatFile.Contracts.Api;
-using BigFatFile.Contracts.Chunking;
+using BigFatFile.Contracts.Manifests;
 using BigFatFile.Origin.Auth.Users;
 using BigFatFile.Origin.Database.Seeds;
 using Dapper;
@@ -34,14 +34,14 @@ public sealed class OriginTests(Origin origin, Postgres postgres) : IClassFixtur
     }
 
     [Fact]
-    public async Task MetaReportsTheChunker()
+    public async Task MetaReportsTheAcceptedChunkings()
     {
         using var client = origin.CreateClient();
 
         var meta = await client.GetFromJsonAsync<Meta>("/api/v1/meta", Cancellation);
 
         Assert.Equal(ApiVersion.Current, meta!.ApiVersion);
-        Assert.Equal(ChunkerParameters.AverageSize, meta.Chunker.AverageSize);
+        Assert.Equal([ManifestChunking.Default], meta.Chunkings);
         Assert.Empty(meta.Features);
     }
 

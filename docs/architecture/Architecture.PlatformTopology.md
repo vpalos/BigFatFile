@@ -101,7 +101,8 @@ Licensed modules are (by exception) kept in a separate repository.
     - dashboard under the admin area;
     - in cluster mode Hangfire coordinates across nodes through its PostgreSQL storage.
 - Storage:
-    - content-defined chunks written into warehouses (`Architecture.FileStorage.md`).
+    - content-defined chunks or whole objects written into warehouses
+      (`Architecture.FileStorage.md`).
 - Web UI (served from .NET):
     - Svelte 5 SPA built with Vite;
     - Tailwind CSS, shadcn-svelte, Lucide icons;
@@ -299,16 +300,7 @@ api/openapi.json --> @bigfatfile/client --> @bigfatfile/ui --> apps/web,
 - Developer role per tenant:
     - creates Apps, rotates keys, sets webhook endpoints;
     - sees webhook delivery logs and API usage for its Apps.
-- Scopes are coarse and readable:
-    - `files.read`;
-    - `files.write`;
-    - `shares.manage`;
-    - `requests.manage`;
-    - `members.read`;
-    - `members.manage`;
-    - `metadata.write`;
-    - `events.read`;
-    - `tenant.mirror` (for tenant-wide mirroring or backup Apps, like Replica).
+- Scopes: the list, and what each one allows, is in `Architecture.API.md`, section 4.
 
 ## 4. Primitives
 
