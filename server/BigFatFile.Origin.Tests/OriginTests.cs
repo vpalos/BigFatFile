@@ -41,7 +41,7 @@ public sealed class OriginTests(Origin origin, Postgres postgres) : IClassFixtur
         var meta = await client.GetFromJsonAsync<Meta>("/api/v1/meta", Cancellation);
 
         Assert.Equal(ApiVersion.Current, meta!.ApiVersion);
-        Assert.Equal([ManifestChunking.Default], meta.Chunkings);
+        Assert.Equal([ManifestChunking.Default], meta.AcceptedChunkings);
         Assert.Empty(meta.Features);
     }
 

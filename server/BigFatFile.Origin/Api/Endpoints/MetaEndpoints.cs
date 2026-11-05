@@ -25,7 +25,7 @@ internal static class MetaEndpoints
                 Returns what a client needs to know about this server before it uses the API:
 
                 - the API version and the server version;
-                - `chunkings`: the chunking parameter sets that this server accepts; a manifest that a client sends must use one of them;
+                - `acceptedChunkings`: the chunking parameter sets that this server accepts; a manifest that a client sends must use one of them;
                 - the Unicode version used to normalise file names before they are compared;
                 - the licensed features that are turned on;
                 - `account`: what the sign-in and sign-up flows offer:
