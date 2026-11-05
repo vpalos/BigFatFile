@@ -12,7 +12,7 @@
           "meta"
         ],
         "summary": "Get server information",
-        "description": "Returns what a client needs to know about this server before it uses the API:\n\n- the API version and the server version;\n- `acceptedChunkings`: the chunking parameter sets that this server accepts; a manifest that a client sends must use one of them;\n- the Unicode version used to normalise file names before they are compared;\n- the licensed features that are turned on;\n- `account`: what the sign-in and sign-up flows offer:\n    - `signUp` says whether anyone can create an account, or only people with an invitation;\n    - `password` says whether people can sign in and sign up with an email address and a password;\n    - `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.\n\nIt needs no token.",
+        "description": "Returns what a client needs to know about this server before it uses the API:\n\n- the API version and the server version;\n- `acceptedChunkings`: the chunking parameters accepted by this server:\n    - any manifest sent by a client must use one of these;\n- the Unicode version used to normalise file names before they are compared;\n- the licensed features that are turned on;\n- `account`: what the sign-in and sign-up flows offer:\n    - `signUp` says whether anyone can create an account, or only people with an invitation;\n    - `password` says whether people can sign in and sign up with an email address and a password;\n    - `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.\n\nThis endpoint needs no token.",
         "operationId": "getMeta",
         "responses": {
           "200": {

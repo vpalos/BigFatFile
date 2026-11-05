@@ -25,7 +25,8 @@ internal static class MetaEndpoints
                 Returns what a client needs to know about this server before it uses the API:
 
                 - the API version and the server version;
-                - `acceptedChunkings`: the chunking parameter sets that this server accepts; a manifest that a client sends must use one of them;
+                - `acceptedChunkings`: the chunking parameters accepted by this server:
+                    - any manifest sent by a client must use one of these;
                 - the Unicode version used to normalise file names before they are compared;
                 - the licensed features that are turned on;
                 - `account`: what the sign-in and sign-up flows offer:
@@ -33,7 +34,7 @@ internal static class MetaEndpoints
                     - `password` says whether people can sign in and sign up with an email address and a password;
                     - `providers` lists the external accounts that people can sign in with, such as Google or Microsoft.
 
-                It needs no token.
+                This endpoint needs no token.
                 """)
             .AllowAnonymous();
 }
