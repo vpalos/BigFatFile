@@ -1,0 +1,172 @@
+#!/usr/bin/env bash
+# Commands for working on this repository.
+# They need the tools listed in the README, section 1.
+#
+# Local Origin:
+#   ./dev up                 start the Origin from source with Hot Reload, with PostgreSQL and Aspire
+#   ./dev down               stop everything and keep the data
+#   ./dev restart            stop everything and start it again, keeping the data
+#   ./dev purge              stop everything and delete the data and the build cache
+#   ./dev logs [service]     follow the log of a service; the default is origin
+#   ./dev psql [--app]       open psql on the database; --app signs in as bigfatfile_app
+#
+# Building and testing:
+#   ./dev build              build the .NET code, the API spec and the TypeScript client
+#   ./dev test               run the .NET tests, then the TypeScript type checks and tests
+#   ./dev check              run what CI runs, before a push
+#   ./dev example [name]     run a sample from examples/; with no name, list the samples
+#   ./dev migration <name>   create the next migration script of the core
+#
+# Docs:
+#   ./dev docs <name>        serve the docs site in docs/<name>, such as architecture
+
+set -euo pipefail
+cd "$(dirname "$0")"
+
+# The development database passwords; the reference deployment takes them from .env instead.
+export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-bigfatfile-dev}"
+export BFF_DATABASE_PASSWORD="${BFF_DATABASE_PASSWORD:-bigfatfile-app-dev}"
+
+MIGRATIONS=server/BigFatFile.Origin/Database/Migrations
+
+# The files that a build can rewrite. CI fails when they differ from the commit.
+GENERATED=(api/openapi.json sdk/@bigfatfile/client/src/generated pnpm-lock.yaml)
+
+compose() {
+    docker compose --file docker-compose.yml --file docker-compose.dev.yml "$@"
+}
+
+usage() {
+    sed -n '1d; /^#/!q; s/^# \{0,1\}//p' "$0"
+    exit 1
+}
+
+cmd_up() {
+    compose up --detach --wait
+    cat <<INFO
+
+The Origin is running (Hot Reload).
+  Sign in        http://localhost:${BFF_PORT:-8080}/account/sign-in
+  API reference  http://localhost:${BFF_PORT:-8080}/api/docs
+  Job dashboard  http://localhost:${BFF_PORT:-8080}/admin/jobs
+  Telemetry      http://localhost:${BFF_ASPIRE_PORT:-18888}
+  PostgreSQL     localhost:${BFF_DB_PORT:-5432}, user bigfatfile, password ${POSTGRES_PASSWORD}
+
+Demo user: demo@bigfatfile.local / bigfatfile-demo
+
+Run "./dev logs" to follow the Origin's log.
+INFO
+}
+
+cmd_down() {
+    compose down
+}
+
+cmd_restart() {
+    cmd_down
+    cmd_up
+}
+
+cmd_purge() {
+    compose down --volumes
+}
+
+cmd_logs() {
+    compose logs --follow "${1:-origin}"
+}
+
+cmd_psql() {
+    local user=bigfatfile
+    if [[ "${1:-}" == --app ]]; then
+        user=bigfatfile_app
+        shift
+    fi
+    compose exec db psql --username "$user" --dbname bigfatfile "$@"
+}
+
+cmd_build() {
+    dotnet build BigFatFile.slnx
+    pnpm install
+    # The .NET build writes api/openapi.json, and pnpm generate reads it.
+    pnpm generate
+    pnpm build
+}
+
+# The arguments go to dotnet test. check passes --no-build, because it has just built.
+cmd_test() {
+    dotnet test --solution BigFatFile.slnx "$@"
+    pnpm typecheck
+    pnpm test
+}
+
+cmd_check() {
+    cmd_build
+    local changed
+    changed=$(git diff --name-only -- "${GENERATED[@]}")
+    if [[ -n "$changed" ]]; then
+        echo "The build changed these files, so CI would fail:" >&2
+        sed 's/^/  /' <<<"$changed" >&2
+        echo "Stage them with git add, then run ./dev check again." >&2
+        exit 1
+    fi
+    cmd_test --no-build
+}
+
+cmd_example() {
+    local name="${1:-}"
+    if [[ ! -f "examples/$name/package.json" ]]; then
+        echo "There is no example at examples/$name. The examples are:" >&2
+        for package in examples/*/package.json; do
+            echo "  ./dev example $(basename "$(dirname "$package")")" >&2
+        done
+        exit 1
+    fi
+    shift
+    pnpm --filter "{./examples/$name}^..." run --if-present build
+    pnpm --dir "examples/$name" start "$@"
+}
+
+cmd_migration() {
+    local name="${1:-}"
+    if [[ ! "$name" =~ ^[a-z][a-z0-9_]*$ ]]; then
+        echo "Name the migration in lower case, with _ between words, such as add_drives." >&2
+        exit 1
+    fi
+    # A number that any commit ever used stays used, even after its file was deleted.
+    # Git history holds core scripts under older project names too, so every
+    # server/<project>/Database/Migrations folder counts. Modules keep theirs in Migrations/.
+    local highest
+    highest=$({ git log --all --format= --name-only -- server; ls "$MIGRATIONS"/*; } |
+        grep -E '^server/[^/]+/Database/Migrations/V[0-9]+__' | sed -E 's/.*\/V0*([0-9]+)__.*/\1/' |
+        sort -n | tail -1)
+    local file
+    file=$(printf '%s/V%04d__%s.sql' "$MIGRATIONS" $((highest + 1)) "$name")
+    touch "$file"
+    echo "Created $file"
+}
+
+cmd_docs() {
+    local site="docs/${1:-}"
+    if [[ ! -f "$site/index.html" ]]; then
+        echo "There is no docs site at $site. The sites are:" >&2
+        for index in docs/*/index.html; do
+            echo "  ./dev docs $(basename "$(dirname "$index")")" >&2
+        done
+        exit 1
+    fi
+    echo "Serving $site at http://localhost:3000. Press Ctrl+C to stop."
+    # Without --init, the server runs as the container's first process, and Ctrl+C does not stop it.
+    # Without the .md content type, Firefox logs an error for every page.
+    exec docker run --rm --init --publish 3000:3000 --volume "$PWD/$site:/www:ro" busybox:stable \
+        sh -c 'echo ".md:text/markdown; charset=utf-8" > /etc/httpd.conf && exec httpd -f -p 3000 -h /www'
+}
+
+name="${1:-}"
+if [[ $# -gt 0 ]]; then
+    shift
+fi
+if declare -F "cmd_$name" >/dev/null; then
+    "cmd_$name" "$@"
+else
+    usage
+fi

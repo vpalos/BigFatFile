@@ -1,4 +1,4 @@
-# The development override, used by `./bff dev up`:
+# The development override, used by `./dev up`:
 # - runs the Origin from the checkout under `dotnet watch`, with Hot Reload;
 # - seeds a demo tenant, user and clients;
 # - adds the Aspire dashboard (traces, metrics and logs).

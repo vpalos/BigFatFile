@@ -71,6 +71,8 @@ Licensed modules are (by exception) kept in a separate repository.
             - its scripts are embedded resources named `V<number>__<name>.sql`, in the
               `Migrations` folder of the project that owns the tables;
             - its numbers form their own sequence;
+            - `./dev migration <name>` creates the next script of the core, numbered one
+              past the highest number in any commit, so a deleted number is never reused;
             - the scripts it has applied are recorded in its own table,
               `schema_migrations_<prefix>`.
         - run at startup with Evolve (NuGet `Evolve`, MIT license), once per prefix: first
@@ -482,9 +484,10 @@ Platform (needed to host BFF as a service):
 
 ## 8. The developer experience
 
-- `bff dev up` command:
+- `./dev up` command:
     - few minutes from clone to first upload;
-    - `./bff` is a script at the repository root and needs only Docker;
+    - `./dev` is a script at the repository root;
+    - this command needs only Docker;
     - command starts (via a compose file):
         - an Origin with PostgreSQL, run from the checkout with Hot Reload;
         - a seeded demo tenant and demo user;

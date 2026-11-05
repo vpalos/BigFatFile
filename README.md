@@ -11,12 +11,17 @@ The design is explained in detail in `docs/architecture`.
 
 ## 2. Running locally
 
-- `./bff dev up` starts the Origin server (hot-reload mode);
-- `./bff dev logs` follows logs;
-- `./bff dev down` stops everything and keeps the data;
-- `./bff dev restart` stops everything and starts it again, and keeps the data;
-- `./bff dev purge` stops everything and also deletes the data and the build cache;
-- `./bff docs architecture` serves the architecture docs at http://localhost:3000.
+- `./dev` with no command lists every command;
+- `./dev up` starts the Origin server (hot-reload mode);
+- `./dev logs` follows the Origin's logs:
+    - `./dev logs <service>` follows the logs of another service, such as `db` or `aspire`;
+- `./dev down` stops everything and keeps the data;
+- `./dev restart` stops everything and starts it again, and keeps the data;
+- `./dev purge` stops everything and also deletes the data and the build cache;
+- `./dev psql` opens psql on the database, as the owner of the tables:
+    - `./dev psql --app` signs in as `bigfatfile_app`, the role that row-level security
+      applies to;
+- `./dev docs architecture` serves the architecture docs at http://localhost:3000.
 
 **Notes:**
 
@@ -54,27 +59,33 @@ dotnet run --project server/BigFatFile.Origin
 
 ## 4. Running examples
 
-The sign-in example signs in from a script and calls the API through the generated TypeScript types:
+The sign-in example signs in from a script and calls the API through the generated TypeScript types.
+With `./dev up` running:
 
 ```sh
-pnpm install
-pnpm build
-pnpm --filter @bigfatfile/example-sign-in start
+./dev example sign-in
 ```
+
+- the command builds the packages that the example uses, then starts the example;
+- `./dev example` lists the examples.
 
 ## 5. Building and testing
 
-- .NET:
-    - `dotnet build BigFatFile.slnx`, then...
-    - `dotnet test --solution BigFatFile.slnx`;
-    - the tests start PostgreSQL in Docker through Testcontainers;
-    - every build of the Origin rewrites `api/openapi.json`.
-- TypeScript:
-    - `pnpm install`
-    - `pnpm generate` (generates types from `api/openapi.json`)
-    - `pnpm build`
-    - `pnpm typecheck`
-    - `pnpm test`
+- `./dev build` builds everything, in this order:
+    - `dotnet build BigFatFile.slnx`, which also rewrites `api/openapi.json`;
+    - `pnpm install`;
+    - `pnpm generate`, which generates the TypeScript types from `api/openapi.json`;
+    - `pnpm build`.
+- `./dev test` runs the tests, in this order:
+    - `dotnet test --solution BigFatFile.slnx`, which starts PostgreSQL in Docker through
+      Testcontainers;
+    - `pnpm typecheck`;
+    - `pnpm test`.
+- `./dev check` runs what CI runs, before a push:
+    - `./dev build`;
+    - a stop when the build changed `api/openapi.json`, the generated types or
+      `pnpm-lock.yaml`, compared with what is staged;
+    - `./dev test`.
 - CI runs all of the above and fails when `api/openapi.json` or the generated types
   differ from what the build produces.
 

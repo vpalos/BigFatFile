@@ -3,7 +3,7 @@
 // 2. Receives the code on a loopback address and exchanges it for tokens.
 // 3. Calls GET /api/v1/account/me.
 //
-// Usage, with `./bff dev up` running: pnpm --filter @bigfatfile/example-sign-in start
+// Usage, with `./dev up` running: ./dev example sign-in
 // Set BFF_URL to use another Origin than http://localhost:8080.
 
 import { spawn } from "node:child_process";
