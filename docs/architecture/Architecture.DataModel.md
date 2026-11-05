@@ -190,25 +190,28 @@ this section is about how it works.
       groups;
     - a row may only name a member of the tenant; removing a member from the tenant
       removes their memberships.
-- No nesting: a group holds users, never groups. The request's principals are then one
-  indexed read, and a group cannot contain itself.
-- A membership change appends a change-log row of type `groups` with no node, so a
-  desktop client or Replica re-evaluates what its user may see; the rows of
-  `permissions` do not change.
+- No nesting:
+    - a group holds only users, never groups;
+    - the request's principals are found with just one indexed read.
+- A membership change appends a change-log row of type `groups` with no node, so
+  clients re-evaluate what the user may see;
+    - the rows of `permissions` do not change.
 - Deleting a group deletes its `permissions` rows and its memberships in the same
   transaction.
 
 ### The check
 
 - The principals of a request are: the user, the user's groups, and `tenant`.
-- Walk from the node up to the drive root. The nearest node that has a rule for any of
-  the request's principals decides; the role is the highest among that node's matching
-  rules.
+- Walk from the node up to the drive root.
+- The nearest node that has a rule for any of the request's principals decides.
+- The role is the highest among that node's matching rules.
 - No rule on the way up means no access, which the API answers as 404, the same as
   for a node that does not exist.
-- This is one query: a recursive CTE over `nodes` for the ancestors, joined with
-  `permissions` on the request's principals, ordered by depth, first row. Depth is at
-  most 64 levels and usually under ten.
+- This is one query:
+    - a recursive CTE over `nodes` for the ancestors,
+    - joined with `permissions` on the request's principals,
+    - ordered by depth, first row.
+- Depth is at most 64 levels and usually under ten.
 - Nearest wins, so a folder rule may give more or less than the drive rule above it:
   an `editor` of the drive can be `viewer` of one folder.
 
