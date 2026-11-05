@@ -17,7 +17,7 @@ internal static class DatabaseServices
             .AddSingleton(provider => Build(provider, provider.GetRequiredService<OriginSettings>().Database, "bigfatfile"))
             .AddKeyedSingleton(Owner, (provider, _) => Build(provider, provider.GetRequiredService<OriginSettings>().DatabaseOwner, "bigfatfile-owner"))
             .AddHttpContextAccessor()
-            .AddScoped<RequestDatabase>();
+            .AddScoped<ScopedDatabase>();
 
     private static NpgsqlDataSource Build(IServiceProvider provider, string connectionString, string name)
     {

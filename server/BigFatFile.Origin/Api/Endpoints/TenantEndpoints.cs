@@ -21,7 +21,7 @@ internal static class TenantEndpoints
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersRead));
 
     private static async Task<Results<Ok<Tenant>, ProblemHttpResult>> GetTenantAsync(
-        Guid id, RequestDatabase database, CancellationToken cancellationToken)
+        Guid id, ScopedDatabase database, CancellationToken cancellationToken)
     {
         var connection = await database.OpenAsync(cancellationToken);
         if (await TenantModel.GetAsync(connection, id, cancellationToken) is not { } tenant)

@@ -56,7 +56,7 @@ internal static class OriginServices
             .AddApi()
             .AddHealth()
             .AddSingleton<DatabaseMigrations>()
-            .AddSingleton<DatabaseRoles>()
+            .AddSingleton<DatabaseBootstrap>()
             .AddScoped<DevelopmentSeed>();
 
         var features = new LicenceFeatureGate();

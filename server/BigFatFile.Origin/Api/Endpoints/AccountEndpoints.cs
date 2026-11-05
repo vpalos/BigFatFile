@@ -74,7 +74,7 @@ internal static class AccountEndpoints
         TypedResults.Ok(new CsrfToken(antiforgery.GetAndStoreTokens(context).RequestToken!));
 
     private static async Task<Results<Ok<Me>, ProblemHttpResult>> GetMeAsync(
-        ClaimsPrincipal principal, UserManager<BffUser> users, RequestDatabase database, CancellationToken cancellationToken)
+        ClaimsPrincipal principal, UserManager<BffUser> users, ScopedDatabase database, CancellationToken cancellationToken)
     {
         var user = TenantClaims.UserOf(principal) is { } userId ? await users.FindByIdAsync(userId.ToString()) : null;
         if (user is null)

@@ -47,7 +47,7 @@ internal static class TenantAccess
 
     private static async Task<TenantRole?> RoleOfAsync(HttpContext http, Guid tenantId, Guid userId)
     {
-        var connection = await http.RequestServices.GetRequiredService<RequestDatabase>().OpenAsync(http.RequestAborted);
+        var connection = await http.RequestServices.GetRequiredService<ScopedDatabase>().OpenAsync(http.RequestAborted);
         return await MemberModel.RoleOfAsync(connection, tenantId, userId, http.RequestAborted);
     }
 

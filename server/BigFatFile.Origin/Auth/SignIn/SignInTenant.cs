@@ -12,7 +12,7 @@ internal static class SignInTenant
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         Guid? tenantId;
-        await using (await TenantScope.BeginAsync(connection, tenantId: null, userId, cancellationToken))
+        await using (await ScopedDatabase.BeginTenantTransactionAsync(connection, tenantId: null, userId, cancellationToken))
         {
             tenantId = await MemberModel.LastSignedInTenantAsync(connection, userId, cancellationToken);
         }
@@ -23,7 +23,7 @@ internal static class SignInTenant
         }
 
         // A membership changes only inside its own tenant, so the record is a second transaction.
-        await using var transaction = await TenantScope.BeginAsync(connection, tenantId, userId, cancellationToken);
+        await using var transaction = await ScopedDatabase.BeginTenantTransactionAsync(connection, tenantId, userId, cancellationToken);
         await MemberModel.MarkSignedInAsync(connection, tenantId.Value, userId, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return tenantId;

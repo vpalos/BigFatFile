@@ -1,4 +1,5 @@
 using BigFatFile.Origin.Auth;
+using Dapper;
 using Npgsql;
 
 namespace BigFatFile.Origin.Database;
@@ -8,8 +9,7 @@ namespace BigFatFile.Origin.Database;
 /// user, so row-level security shows only their rows. Nothing is saved until a handler
 /// calls <see cref="CommitAsync"/>.
 /// </summary>
-internal sealed class RequestDatabase(NpgsqlDataSource dataSource, IHttpContextAccessor http)
-    : IAsyncDisposable
+internal sealed class ScopedDatabase(NpgsqlDataSource dataSource, IHttpContextAccessor http) : IAsyncDisposable
 {
     private NpgsqlConnection? connection;
     private NpgsqlTransaction? transaction;
@@ -20,7 +20,7 @@ internal sealed class RequestDatabase(NpgsqlDataSource dataSource, IHttpContextA
         {
             var principal = http.HttpContext?.User;
             connection = await dataSource.OpenConnectionAsync(cancellationToken);
-            transaction = await TenantScope.BeginAsync(
+            transaction = await BeginTenantTransactionAsync(
                 connection,
                 TenantClaims.TenantOf(principal),
                 TenantClaims.UserOf(principal),
@@ -50,5 +50,29 @@ internal sealed class RequestDatabase(NpgsqlDataSource dataSource, IHttpContextA
         {
             await connection.DisposeAsync();
         }
+    }
+
+    /// <summary>
+    /// Starts a transaction under the Tenant's RLS rules.
+    /// </summary>
+    public static async Task<NpgsqlTransaction> BeginTenantTransactionAsync(
+        NpgsqlConnection connection,
+        Guid? tenantId,
+        Guid? userId,
+        CancellationToken cancellationToken)
+    {
+        var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        await connection.ExecuteAsync(new CommandDefinition(
+            "SELECT set_config('app.tenant_id', @TenantId, true), set_config('app.user_id', @UserId, true)",
+            new
+            {
+                TenantId = tenantId?.ToString() ?? "",
+                UserId = userId?.ToString() ?? ""
+            },
+            transaction,
+            cancellationToken: cancellationToken));
+
+        return transaction;
     }
 }

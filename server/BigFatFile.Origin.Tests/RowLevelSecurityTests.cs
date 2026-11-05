@@ -1,3 +1,4 @@
+using BigFatFile.Origin.Database;
 using Dapper;
 using Npgsql;
 
@@ -79,5 +80,5 @@ public sealed class RowLevelSecurityTests(Origin origin) : IClassFixture<Origin>
     }
 
     private static Task<NpgsqlTransaction> BeginAsync(NpgsqlConnection connection, Guid? tenantId, Guid? userId) =>
-        Database.TenantScope.BeginAsync(connection, tenantId, userId, TestContext.Current.CancellationToken);
+        ScopedDatabase.BeginTenantTransactionAsync(connection, tenantId, userId, TestContext.Current.CancellationToken);
 }

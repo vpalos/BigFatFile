@@ -4,16 +4,16 @@ using Npgsql;
 
 namespace BigFatFile.Origin.Database;
 
-/// <summary>
-/// Prepares the user in <c>BFF_DATABASE</c>, which requests connect as. It runs as the owner,
-/// after the migrations, and stops startup when RLS would not apply to that user.
-/// </summary>
-internal sealed class DatabaseRoles(
+internal sealed class DatabaseBootstrap(
     OriginSettings settings,
     NpgsqlDataSource app,
     [FromKeyedServices(DatabaseServices.Owner)] NpgsqlDataSource owner,
-    ILogger<DatabaseRoles> logger)
+    ILogger<DatabaseBootstrap> logger)
 {
+    /// <summary>
+    /// Prepares the user in <c>BFF_DATABASE</c>, which requests connect as.
+    /// It runs as the owner, after migrations, and stops is RLS would not apply to that user.
+    /// </summary>
     public async Task PrepareAsync(CancellationToken cancellationToken)
     {
         var appLogin = new NpgsqlConnectionStringBuilder(settings.Database);

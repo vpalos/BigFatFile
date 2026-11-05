@@ -13,7 +13,7 @@ switch (command)
     case "migrate":
         {
             var commandApp = OriginServices.Build(args[1..]);
-            await StartupTasks.MigrateAsync(commandApp, CancellationToken.None);
+            await OriginBootstrap.MigrateAsync(commandApp, CancellationToken.None);
             return 0;
         }
 
@@ -30,7 +30,7 @@ var app = OriginServices.Build(args);
 
 if (!OriginServices.IsGeneratingOpenApiDocument)
 {
-    await StartupTasks.PrepareAsync(app, app.Lifetime.ApplicationStopping);
+    await OriginBootstrap.PrepareAsync(app, app.Lifetime.ApplicationStopping);
 }
 
 await app.RunAsync();

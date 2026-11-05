@@ -8,13 +8,13 @@ namespace BigFatFile.Origin.Server;
 /// <summary>
 /// What runs between building the app and serving the first request, in this order.
 /// </summary>
-internal static class StartupTasks
+internal static class OriginBootstrap
 {
     public static async Task MigrateAsync(WebApplication app, CancellationToken cancellationToken)
     {
         app.Services.GetRequiredService<OriginSettings>().Validate();
         await app.Services.GetRequiredService<DatabaseMigrations>().RunAsync(cancellationToken);
-        await app.Services.GetRequiredService<DatabaseRoles>().PrepareAsync(cancellationToken);
+        await app.Services.GetRequiredService<Database.DatabaseBootstrap>().PrepareAsync(cancellationToken);
     }
 
     public static async Task PrepareAsync(WebApplication app, CancellationToken cancellationToken)
