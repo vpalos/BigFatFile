@@ -1,3 +1,4 @@
+using BigFatFile.Abstractions.Licensing;
 using BigFatFile.Contracts.Api;
 using BigFatFile.Origin.Api.Errors;
 using BigFatFile.Origin.Auth.Tokens;
@@ -21,7 +22,7 @@ internal static class TenantEndpoints
             .RequireAuthorization(ScopeAuthorization.PolicyFor(BffScopes.MembersRead));
 
     private static async Task<Results<Ok<Tenant>, ProblemHttpResult>> GetTenantAsync(
-        Guid id, ScopedDatabase database, CancellationToken cancellationToken)
+        Guid id, ScopedDatabase database, IPlanPolicy plans, CancellationToken cancellationToken)
     {
         var connection = await database.OpenAsync(cancellationToken);
         if (await TenantModel.GetAsync(connection, id, cancellationToken) is not { } tenant)
@@ -29,6 +30,7 @@ internal static class TenantEndpoints
             return Problems.Of(ApiErrors.NotFound);
         }
 
-        return TypedResults.Ok(new Tenant(tenant.Id, tenant.Name, "unlimited", tenant.CreatedAt));
+        var plan = await plans.GetPlanAsync(connection, tenant.Id, cancellationToken);
+        return TypedResults.Ok(new Tenant(tenant.Id, tenant.Name, plan.Key, tenant.CreatedAt));
     }
 }

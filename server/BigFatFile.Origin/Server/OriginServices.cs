@@ -1,5 +1,5 @@
 using System.Reflection;
-using BigFatFile.Abstractions.Features;
+using BigFatFile.Abstractions.Licensing;
 using BigFatFile.Abstractions.Modules;
 using BigFatFile.Origin.Api;
 using BigFatFile.Origin.Api.Endpoints;
@@ -8,9 +8,11 @@ using BigFatFile.Origin.Auth.SignIn;
 using BigFatFile.Origin.Database;
 using BigFatFile.Origin.Database.Seeds;
 using BigFatFile.Origin.Jobs;
+using BigFatFile.Origin.Licensing;
 using BigFatFile.Origin.Modules;
 using BigFatFile.Origin.Server.Health;
 using BigFatFile.Origin.Server.Observability;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging.Console;
 
 namespace BigFatFile.Origin.Server;
@@ -65,12 +67,10 @@ internal static class OriginServices
         // Modules register services, so they load before the host is built.
         var modulesPath = OriginSettings.ModulesPathFrom(builder.Configuration);
         var modules = ModuleLoader.Load(modulesPath);
-        var moduleContext = new BffModuleContext(builder.Configuration, features);
-        foreach (var loaded in modules)
-        {
-            loaded.Module.ConfigureServices(builder.Services, moduleContext);
-        }
+        ModuleLoader.ConfigureServices(builder.Services, modules, new BffModuleContext(builder.Configuration, features));
 
+        // After the modules, so that a module's own plan policy comes first.
+        builder.Services.TryAddSingleton<IPlanPolicy, UnlimitedPlanPolicy>();
         builder.Services.AddSingleton(new ModuleCatalog(modules));
 
         var app = builder.Build();

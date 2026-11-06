@@ -1,13 +1,14 @@
+using BigFatFile.Abstractions.Licensing;
 using BigFatFile.Abstractions.Modules;
 
 namespace BigFatFile.Origin.Modules;
 
-/// <summary>
-/// Finds modules in the modules folder: one subfolder per module, holding
-/// <c>&lt;folder name&gt;.dll</c> and its dependencies.
-/// </summary>
 internal static class ModuleLoader
 {
+    /// <summary>
+    /// Finds modules in the modules folder: one subfolder per module, holding
+    /// <c>&lt;folder name&gt;.dll</c> and its dependencies.
+    /// </summary>
     public static IReadOnlyList<LoadedModule> Load(string modulesPath)
     {
         if (!Directory.Exists(modulesPath))
@@ -54,4 +55,34 @@ internal static class ModuleLoader
 
         return modules;
     }
+
+    /// <summary>
+    /// Lets each module register its services.
+    /// Startup fails when more than one module registers an <see cref="IPlanPolicy"/>.
+    /// </summary>
+    public static void ConfigureServices(IServiceCollection services, IReadOnlyList<LoadedModule> modules, BffModuleContext context)
+    {
+        var withPlanPolicy = new List<LoadedModule>();
+        foreach (var loaded in modules)
+        {
+            var before = PlanPolicies(services);
+            loaded.Module.ConfigureServices(services, context);
+            if (PlanPolicies(services).Except(before).Any())
+            {
+                withPlanPolicy.Add(loaded);
+            }
+        }
+
+        if (withPlanPolicy.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"Only one module may register a plan policy ({nameof(IPlanPolicy)}), and these modules each register one: " +
+                $"{string.Join(", ", withPlanPolicy.Select(loaded => $"{loaded.Module.Name} ({loaded.Path})"))}. " +
+                $"Keep one of them in the modules folder, and remove the others.");
+        }
+    }
+
+    // A keyed registration is left out, because it does not replace the core's policy.
+    private static HashSet<ServiceDescriptor> PlanPolicies(IServiceCollection services) =>
+        [.. services.Where(service => service.ServiceType == typeof(IPlanPolicy) && service.ServiceKey is null)];
 }

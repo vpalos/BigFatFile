@@ -1,5 +1,7 @@
+using System.Globalization;
 using BigFatFile.Origin.Database;
 using Dapper;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
 namespace BigFatFile.Origin.Tests;
@@ -70,6 +72,71 @@ public sealed class RowLevelSecurityTests(Origin origin) : IClassFixture<Origin>
             transaction));
 
         Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, error.SqlState);
+    }
+
+    [Fact]
+    public async Task ATenantSeesOnlyItsOwnAuditEvents()
+    {
+        var mine = await TestData.CreateTenantAsync(origin, "Audit mine");
+        var other = await TestData.CreateTenantAsync(origin, "Audit other");
+        await InsertAuditEventAsOwnerAsync(mine);
+        await InsertAuditEventAsOwnerAsync(other);
+        await InsertAuditEventAsOwnerAsync(tenantId: null);
+        await using var connection = await OpenAsAppAsync();
+        await using var transaction = await BeginAsync(connection, tenantId: mine, userId: null);
+
+        var tenants = await connection.QueryAsync<Guid?>("SELECT tenant_id FROM audit_events", transaction: transaction);
+
+        Assert.Equal([mine], tenants);
+    }
+
+    [Theory]
+    [InlineData("UPDATE audit_events SET action = 'changed'")]
+    [InlineData("DELETE FROM audit_events")]
+    public async Task AuditEventsCannotBeChangedOrDeleted(string sql)
+    {
+        var tenantId = await TestData.CreateTenantAsync(origin, "Audit append-only");
+        await InsertAuditEventAsOwnerAsync(tenantId);
+        await using var connection = await OpenAsAppAsync();
+        await using var transaction = await BeginAsync(connection, tenantId, userId: null);
+
+        var error = await Assert.ThrowsAsync<PostgresException>(() => connection.ExecuteAsync(sql, transaction: transaction));
+
+        Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, error.SqlState);
+    }
+
+    [Fact]
+    public async Task ARequestCannotWriteAnAuditEventIntoAnotherTenant()
+    {
+        var mine = await TestData.CreateTenantAsync(origin, "Audit writer");
+        var other = await TestData.CreateTenantAsync(origin, "Audit target");
+        await using var connection = await OpenAsAppAsync();
+        await using var transaction = await BeginAsync(connection, tenantId: mine, userId: null);
+
+        var error = await Assert.ThrowsAsync<PostgresException>(() => connection.ExecuteAsync(
+            "INSERT INTO audit_events (tenant_id, action) VALUES (@TenantId, 'signed_in')", new { TenantId = other }, transaction));
+
+        Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, error.SqlState);
+    }
+
+    [Fact]
+    public async Task APartitionCannotBeReadDirectly()
+    {
+        // A second start grants every table again, partitions included, and must take them back.
+        await origin.Factory.Services.GetRequiredService<DatabaseBootstrap>().PrepareAsync(TestContext.Current.CancellationToken);
+        var partition = string.Create(CultureInfo.InvariantCulture, $"audit_events_{DateTime.UtcNow:yyyy_MM}");
+        await using var connection = await OpenAsAppAsync();
+
+        var error = await Assert.ThrowsAsync<PostgresException>(() => connection.ExecuteAsync($"SELECT count(*) FROM {partition}"));
+
+        Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, error.SqlState);
+    }
+
+    private async Task InsertAuditEventAsOwnerAsync(Guid? tenantId)
+    {
+        await using var connection = new NpgsqlConnection(origin.ConnectionString);
+        await connection.ExecuteAsync(
+            "INSERT INTO audit_events (tenant_id, action) VALUES (@TenantId, 'signed_in')", new { TenantId = tenantId });
     }
 
     private async Task<NpgsqlConnection> OpenAsAppAsync()

@@ -1,4 +1,4 @@
-namespace BigFatFile.Abstractions.Features;
+namespace BigFatFile.Abstractions.Licensing;
 
 /// <summary>
 /// The one place that says whether a licensed feature is on.

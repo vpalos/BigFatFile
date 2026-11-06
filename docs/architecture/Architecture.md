@@ -83,6 +83,9 @@ docs/       architecture documents, developer docs
 - [Tenancy](Architecture.Tenancy.md):
     - tenants, tenant isolation (scoping and row-level security), groups, permissions and
       authentication.
+- [Licensing](Architecture.Licensing.md):
+    - the licence, the feature keys that turn licensed modules on, and the plan of each
+      tenant.
 - [Data Model](Architecture.DataModel.md):
     - the file tree, uploads in progress, content, permissions, file versioning, the change
       log and the audit log.

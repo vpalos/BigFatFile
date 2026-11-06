@@ -343,6 +343,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tenants/{id}/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List audit events
+         * @description Returns the tenant's audit log, newest first, one page at a time: who signed in, and which Apps received tokens to act for a user.
+         *
+         *     Events are kept for at least 90 days.
+         */
+        get: operations["listAuditEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tenants/{id}/members": {
         parameters: {
             query?: never;
@@ -446,6 +468,35 @@ export interface components {
             password: boolean;
             /** @description The external accounts a person can sign in with, in display order. */
             providers: components["schemas"]["SignInProvider"][];
+        };
+        /**
+         * @description - `signed_in`: the user signed in with a password, and a session started.
+         *     - `app_authorized`: an App or the CLI received tokens to act for the user. `agentClientId` names it.
+         * @enum {unknown}
+         */
+        AuditAction: "signed_in" | "app_authorized";
+        AuditActor: {
+            /** Format: uuid */
+            userId: string;
+            /** @description Null once the user's account is deleted. */
+            email: null | string;
+            /** @description Null once the user's account is deleted. */
+            name: null | string;
+        };
+        /** @description One entry of a tenant's audit log. */
+        AuditEvent: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            occurredAt: string;
+            action: components["schemas"]["AuditAction"];
+            actor: null | components["schemas"]["AuditActor"];
+            /** @description The client ID of the App or the CLI that acted for the user. Null when the user acted alone. */
+            agentClientId: null | string;
+            /** @description The address that the request came from. */
+            ipAddress: null | string;
+            /** @description The name that the browser or the program sent in its `User-Agent` header, cut to 512 characters. */
+            userAgent: null | string;
         };
         ConfirmEmailRequest: {
             /** Format: uuid */
@@ -594,6 +645,12 @@ export interface components {
             id: string;
             name: string;
             role: components["schemas"]["TenantRole"];
+        };
+        /** @description One page of a listing. */
+        PageOfAuditEvent: {
+            items: components["schemas"]["AuditEvent"][];
+            /** @description Pass it as `cursor` to get the next page; null on the last page. */
+            nextCursor: null | string;
         };
         /** @description One page of a listing. */
         PageOfInvitation: {
@@ -1261,6 +1318,78 @@ export interface operations {
             /**
              * @description - `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.
              *     - `member_required`: A guest of the tenant cannot do this. The user is a guest of the tenant. A guest has access only through the permission rules that name them, and sees neither the member list nor the groups.
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description `not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    listAuditEvents: {
+        parameters: {
+            query?: {
+                /** @description Only events at this time or later. */
+                from?: string;
+                /** @description Only events before this time. */
+                to?: string;
+                /** @description Only events by this user. */
+                actor?: string;
+                /** @description The nextCursor of the previous page. Leave it out for the first page. */
+                cursor?: string;
+                /** @description The most items to return. The default is 100. */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageOfAuditEvent"];
+                };
+            };
+            /** @description `bad_request`: The request is not valid. The server could not read the request. For example, its JSON body is malformed, a required parameter is missing, or a parameter has a value that the spec does not list. Fix the request before sending it again. Here, the cursor is not one that this endpoint returned, or the limit is out of range. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description `authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /**
+             * @description - `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.
+             *     - `admin_required`: Only an admin of the tenant can do this. The user is not an admin of the tenant.
              */
             403: {
                 headers: {

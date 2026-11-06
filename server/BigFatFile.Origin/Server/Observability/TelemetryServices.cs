@@ -1,4 +1,4 @@
-using Hangfire;
+using BigFatFile.Abstractions.Telemetry;
 using Npgsql;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -19,11 +19,13 @@ internal static class TelemetryServices
                 .SetSampler(builder.Environment.IsDevelopment()
                     ? new AlwaysOnSampler()
                     : new ParentBasedSampler(new TraceIdRatioBasedSampler(0.1)))
+                .AddSource(BffTelemetry.Name)
                 .AddAspNetCoreInstrumentation(options => options.Filter = context => !IsProbe(context.Request.Path))
                 .AddHttpClientInstrumentation()
                 .AddNpgsql()
                 .AddHangfireInstrumentation())
             .WithMetrics(metrics => metrics
+                .AddMeter(BffTelemetry.Name)
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
                 .AddRuntimeInstrumentation()

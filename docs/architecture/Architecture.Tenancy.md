@@ -26,10 +26,7 @@ Apps authenticate.
     - deleting a group removes its rules; nothing else refers to it;
     - the tables and how a group enters the permission check are in
       `Architecture.DataModel.md`, section 4.
-- Plans:
-    - the open core has one unlimited plan;
-    - the billing module enforces storage, bandwidth, retention and feature limits
-      through `IPlanPolicy` (`Architecture.PlatformTopology.md`, section 7).
+- Each tenant has a plan, which sets its limits (`Architecture.Licensing.md`, section 4).
 
 ## 2. Tenant isolation
 
@@ -67,6 +64,13 @@ Apps authenticate.
         - `/api/v1/account/me` lists the user's tenants, and sign-in chooses one of them;
         - this second policy is for reading only, so a membership changes only inside its
           own tenant.
+    - partitions of a partitioned table, such as the audit log's monthly partitions:
+        - policies apply only through the parent table, so a partition read directly
+          would show every tenant's rows;
+        - the request user has no rights on any partition, and reaches the rows only
+          through the parent;
+        - every start grants the request user its rights, then takes back its rights on
+          every partition.
 
 ## 3. Permissions
 

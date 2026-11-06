@@ -1,4 +1,4 @@
-using BigFatFile.Abstractions.Features;
+using BigFatFile.Abstractions.Licensing;
 using Microsoft.Extensions.Configuration;
 
 namespace BigFatFile.Abstractions.Modules;

@@ -2,7 +2,7 @@ using BigFatFile.Contracts.Account;
 using BigFatFile.Contracts.Api;
 using BigFatFile.Contracts.Manifests;
 using BigFatFile.Contracts.Names;
-using BigFatFile.Origin.Modules;
+using BigFatFile.Origin.Licensing;
 using BigFatFile.Origin.Server;
 
 namespace BigFatFile.Origin.Api.Endpoints;

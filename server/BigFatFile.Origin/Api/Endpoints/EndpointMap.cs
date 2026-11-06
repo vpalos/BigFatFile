@@ -43,6 +43,7 @@ internal static class EndpointMap
         tenant.MapTenantEndpoints();
         tenant.MapMemberEndpoints();
         tenant.MapInvitationEndpoints();
+        tenant.MapAuditEndpoints();
 
         foreach (var loaded in modules)
         {

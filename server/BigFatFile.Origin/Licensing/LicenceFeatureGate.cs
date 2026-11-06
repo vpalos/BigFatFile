@@ -1,9 +1,9 @@
-using BigFatFile.Abstractions.Features;
+using BigFatFile.Abstractions.Licensing;
 
-namespace BigFatFile.Origin.Modules;
+namespace BigFatFile.Origin.Licensing;
 
 /// <summary>
-/// Answers from the licence. This build reads no licence, so every reserved key is off.
+/// Answers what features are enabled, from the licence.
 /// </summary>
 internal sealed class LicenceFeatureGate : IFeatureGate
 {

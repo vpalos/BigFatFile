@@ -1,4 +1,4 @@
-namespace BigFatFile.Abstractions.Features;
+namespace BigFatFile.Abstractions.Licensing;
 
 /// <summary>
 /// The keys reserved for licensed modules.

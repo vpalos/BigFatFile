@@ -75,7 +75,7 @@ public sealed class TenantIsolationTests(Origin origin, Postgres postgres) : ICl
 
         var tenant = await browser.GetFromJsonAsync<Tenant>($"/api/v1/tenants/{me!.TenantId}", Cancellation);
 
-        Assert.Equal(DevelopmentSeed.TenantName, tenant!.Name);
+        Assert.Equal((DevelopmentSeed.TenantName, "unlimited"), (tenant!.Name, tenant.Plan));
     }
 
     [Fact]

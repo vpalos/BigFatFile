@@ -1,3 +1,5 @@
+using System.Data.Common;
+using BigFatFile.Abstractions.Licensing;
 using BigFatFile.Abstractions.Modules;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -13,10 +15,18 @@ public sealed class SampleModule : IBffModule
     public Version RequiredCoreVersion => typeof(IBffModule).Assembly.GetName().Version!;
 
     public void ConfigureServices(IServiceCollection services, BffModuleContext context) =>
-        services.AddSingleton(new Greeting("hello from the sample module"));
+        services
+            .AddSingleton(new Greeting("hello from the sample module"))
+            .AddSingleton<IPlanPolicy, SamplePlanPolicy>();
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints) =>
         endpoints.MapGet("/hello", (Greeting greeting) => Results.Text(greeting.Text)).AllowAnonymous();
 
     public sealed record Greeting(string Text);
+
+    private sealed class SamplePlanPolicy : IPlanPolicy
+    {
+        public ValueTask<TenantPlan> GetPlanAsync(DbConnection connection, Guid tenantId, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(new TenantPlan { Key = "sample" });
+    }
 }

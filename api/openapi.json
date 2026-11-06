@@ -1045,6 +1045,188 @@
         ]
       }
     },
+    "/api/v1/tenants/{id}/audit": {
+      "get": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "List audit events",
+        "description": "Returns the tenant's audit log, newest first, one page at a time: who signed in, and which Apps received tokens to act for a user.\n\nEvents are kept for at least 90 days.",
+        "operationId": "listAuditEvents",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Only events at this time or later.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Only events before this time.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "actor",
+            "in": "query",
+            "description": "Only events by this user.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "The nextCursor of the previous page. Leave it out for the first page.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The most items to return. The default is 100.",
+            "schema": {
+              "maximum": 500,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageOfAuditEvent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`bad_request`: The request is not valid. The server could not read the request. For example, its JSON body is malformed, a required parameter is missing, or a parameter has a value that the spec does not list. Fix the request before sending it again. Here, the cursor is not one that this endpoint returned, or the limit is out of range.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "bad_request": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:bad_request",
+                      "title": "The request is not valid.",
+                      "status": 400,
+                      "code": "bad_request",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`authentication_required`: This endpoint needs a token or a session. The request has no access token and no session cookie, or the one it has is not valid or has expired. Get a new token, or sign in again.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "authentication_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:authentication_required",
+                      "title": "This endpoint needs a token or a session.",
+                      "status": 401,
+                      "code": "authentication_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `forbidden`: The token or the session does not allow this. The request is authenticated, but its token does not have the scope that the endpoint needs. Ask for a token with that scope.\n- `admin_required`: Only an admin of the tenant can do this. The user is not an admin of the tenant.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:forbidden",
+                      "title": "The token or the session does not allow this.",
+                      "status": 403,
+                      "code": "forbidden",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  },
+                  "admin_required": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:admin_required",
+                      "title": "Only an admin of the tenant can do this.",
+                      "status": 403,
+                      "code": "admin_required",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: Nothing exists at this address. The resource does not exist, or the request has no access to it. The answer is the same in both cases, so it does not reveal what exists.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "type": "urn:bigfatfile:problem:not_found",
+                      "title": "Nothing exists at this address.",
+                      "status": 404,
+                      "code": "not_found",
+                      "traceId": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": [
+              "tenant.admin"
+            ]
+          },
+          {
+            "session": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/tenants/{id}/members": {
       "get": {
         "tags": [
@@ -1991,6 +2173,99 @@
         },
         "description": "What the sign-in and sign-up flows offer on this server."
       },
+      "AuditAction": {
+        "enum": [
+          "signed_in",
+          "app_authorized"
+        ],
+        "description": "- `signed_in`: the user signed in with a password, and a session started.\n- `app_authorized`: an App or the CLI received tokens to act for the user. `agentClientId` names it."
+      },
+      "AuditActor": {
+        "required": [
+          "userId",
+          "email",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Null once the user's account is deleted."
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Null once the user's account is deleted."
+          }
+        }
+      },
+      "AuditEvent": {
+        "required": [
+          "id",
+          "occurredAt",
+          "action",
+          "actor",
+          "agentClientId",
+          "ipAddress",
+          "userAgent"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "action": {
+            "$ref": "#/components/schemas/AuditAction"
+          },
+          "actor": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The user who acted. Null when no signed-in user did it.",
+                "$ref": "#/components/schemas/AuditActor"
+              }
+            ]
+          },
+          "agentClientId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The client ID of the App or the CLI that acted for the user. Null when the user acted alone."
+          },
+          "ipAddress": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The address that the request came from."
+          },
+          "userAgent": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name that the browser or the program sent in its `User-Agent` header, cut to 512 characters."
+          }
+        },
+        "description": "One entry of a tenant's audit log."
+      },
       "ConfirmEmailRequest": {
         "required": [
           "userId",
@@ -2391,6 +2666,29 @@
           }
         }
       },
+      "PageOfAuditEvent": {
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEvent"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Pass it as `cursor` to get the next page; null on the last page."
+          }
+        },
+        "description": "One page of a listing."
+      },
       "PageOfInvitation": {
         "required": [
           "items",
@@ -2728,7 +3026,7 @@
     },
     {
       "name": "tenants",
-      "description": "The tenant, its members and its invitations.\n\n- A token or a session works in one tenant. A request with any other tenant's ID gets 404, the same answer as for a tenant that does not exist.\n- The endpoints that need the `members.manage` scope are for admins only. A user who is not an admin of the tenant gets 403 with the code `admin_required`.\n- The endpoints that need the `members.read` scope are for members and admins. A guest of the tenant gets 403 with the code `member_required`."
+      "description": "The tenant, its members, its invitations and its audit log.\n\n- A token or a session works in one tenant. A request with any other tenant's ID gets 404, the same answer as for a tenant that does not exist.\n- The endpoints that need the `members.manage` or the `tenant.admin` scope are for admins only. A user who is not an admin of the tenant gets 403 with the code `admin_required`.\n- The endpoints that need the `members.read` scope are for members and admins. A guest of the tenant gets 403 with the code `member_required`."
     }
   ]
 }

@@ -35,7 +35,7 @@ internal static class SignInFormEndpoints
         var user = await users.FindByEmailAsync(email);
         if (user is not null)
         {
-            var result = await PasswordSignIn.SignInAsync(signIn, dataSource, user, password, context.RequestAborted);
+            var result = await PasswordSignIn.SignInAsync(signIn, dataSource, user, password, context);
             if (result.Succeeded)
             {
                 return Results.Redirect(target);

@@ -65,7 +65,7 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 
 #### M1.1. Accounts and tenants
 
-- Status: steps 1, 2 and 7 are done.
+- Status: steps 1, 2, 3 and 7 are done.
 - Steps, in order:
     1. The API spec, with every endpoint of M1.1 as a stub.
     2. Tenant isolation:
@@ -271,8 +271,10 @@ Milestones for v2, in order, each with what it contains and when it counts as do
   then for real.
 - Deployment catalogs (Unraid, TrueNAS, CasaOS, Portainer, Coolify) and the package
   repositories.
-- The public pages (Privacy, FAQ, Features, Plans, About) rewritten: file content passes
-  through the Origin, which v1's pages said it did not.
+- The public pages (Privacy, FAQ, Features, Plans, About) rewritten:
+    - file content passes through the Origin, which v1's pages said it did not;
+    - the Privacy page says that the audit log stores the IP address and the user agent of
+      each sign-in, and for how long it keeps them.
 - Done when: v1 is switched off.
 
 ## 3. After v2.0

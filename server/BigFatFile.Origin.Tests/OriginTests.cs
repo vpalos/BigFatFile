@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using BigFatFile.Abstractions.Telemetry;
 using BigFatFile.Contracts.Account;
 using BigFatFile.Contracts.Api;
 using BigFatFile.Contracts.Manifests;
@@ -32,6 +33,9 @@ public sealed class OriginTests(Origin origin, Postgres postgres) : IClassFixtur
         Assert.Equal(TimeSpan.Zero, timestamp.Offset);
         Assert.InRange(DateTimeOffset.UtcNow - timestamp, TimeSpan.Zero, TimeSpan.FromMinutes(1));
     }
+
+    [Fact]
+    public void TheBigFatFileSpansAreRecorded() => Assert.True(BffTelemetry.ActivitySource.HasListeners());
 
     [Fact]
     public async Task MetaReportsTheAcceptedChunkings()

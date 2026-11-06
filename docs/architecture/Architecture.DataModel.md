@@ -277,11 +277,49 @@ node_id, role, password_hash, expires_at, created_by)`, with `role` either `view
 
 ## 7. Audit log
 
-- Separate from the change log;
-- Stores:
-    - who did what;
-    - sign-ins;
-    - share-link visits;
-    - downloads and permission changes.
-- Retention depends on the plan (on cloud version).
-- Uses a partitioned table, so old partitions can be dropped cheaply.
+- Separate from the change log.
+- Each row of `audit_events` holds:
+    - the action;
+    - the time;
+    - the tenant, or none for an event outside any tenant;
+    - the actor: the user who acted;
+    - the agent: the client ID of the App or the CLI that acted for the user;
+    - the IP address of the request;
+    - the user agent of the request, cut to 512 characters;
+    - `details`: anything else that the action needs.
+- Actions:
+    - `signed_in`: a password sign-in;
+        - it is written in the tenant that sign-in chose;
+        - a user with no tenant gets no row;
+    - `app_authorized`: an App or the CLI exchanged an authorization code for tokens;
+        - a refresh writes no row;
+    - `sign_in_failed`: a password sign-in that was refused;
+        - `details.reason` says why:
+            - `wrong_password`;
+            - `locked_out`: the account is locked after too many wrong passwords;
+            - `not_allowed`: the email address is not confirmed;
+            - `two_factor_required`: the account has two-factor sign-in turned on
+              (`Architecture.Tenancy.md`, section 4);
+        - the actor is the account that was tried;
+        - the row has no tenant, so only the operator reads it, as the database owner;
+        - an unknown email address writes no row;
+    - the later features add their own actions:
+        - share-link visits;
+        - downloads;
+        - permission changes;
+        - tree changes.
+- Access:
+    - a tenant admin reads the tenant's rows through `GET /tenants/{id}/audit`;
+    - requests only add rows;
+    - the request user has no right to change or delete a row;
+    - a request may add a row outside any tenant, but no policy lets it read one.
+- Partitions:
+    - one per month of the event's time, with months starting at midnight UTC;
+    - the Origin creates this month's partition and the next two, at startup and in a
+      daily job;
+    - requests reach them only through the parent table (`Architecture.Tenancy.md`,
+      section 2).
+- Retention:
+    - the daily job drops a month's partition once its last day is 90 days old, so a
+      row is kept for 90 to about 121 days;
+    - on the cloud, retention depends on the tenant's plan.

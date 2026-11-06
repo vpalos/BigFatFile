@@ -72,15 +72,28 @@ internal sealed class DatabaseBootstrap(
     private static async Task GrantAsync(NpgsqlConnection connection, string name, CancellationToken cancellationToken)
     {
         var (role, database) = await connection.QuerySingleAsync<(string Role, string Database)>(new CommandDefinition(
-            "SELECT quote_ident(@Name), quote_ident(current_database())", new { Name = name }, cancellationToken: cancellationToken));
+            "SELECT quote_ident(@Name), quote_ident(current_database())",
+            new { Name = name }, cancellationToken: cancellationToken));
 
-        // Also the table of a module that is no longer loaded: the GRANT on all tables
-        // gives it back to the role on every start.
         var migrationTables = await connection.QueryAsync<string>(new CommandDefinition(
             "SELECT quote_ident(tablename) FROM pg_tables WHERE schemaname = 'public' AND starts_with(tablename, @Prefix)",
             new { Prefix = DatabaseMigrations.TablePrefix },
             cancellationToken: cancellationToken));
-        var revokes = string.Concat(migrationTables.Select(table => $"REVOKE ALL ON {table} FROM {role};\n"));
+
+        // TODO:
+        // We should remember to also revoke permissions on tables for unloaded modules,
+        // because the initial GRANT applied to all tables, restores them on every start.
+
+        // We revoke direct access to partitions, to prevent exposing rows across tenants.
+        // Therefore access is done only through the parent table, as is expected anyway.
+        var partitions = await connection.QueryAsync<string>(new CommandDefinition(
+            """
+            SELECT quote_ident(c.relname) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'public' AND c.relispartition AND c.relkind IN ('r', 'p')
+            """,
+            cancellationToken: cancellationToken));
+
+        var revokes = string.Concat(migrationTables.Concat(partitions).Select(table => $"REVOKE ALL ON {table} FROM {role};\n"));
 
         await connection.ExecuteAsync(new CommandDefinition(
             $"""
@@ -88,6 +101,7 @@ internal sealed class DatabaseBootstrap(
             GRANT USAGE ON SCHEMA public TO {role};
             GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO {role};
             GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO {role};
+            REVOKE UPDATE, DELETE ON audit_events FROM {role};
             {revokes}
             """,
             cancellationToken: cancellationToken));

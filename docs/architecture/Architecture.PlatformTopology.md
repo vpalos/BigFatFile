@@ -404,13 +404,9 @@ Designed for Apps rather than discovered by them. Our own clients use these.
     - runs the module's DB migrations;
     - maps the module's API endpoints;
     - the public image has the loader and no modules.
-- Licence key:
-    - a signed document (Ed25519; the public key is embedded in the Origin): instance or
-      tenant ID, enabled feature keys, seat limit, expiry, grace period;
-    - verified offline, so a dedicated instance without internet still starts;
-    - A single way to check the key (`IFeatureGate.IsEnabled("<key>")`):
-        - used by the core (show or hide UI, refuse endpoints);
-        - used by modules (refuse to activate without their key).
+- Licence:
+    - a module runs only when the licence turns on its feature key
+      (`Architecture.Licensing.md`, sections 2 and 3).
 - UI:
     - `/api/ui/manifest` lists enabled features, menu entries and settings pages;
     - the licensed web build includes the modules' UI packages from the private part of

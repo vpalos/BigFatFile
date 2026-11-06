@@ -26,7 +26,7 @@ internal static class JobServices
             services.AddHangfireServer();
         }
 
-        return services;
+        return services.AddSingleton<AuditPartitionsJob>();
     }
 
     public static DashboardOptions DashboardOptions() => new()

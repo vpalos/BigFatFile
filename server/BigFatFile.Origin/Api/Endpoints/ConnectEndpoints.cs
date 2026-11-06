@@ -1,9 +1,12 @@
 using BigFatFile.Origin.Auth;
+using BigFatFile.Origin.Auth.SignIn;
 using BigFatFile.Origin.Auth.Tokens;
 using BigFatFile.Origin.Auth.Users;
+using BigFatFile.Origin.Models;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Npgsql;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -61,7 +64,8 @@ internal static class ConnectEndpoints
         return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
-    private static async Task<IResult> TokenAsync(HttpContext context, UserManager<BffUser> users, SignInManager<BffUser> signIn)
+    private static async Task<IResult> TokenAsync(
+        HttpContext context, UserManager<BffUser> users, SignInManager<BffUser> signIn, NpgsqlDataSource dataSource)
     {
         var request = context.GetOpenIddictServerRequest()
             ?? throw new InvalidOperationException("OpenIddict did not attach the token request.");
@@ -83,6 +87,16 @@ internal static class ConnectEndpoints
                 granted.Principal!.GetClaim(TenantClaims.TenantId),
                 granted.Principal!.GetScopes(),
                 granted.Principal!.GetResources());
+
+            // A refresh only renews what the App or the CLI already has, so it writes no row.
+            if (request.IsAuthorizationCodeGrantType() && TenantClaims.TenantOf(granted.Principal) is { } tenantId)
+            {
+                await SignInAudit.WriteAsync(
+                    dataSource,
+                    SignInAudit.Entry(context, tenantId, AuditModel.AppAuthorized, user.Id, agentClientId: request.ClientId),
+                    context.RequestAborted);
+            }
+
             return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 

@@ -1,5 +1,8 @@
+using System.Net;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
 namespace BigFatFile.Origin.Tests;
@@ -7,6 +10,9 @@ namespace BigFatFile.Origin.Tests;
 /// <summary>An Origin on its own empty database, with the development seed.</summary>
 public class Origin(Postgres postgres) : IAsyncLifetime
 {
+    /// <summary>The address of every request from <see cref="CreateClient"/>, because the test client has none.</summary>
+    public static readonly IPAddress ClientAddress = IPAddress.Parse("192.0.2.10");
+
     private WebApplicationFactory<Program>? factory;
 
     /// <summary>The owner's connection string. Row-level security does not apply to it.</summary>
@@ -34,7 +40,8 @@ public class Origin(Postgres postgres) : IAsyncLifetime
             .UseSetting("BFF_DATABASE", AppConnectionString)
             .UseSetting("BFF_DATABASE_OWNER", ConnectionString)
             .UseSetting("BFF_DEVELOPMENT_SEED", "true")
-            .UseSetting("BFF_MODULES_PATH", ModulesPath));
+            .UseSetting("BFF_MODULES_PATH", ModulesPath)
+            .ConfigureServices(services => services.AddSingleton<IStartupFilter, ClientAddressFilter>()));
         factory.CreateClient().Dispose();
     }
 
@@ -44,6 +51,19 @@ public class Origin(Postgres postgres) : IAsyncLifetime
         {
             await factory.DisposeAsync();
         }
+    }
+
+    private sealed class ClientAddressFilter : IStartupFilter
+    {
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
+        {
+            app.Use((context, nextMiddleware) =>
+            {
+                context.Connection.RemoteIpAddress ??= ClientAddress;
+                return nextMiddleware(context);
+            });
+            next(app);
+        };
     }
 }
 

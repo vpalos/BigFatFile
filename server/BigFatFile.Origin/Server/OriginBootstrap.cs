@@ -1,7 +1,9 @@
 using BigFatFile.Origin.Auth.Tokens;
 using BigFatFile.Origin.Database;
 using BigFatFile.Origin.Database.Seeds;
+using BigFatFile.Origin.Jobs;
 using BigFatFile.Origin.Server.Machine;
+using Hangfire;
 
 namespace BigFatFile.Origin.Server;
 
@@ -14,13 +16,19 @@ internal static class OriginBootstrap
     {
         app.Services.GetRequiredService<OriginSettings>().Validate();
         await app.Services.GetRequiredService<DatabaseMigrations>().RunAsync(cancellationToken);
-        await app.Services.GetRequiredService<Database.DatabaseBootstrap>().PrepareAsync(cancellationToken);
+        await app.Services.GetRequiredService<DatabaseBootstrap>().PrepareAsync(cancellationToken);
     }
 
     public static async Task PrepareAsync(WebApplication app, CancellationToken cancellationToken)
     {
         CongestionControlCheck.WarnIfNotBbr(app.Logger);
+
         await MigrateAsync(app, cancellationToken);
+
+        await app.Services.GetRequiredService<AuditPartitionsJob>().CreatePartitionsAsync(cancellationToken);
+
+        RecurringJobs.Register(app.Services.GetRequiredService<IRecurringJobManager>());
+
         await app.Services.GetRequiredService<ServerKeys>().LoadAsync(cancellationToken);
 
         if (app.Services.GetRequiredService<OriginSettings>().DevelopmentSeed)

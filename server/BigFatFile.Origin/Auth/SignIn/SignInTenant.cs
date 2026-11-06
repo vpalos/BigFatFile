@@ -4,12 +4,13 @@ using Npgsql;
 
 namespace BigFatFile.Origin.Auth.SignIn;
 
-/// <summary>Chooses the tenant that a new session works in, and records the choice.</summary>
+/// <summary>Chooses the tenant that a new session works in, and records the sign-in there.</summary>
 internal static class SignInTenant
 {
     /// <returns>The tenant that the user signed in to last, or else the oldest membership; null when the user is a member of none.</returns>
-    public static async Task<Guid?> ChooseAsync(NpgsqlDataSource dataSource, Guid userId, CancellationToken cancellationToken)
+    public static async Task<Guid?> ChooseAsync(NpgsqlDataSource dataSource, Guid userId, HttpContext context)
     {
+        var cancellationToken = context.RequestAborted;
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         Guid? tenantId;
         await using (await ScopedDatabase.BeginTenantTransactionAsync(connection, tenantId: null, userId, cancellationToken))
@@ -25,6 +26,7 @@ internal static class SignInTenant
         // A membership changes only inside its own tenant, so the record is a second transaction.
         await using var transaction = await ScopedDatabase.BeginTenantTransactionAsync(connection, tenantId, userId, cancellationToken);
         await MemberModel.MarkSignedInAsync(connection, tenantId.Value, userId, cancellationToken);
+        await AuditModel.AddAsync(connection, SignInAudit.Entry(context, tenantId, AuditModel.SignedIn, userId), cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return tenantId;
     }

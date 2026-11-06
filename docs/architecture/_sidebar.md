@@ -2,6 +2,7 @@
 - [Platform topology](Architecture.PlatformTopology.md)
 - [API](Architecture.API.md)
 - [Tenancy](Architecture.Tenancy.md)
+- [Licensing](Architecture.Licensing.md)
 - [Data model](Architecture.DataModel.md)
 - [File storage](Architecture.FileStorage.md)
 - [File transfer](Architecture.FileTransfer.md)

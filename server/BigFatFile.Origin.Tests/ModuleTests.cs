@@ -1,10 +1,18 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json.Nodes;
-using BigFatFile.Abstractions.Features;
+using BigFatFile.Abstractions.Licensing;
+using BigFatFile.Abstractions.Modules;
+using BigFatFile.Contracts.Api;
 using BigFatFile.Origin.Database;
+using BigFatFile.Origin.Database.Seeds;
+using BigFatFile.Origin.Licensing;
 using BigFatFile.Origin.Models;
 using BigFatFile.Origin.Modules;
 using Dapper;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
 namespace BigFatFile.Origin.Tests;
@@ -30,6 +38,38 @@ public sealed class ModuleTests(OriginWithSampleModule origin) : IClassFixture<O
 
         var tags = spec["paths"]?["/api/v1/sample/hello"]?["get"]?["tags"]?.AsArray().Select(tag => tag!.GetValue<string>());
         Assert.Equal(["sample"], tags);
+    }
+
+    [Fact]
+    public async Task AModulesPlanReplacesTheCoresPlan()
+    {
+        using var browser = origin.CreateClient();
+        await SignIn.SignInWithPasswordAsync(browser, DevelopmentSeed.UserEmail, DevelopmentSeed.UserPassword);
+        var me = await browser.GetFromJsonAsync<Me>("/api/v1/account/me", TestContext.Current.CancellationToken);
+
+        var tenant = await browser.GetFromJsonAsync<Tenant>($"/api/v1/tenants/{me!.TenantId}", TestContext.Current.CancellationToken);
+
+        Assert.Equal("sample", tenant!.Plan);
+    }
+
+    [Fact]
+    public void TwoModulesWithAPlanPolicyStopStartup()
+    {
+        LoadedModule[] modules = [Fake("first", withPlanPolicy: true), Fake("second", withPlanPolicy: false), Fake("third", withPlanPolicy: true)];
+
+        var error = Assert.Throws<InvalidOperationException>(() => ModuleLoader.ConfigureServices(new ServiceCollection(), modules, Context()));
+
+        Assert.Contains("first (/modules/first/first.dll), third (/modules/third/third.dll)", error.Message);
+    }
+
+    [Fact]
+    public void OneModuleWithAPlanPolicyStartsUp()
+    {
+        var services = new ServiceCollection();
+
+        ModuleLoader.ConfigureServices(services, [Fake("first", withPlanPolicy: true), Fake("second", withPlanPolicy: false)], Context());
+
+        Assert.Single(services, service => service.ServiceType == typeof(IPlanPolicy));
     }
 
     [Fact]
@@ -66,5 +106,29 @@ public sealed class ModuleTests(OriginWithSampleModule origin) : IClassFixture<O
 
         Assert.All(FeatureKeys.All, key => Assert.False(gate.IsEnabled(key)));
         Assert.Throws<ArgumentException>(() => gate.IsEnabled("sso.typo"));
+    }
+
+    private static LoadedModule Fake(string name, bool withPlanPolicy) =>
+        new(new FakeModule(name, withPlanPolicy), typeof(FakeModule).Assembly, $"/modules/{name}/{name}.dll");
+
+    private static BffModuleContext Context() => new(new ConfigurationBuilder().Build(), new LicenceFeatureGate());
+
+    private sealed class FakeModule(string name, bool withPlanPolicy) : IBffModule
+    {
+        public string Name => name;
+
+        public Version RequiredCoreVersion => typeof(IBffModule).Assembly.GetName().Version!;
+
+        public void ConfigureServices(IServiceCollection services, BffModuleContext context)
+        {
+            if (withPlanPolicy)
+            {
+                services.AddSingleton<IPlanPolicy, UnlimitedPlanPolicy>();
+            }
+        }
+
+        public void MapEndpoints(IEndpointRouteBuilder endpoints)
+        {
+        }
     }
 }
