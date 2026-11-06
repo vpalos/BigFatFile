@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BigFatFile.Contracts.Api;
+using BigFatFile.Origin.Auth;
 using BigFatFile.Origin.Database.Seeds;
 using BigFatFile.Origin.Jobs;
 using BigFatFile.Origin.Models;
@@ -29,7 +30,7 @@ public sealed class AuditTests(Origin origin) : IClassFixture<Origin>
         await SignIn.SignInWithPasswordAsync(browser, "audit-signed-in@bigfatfile.local", TestData.Password);
 
         var row = Assert.Single(await RowsOfAsync(userId));
-        Assert.Equal(((Guid?)tenantId, AuditModel.SignedIn, (string?)null), (row.TenantId, row.Action, row.AgentClientId));
+        Assert.Equal(((Guid?)tenantId, AuthAudit.SignedIn, (string?)null), (row.TenantId, row.Action, row.AgentClientId));
         Assert.Equal((Origin.ClientAddress.ToString(), UserAgent), (row.IpAddress, row.UserAgent));
     }
 
@@ -51,7 +52,7 @@ public sealed class AuditTests(Origin origin) : IClassFixture<Origin>
         Assert.Equal(HttpStatusCode.OK, refreshed.StatusCode);
 
         var rows = await RowsOfAsync(userId);
-        Assert.Equal([AuditModel.SignedIn, AuditModel.AppAuthorized], rows.Select(row => row.Action));
+        Assert.Equal([AuthAudit.SignedIn, AuthAudit.AppAuthorized], rows.Select(row => row.Action));
         Assert.Equal(((Guid?)tenantId, (string?)DevelopmentSeed.CliClientId), (rows[1].TenantId, rows[1].AgentClientId));
     }
 
@@ -65,7 +66,7 @@ public sealed class AuditTests(Origin origin) : IClassFixture<Origin>
         await SignIn.PostSignInFormAsync(browser, "audit-wrong@bigfatfile.local", "not the password");
 
         var row = Assert.Single(await RowsOfAsync(userId));
-        Assert.Equal(((Guid?)null, AuditModel.SignInFailed, (string?)"wrong_password"), (row.TenantId, row.Action, row.Reason));
+        Assert.Equal(((Guid?)null, AuthAudit.SignInFailed, (string?)"wrong_password"), (row.TenantId, row.Action, row.Reason));
         Assert.Equal((Origin.ClientAddress.ToString(), UserAgent), (row.IpAddress, row.UserAgent));
     }
 
@@ -78,6 +79,15 @@ public sealed class AuditTests(Origin origin) : IClassFixture<Origin>
         await SignIn.PostSignInFormAsync(browser, "nobody@bigfatfile.local", "any password");
 
         Assert.Equal(before, await CountAsync());
+    }
+
+    [Fact]
+    public void ALongUserAgentIsCutAndAnEmptyOneIsNull()
+    {
+        static AuditModel.Entry WithUserAgent(string userAgent) => new(null, AuthAudit.SignedIn, null, null, null, userAgent);
+
+        Assert.Equal(new string('a', AuditModel.Entry.MaxUserAgentLength), WithUserAgent(new string('a', 600)).UserAgent);
+        Assert.Null(WithUserAgent("").UserAgent);
     }
 
     [Fact]
@@ -233,7 +243,7 @@ public sealed class AuditTests(Origin origin) : IClassFixture<Origin>
         await using var connection = await OpenAsOwnerAsync();
         await connection.ExecuteAsync(
             "INSERT INTO audit_events (occurred_at, tenant_id, action, actor_user_id) VALUES (@Time, @TenantId, @Action, @UserId)",
-            new { Time = time, TenantId = tenantId, Action = AuditModel.SignedIn, UserId = userId });
+            new { Time = time, TenantId = tenantId, Action = AuthAudit.SignedIn, UserId = userId });
     }
 
     private async Task<long> CountAsync()

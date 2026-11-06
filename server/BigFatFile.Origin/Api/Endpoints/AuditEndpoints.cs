@@ -2,6 +2,7 @@ using System.ComponentModel;
 using BigFatFile.Contracts.Api;
 using BigFatFile.Origin.Api.Errors;
 using BigFatFile.Origin.Api.Parameters;
+using BigFatFile.Origin.Auth;
 using BigFatFile.Origin.Auth.Tokens;
 using BigFatFile.Origin.Database;
 using BigFatFile.Origin.Jobs;
@@ -65,8 +66,8 @@ internal static class AuditEndpoints
         row.OccurredAt,
         row.Action switch
         {
-            AuditModel.SignedIn => AuditAction.SignedIn,
-            AuditModel.AppAuthorized => AuditAction.AppAuthorized,
+            AuthAudit.SignedIn => AuditAction.SignedIn,
+            AuthAudit.AppAuthorized => AuditAction.AppAuthorized,
             _ => throw new InvalidOperationException($"The audit action {row.Action} has no value in {nameof(AuditAction)}."),
         },
         row.ActorUserId is { } userId ? new AuditActor(userId, row.ActorEmail, row.ActorName) : null,

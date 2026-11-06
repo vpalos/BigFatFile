@@ -3,7 +3,10 @@ using System.Buffers.Text;
 
 namespace BigFatFile.Origin.Api.Parameters;
 
-/// <summary>The cursor of a listing that is ordered by time: the time and the ID of the page's last item.</summary>
+/// <summary>
+/// The cursor of a listing that is ordered by time:
+/// - the time and the ID of the page's last item.
+/// </summary>
 internal static class TimeCursor
 {
     private const int Length = sizeof(long) + 16;

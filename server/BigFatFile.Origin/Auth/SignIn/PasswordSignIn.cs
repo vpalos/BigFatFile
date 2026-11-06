@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using BigFatFile.Origin.Auth.Users;
-using BigFatFile.Origin.Models;
 using Microsoft.AspNetCore.Identity;
 using Npgsql;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -28,17 +27,7 @@ internal static class PasswordSignIn
 
         if (!result.Succeeded)
         {
-            var reason = result switch
-            {
-                { IsLockedOut: true } => "locked_out",
-                { IsNotAllowed: true } => "not_allowed",
-                { RequiresTwoFactor: true } => "two_factor_required",
-                _ => "wrong_password",
-            };
-            await SignInAudit.WriteAsync(
-                dataSource,
-                SignInAudit.Entry(context, tenantId: null, AuditModel.SignInFailed, user.Id, details: new Dictionary<string, string> { ["reason"] = reason }),
-                context.RequestAborted);
+            await AuthAudit.WriteAsync(dataSource, AuthAudit.SignInFailedEntry(context, user.Id, result), context.RequestAborted);
             return result;
         }
 

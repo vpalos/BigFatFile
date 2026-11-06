@@ -26,7 +26,7 @@ internal static class SignInTenant
         // A membership changes only inside its own tenant, so the record is a second transaction.
         await using var transaction = await ScopedDatabase.BeginTenantTransactionAsync(connection, tenantId, userId, cancellationToken);
         await MemberModel.MarkSignedInAsync(connection, tenantId.Value, userId, cancellationToken);
-        await AuditModel.AddAsync(connection, SignInAudit.Entry(context, tenantId, AuditModel.SignedIn, userId), cancellationToken);
+        await AuditModel.AddAsync(connection, AuthAudit.SignedInEntry(context, tenantId.Value, userId), cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return tenantId;
     }

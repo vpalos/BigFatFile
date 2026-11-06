@@ -12,10 +12,6 @@ namespace BigFatFile.Origin.Models;
 /// </summary>
 internal static partial class AuditModel
 {
-    public const string SignedIn = "signed_in";
-    public const string AppAuthorized = "app_authorized";
-    public const string SignInFailed = "sign_in_failed";
-
     /// <param name="TenantId">Null for an event outside any tenant, which only the owner can read.</param>
     /// <param name="AgentClientId">The App or the CLI that acted for the user.</param>
     public sealed record Entry(
@@ -25,7 +21,13 @@ internal static partial class AuditModel
         string? AgentClientId,
         IPAddress? IpAddress,
         string? UserAgent,
-        IReadOnlyDictionary<string, string>? Details = null);
+        IReadOnlyDictionary<string, string>? Details = null)
+    {
+        public const int MaxUserAgentLength = 512;
+
+        /// <summary>Cut to <see cref="MaxUserAgentLength"/> characters. An empty one is stored as null.</summary>
+        public string? UserAgent { get; } = string.IsNullOrEmpty(UserAgent) ? null : UserAgent[..Math.Min(UserAgent.Length, MaxUserAgentLength)];
+    }
 
     /// <param name="ActorEmail">Null once the user is deleted.</param>
     public sealed record Row(

@@ -1,8 +1,6 @@
 using BigFatFile.Origin.Auth;
-using BigFatFile.Origin.Auth.SignIn;
 using BigFatFile.Origin.Auth.Tokens;
 using BigFatFile.Origin.Auth.Users;
-using BigFatFile.Origin.Models;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -91,9 +89,9 @@ internal static class ConnectEndpoints
             // A refresh only renews what the App or the CLI already has, so it writes no row.
             if (request.IsAuthorizationCodeGrantType() && TenantClaims.TenantOf(granted.Principal) is { } tenantId)
             {
-                await SignInAudit.WriteAsync(
+                await AuthAudit.WriteAsync(
                     dataSource,
-                    SignInAudit.Entry(context, tenantId, AuditModel.AppAuthorized, user.Id, agentClientId: request.ClientId),
+                    AuthAudit.AppAuthorizedEntry(context, tenantId, user.Id, request.ClientId),
                     context.RequestAborted);
             }
 
