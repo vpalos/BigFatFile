@@ -150,7 +150,7 @@ flowchart TB
 ## 4. Permissions
 
 What a user may do with a node is decided by rules on folders, found by walking up the
-tree. The policy (why folders and never files) is in `Architecture.Authentication.md` (section 4);
+tree. The policy (why folders and never files) is in `Architecture.Authentication.md` (section 5);
 this section is about how it works.
 
 ### Roles
@@ -304,7 +304,7 @@ node_id, role, password_hash, expires_at, created_by)`, with `role` either `view
             - `locked_out`: the account is locked after too many wrong passwords;
             - `not_allowed`: the email address is not confirmed;
             - `two_factor_required`: the account has two-factor sign-in turned on
-              (`Architecture.Authentication.md`, section 1);
+              (`Architecture.Authentication.md`, section 2);
         - the actor is the account that was tried;
         - the row has no tenant, so only the operator reads it, as the database owner;
         - an unknown email address writes no row;
@@ -323,7 +323,7 @@ node_id, role, password_hash, expires_at, created_by)`, with `role` either `view
     - the Origin creates this month's partition and the next two, at startup and in a
       daily job;
     - requests reach them only through the parent table (`Architecture.Authentication.md`,
-      section 3).
+      section 4).
 - Retention:
     - the daily job drops a month's partition once its last day is 90 days old, so a
       row is kept for 90 to about 121 days;

@@ -1,50 +1,47 @@
 # Platform topology
 
-The platform as a whole: the topology, the projects and the repository, how Apps and
-licensed modules plug in, the SDKs, and the developer experience.
-
-## 1. Core topology
+## 1. Basics
 
 ```mermaid
 flowchart TB
     Origin["`**Origin**
-    the one authoritative copy of a tenant's data, in the cloud, on a dedicated instance, or self-hosted`"]
+    the one authoritative copy of all data for all tenants,
+    in the cloud or self-hosted`"]
     Replica["`**Replica** (optional)
-    a full mirror of a tenant's data, on the tenant's LAN`"]
+    full-mirror for one tenant,
+    hosted on local LAN`"]
     Apps["`**Apps**
     Web, Desktop, Cli and any third-party App`"]
 
-    Replica <-->|"syncs all the time, as a tenant-scoped App"| Origin
-    Apps <==>|"at LAN speed, when the Replica is reachable"| Replica
-    Apps <-->|otherwise| Origin
+    Replica <-->|"syncs in real-time"| Origin
+    Apps <==>|"use Replica if reachable"| Replica
+    Apps <-->|else, use Origin| Origin
 ```
 
 - **Origin**:
-    - the one authoritative copy of a tenant's data;
+    - the one authoritative copy of all data (can be multi-tenant);
     - runs in the cloud, on a dedicated instance, or self-hosted;
-    - the platform is the Origin alone.
+    - it the core of the entire platform.
 - **Replica** (optional):
-    - designed to act as a full mirror of a tenant's data on the tenant's LAN;
-    - constantly syncs with the Origin upstream;
-    - replicates the Origin's API downstream to listening Apps;
+    - designed to act as a full mirror of a single tenant's data;
+    - it's hosted on the tenant's LAN;
+    - constantly syncs with the Origin upstream in real-time;
+    - acts as Origin for listening Apps (replicates APIs downstream);
     - serves downstream Apps at LAN speed (even when uplink is down);
     - is actually itself an App (chunk-level, tenant-scoped);
-    - see more details in:
-        - `Architecture.API.md` section 4;
+    - more details in:
+        - `Architecture.API.md` [section 4](Architecture.API.md#_4-scopes);
         - `Architecture.FileTransfer.md` section 4.
 - **Apps**:
-    - Web, Desktop.?, Cli, Replica and any third-party App;
-    - they talk to the Replica when one is reachable, otherwise to the Origin;
-    - the protocol is the same either way:
-        - the one public API (`Architecture.API.md`); the SDKs call its chunk-level endpoints for the Apps.
-    - a BFF App has:
-        - level:
-            - file-level Apps use the file-level `nodes` endpoints (high-level);
-            - chunk-level Apps use the chunk-level `nodes` endpoints directly (low-level);
-        - scope:
-            - user-scoped Apps act on what their user may see;
-            - tenant-scoped Apps require `tenant.mirror` scope and see all the tenant's data.
-    - provided Apps (Web, Desktop.? etc.) are actually BFF Apps too:
+    - our own apps (Web, Desktop, Cli, Replica) as well as any 3rd-party apps;
+    - Apps talk to the Replica when one is reachable, otherwise to the Origin;
+    - Origin and Replica talk the same protocol:
+        - the same API is published by both (`Architecture.API.md`);
+        - the same SDKs work seamlessly with both.
+    - Apps have scope:
+        - _user_-scoped Apps act on what their users may see;
+        - _tenant_-scoped Apps may see all the tenant's data (i.e. the `tenant.mirror` scope);
+    - our Apps (Web, Desktop.? etc.) are Apps:
         - they use only the published API and SDKs (acceptance test);
         - no private endpoints, no internal shortcuts;
         - anything our UI can do, a 3rd party App can also do;
@@ -105,7 +102,7 @@ Licensed modules are (by exception) kept in a separate repository.
               together run as one implicit transaction.
 - Tenant isolation:
     - application-level scoping;
-    - PostgreSQL row-level security (`Architecture.Authentication.md`, section 3).
+    - PostgreSQL row-level security (`Architecture.Authentication.md`, section 4).
 - Jobs and queues:
     - Hangfire with PostgreSQL storage is the single scheduling mechanism;
     - recurring jobs: expiry of sends, garbage collection, retention;
@@ -123,12 +120,12 @@ Licensed modules are (by exception) kept in a separate repository.
     - Paraglide (i18n);
     - TanStack Query (server state), TanStack Virtual, TanStack HotKeys.
 - Authentication:
-    - the Origin is the identity provider for the whole system (`Architecture.Authentication.md`, section 1).
+    - the Origin is the identity provider for the whole system (`Architecture.Authentication.md`, section 2).
 
 #### **BigFatFile.Replica** (.NET), aka the Replica:
 
-- Server app acting as the full mirror and the on-prem backup of its tenant;
-- Runs in an office on the local network (NAS, mini PC, Windows service);
+- Both a client and a server App acting as the full mirror and the on-prem backup of its tenant;
+- Runs on the tenant's local network (NAS, mini PC, Windows service);
 - Local state:
     - SQLite (not PostgreSQL);
     - chunks in a `local` warehouse on the host's disks.

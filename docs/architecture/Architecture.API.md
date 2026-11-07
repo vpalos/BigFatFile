@@ -93,11 +93,9 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 
 ## 3. Authentication
 
-- Sessions, tokens, the CSRF header and the flows that clients use are in
-  `Architecture.Authentication.md`, section 1.
-- Public endpoints (section 5, `public` tag) need no token: share links, downloads of
-  sends, uploads to file requests; a link token in the path, and the link's own password
-  where set.
+- Sessions, tokens, CSRF protection and authentication flows are described in detail in
+  [Authentication](Architecture.Authentication.md).
+- Public endpoints (section 5, `public` tag) don't need tokens.
 
 ## 4. Scopes
 

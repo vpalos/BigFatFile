@@ -119,7 +119,7 @@ are no private endpoints.
       the streamed zip from the Origin is the same fallback to explore.
 - Expiry deletes the objects.
 
-## 4. Tenant-wide Apps (`tenant.mirror`)
+## 4. Tenant-scoped Apps
 
 - Everything here is in the one public specification, under the tags of its paths, such
   as `snapshot` and `replicas`. What separates it from the rest is a scope, not privacy.

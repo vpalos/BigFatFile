@@ -1,11 +1,13 @@
 # Authentication
 
-How users and Apps sign in and prove who they act for, the tenants they work in, how
-the tenants' data is kept apart, and the permissions inside a tenant.
+This document shows:
 
-## 1. Authentication
+- how users and Apps sign in and prove who they act for,
+- how multi-tenancy works,
+- how data is kept isolated between tenants,
+- and how permissions are handled inside a tenant.
 
-How the parts relate:
+## 1. Core concepts
 
 ```mermaid
 flowchart TB
@@ -14,31 +16,91 @@ flowchart TB
     Tenant["`**Tenant**
     the space of a company or of a person: its members, its files and its settings`"]
     Client["`**Client**
-    a program that makes requests for the user: the web app, the CLI, the desktop client, the Replica, or an App. It never sees the user's password.
-    An App may also act as itself, with no user, in one tenant (M3).`"]
+    a program that makes requests for the user, such as Web, Desktop etc.;
+    it never sees the user's password; may also act as itself, with no user, inside a tenant (M3).`"]
     Session["`**Session**
-    the proof that the user signed in to the web app. The browser keeps it in the session cookie`"]
+    the proof that the user signed in to the Web app. The browser keeps it in the session cookie`"]
     Token["`**Token**
     a proof, signed by the Origin, that lets one client act for one user, in one tenant, for one hour, without the password`"]
     Scopes["`**Scopes**
-    names of the kinds of action that the user let the client do, such as files.read or members.manage`"]
+    actions that the user allowed the client to perform, such as files.read or members.manage`"]
     Request["`**Request**
-    one call to the API, allowed only when all three allow it:
-    • the token's scope (a session passes)
-    • the user's role in the tenant
-    • the permission on the folder`"]
+    an API call, authorized by: session/token, user role and permissions`"]
 
-    User -->|"is a member of, with one role: admin, member or guest"| Tenant
+    User -->|"is a member of a tenant
+    (admin, member or guest)"| Tenant
     User -->|works through| Client
-    Client -->|the web app uses| Session
-    Client -->|every other client uses| Token
-    Session -->|lets a client get a token| Token
+    Client -->|the Web app uses| Session
+    Session -->|used to make a token for a client| Token
+    Client -->|all other clients use| Token
     Token -->|holds| Scopes
     Session -->|sent with each request| Request
     Scopes -->|sent with each request| Request
 ```
 
-What an access token holds, for example the one that the CLI gets:
+### Who signs in, and why
+
+- A user signs in, to prove who they are:
+    - with a password;
+    - or with an external account, such as Google or Microsoft;
+    - only the Origin ever sees the password.
+- A client acts for a signed-in user, and must prove that it's allowed.
+    - the web app proves it with the session;
+    - every other client proves it with a token.
+- What clients do for their user:
+    - the web app shows the user's files and settings in the browser;
+    - the CLI uploads and downloads files from a shell;
+    - the Desktop client "mounts" the tenant's files as a local folder;
+    - the Replica keeps a copy of the tenant's files on-premise, which keeps working
+      even without internet;
+    - any 3rd-party App may do what the user allowed it, such as backing up a folder.
+- An App can also act as itself, with no user, but within a tenant (M3):
+    - for example, an App that imports files every night;
+    - it proves who it is with its own secret, through the client-credentials flow;
+    - its token holds the tenant and the scopes, and needs no user.
+
+### Why clients use tokens
+
+- The web app runs the Origin's own site, so the browser keeps the session in a cookie.
+- Every other client runs elsewhere, such as in a shell or on another server, so it
+  needs a proof of its own:
+    - it must not keep the user's password (would give full access to the account);
+    - a token gives much less:
+        - one client;
+        - one user;
+        - one tenant;
+        - the scopes that the user allowed;
+        - for one hour;
+    - when the token expires, the client trades its refresh token for a new one, without
+      asking the user;
+    - when the user is deleted, the next refresh fails, and the client loses access.
+- The Origin signs each token:
+    - nobody can change a token without the signature showing it;
+    - anyone with the Origin's public key can check a token, without asking the Origin;
+    - this allows the Replica to checks tokens while its internet connection is down.
+
+### Scopes
+
+- A scope is the name of one kind of action, written as an area, a dot and an action:
+    - `files.read`: list folders and download files;
+    - `files.write`: upload, rename, move and trash files;
+    - `members.manage`: invite and remove members, and change their roles.
+- A client lists the scopes that it wants when it asks for a token:
+    - the token holds the scopes that it got, in the `scope` claim, separated by spaces;
+    - today a client gets every scope that it asks for, from those it is registered with;
+    - later, the user or an admin will see the list and agree to it (M3).
+- Each endpoint names the one scope that it needs:
+    - `GET /tenants/{id}/members` needs `members.read`;
+    - `POST /tenants/{id}/invitations` needs `members.manage`;
+    - `GET /tenants/{id}/audit` needs `tenant.admin`.
+- A scope limits the client, not the user:
+    - a token with `members.manage` still fails for a user who is not an admin;
+    - the full rule is under "Rules" below.
+- The list of scopes, and what each one allows, is in [API](Architecture.API.md#_4-scopes).
+
+### Token payload
+
+What an access token holds, for example the one that the CLI App gets:
 
 | Claim       | Example                                 | What it means                      |
 | ----------- | --------------------------------------- | ---------------------------------- |
@@ -52,87 +114,28 @@ What an access token holds, for example the one that the CLI gets:
 - A token also holds the standard claims of a JWT, such as its issuer (`iss`) and the
   time it was issued (`iat`).
 
-### Who signs in, and why
+### Glossary
 
-- A user signs in, to prove who they are:
-    - with a password;
-    - or with an external account, such as Google (not built yet);
-    - only the Origin ever sees the password.
-- A client acts for a signed-in user, and must prove that it may:
-    - the web app proves it with the session;
-    - every other client proves it with a token.
-- What clients do for their user:
-    - the web app shows the user's files and settings in the browser;
-    - the CLI uploads and downloads files;
-    - the desktop client shows the tenant's files as a local folder;
-    - the Replica keeps a copy of the tenant's files in an office, which keeps working
-      without internet;
-    - an App from someone else does what the user allowed it, such as backing up a
-      folder.
-- An App can also act as itself, with no user, in one tenant (M3):
-    - for example, an App that imports files every night;
-    - it proves who it is with its own secret, through the client-credentials flow;
-    - its token holds the tenant and the scopes, and no user.
-
-### Why clients use tokens
-
-- The web app runs on the Origin's own site, so the browser can keep the session for it
-  in a cookie.
-- Every other client runs elsewhere, such as in a terminal or on another server, so it
-  needs a proof of its own:
-    - it must not keep the user's password, which gives full access to the account until
-      the password changes;
-    - a token gives much less:
-        - one client;
-        - one user;
-        - one tenant;
-        - the scopes that the user allowed;
-        - for one hour;
-    - when the token expires, the client trades its refresh token for a new one, without
-      asking the user;
-    - when the user is deleted, the next refresh fails, and the client loses access.
-- The Origin signs each token:
-    - nobody can change a token without the signature showing it;
-    - anyone with the Origin's public key can check a token, without asking the Origin;
-    - the Replica checks tokens this way while its internet connection is down.
-
-### Scopes
-
-- A scope is the name of one kind of action, written as an area, a dot and an action:
-    - `files.read`: list folders and download files;
-    - `files.write`: upload, rename, move and trash files;
-    - `members.manage`: invite and remove members, and change their roles.
-- A client lists the scopes that it wants when it asks for a token:
-    - the token holds the scopes that it got, in the `scope` claim, separated by spaces;
-    - today a client gets every scope that it asks for, from those it is registered
-      with;
-    - later, the user or an admin will see the list and agree to it (M3).
-- Each endpoint names the one scope that it needs:
-    - `GET /tenants/{id}/members` needs `members.read`;
-    - `POST /tenants/{id}/invitations` needs `members.manage`;
-    - `GET /tenants/{id}/audit` needs `tenant.admin`.
-- A scope limits the client, not the user:
-    - a token with `members.manage` still fails for a user who is not an admin;
-    - the full rule is under "Rules" below.
-- The list of scopes, and what each one allows, is in `Architecture.API.md`, section 4.
-
-### Terms
-
-- **refresh token**: a value that a client trades for a new access token, without asking
-  the user again;
 - **claim**: one fact in a session or a token, such as `sub` (the user's ID) or
   `tenant_id` (the tenant);
-- **principal**: the claims that the Origin reads from the cookie or the token, at the
-  start of each request;
+- **principal**: the set of claims that the Origin reads from the cookie or the token,
+  at the start of each request;
+- **refresh token**: a value that a client trades for a new access token, without asking
+  the user again;
 - **authorization code**: a one-use value that the Origin gives a client after the user
-  signs in, and that the client trades for tokens;
-- **PKCE**: a check that only the client that asked for a code can trade it:
-    - the client first sends the hash of a secret that only it knows;
-    - it then sends the secret itself, with the code;
-- **CSRF token**: a value that the web app sends in the `X-CSRF-Token` header with each
-  write operation:
+  signs in, and that the client then trades for tokens;
+- **PKCE**: a check used to protect against [code injection](https://oauth.net/2/pkce/):
+    - the client generates a secret that only it knows (the "verifier");
+    - it sends the hash of the secret (the "challenge") with the authorization request;
+    - it receives a code;
+    - it then sends the code + the verifier in exchange for a token;
+    - this way, the server uses the challenge (from the first request) and the verifier
+      to ensure that only that client can finish the authorization flow;
+- **CSRF token**: a value sent by the web app with each write request, to prevent
+  [CSRF attacks](https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/CSRF):
     - the web app reads it from `GET /api/v1/account/csrf`;
-    - another website cannot read it, so it cannot make the browser send a forged write
+    - then attaches it to the request in the `X-CSRF-Token` header;
+    - another website can't read it, so it can't make the browser send a forged write
       operation with the cookie.
 
 ### Rules
@@ -149,19 +152,19 @@ What an access token holds, for example the one that the CLI gets:
       the session to that tenant.
 - The role is in neither the session nor the token:
     - the Origin reads it from the membership on every request;
-    - a change of role, or a removal from the tenant, applies to the next request.
-- A request is allowed only when every check allows it:
-    - the scope, which is what the user let the client do:
+    - so that a change of role, or a removal from the tenant, is applied immediately.
+- A request is allowed only if allowed by all of these:
+    - the scope, which contains the claims that the user let the client perform:
         - a token must hold the scope that the endpoint names;
         - a session holds no scopes, and may do all that its user may do;
-        - the one exception is `tenant.mirror`, which only a token can hold;
-    - the role, which is what the user may do in the tenant:
-        - `members.manage` and `tenant.admin` need an admin: anyone else gets 403 with
-          the code `admin_required`;
-        - `members.read` refuses a guest: a guest gets 403 with the code
-          `member_required`;
+        - the one exception is `tenant.mirror`, which only a token can hold (it's for Apps);
+    - the role, which represents what the user may do within the tenant:
+        - `members.manage` and `tenant.admin` need an admin:
+            - others get 403 with the error code `admin_required`;
+        - `members.read` refuses a guest:
+            - a guest gets 403 with the code `member_required`;
         - both rules apply with a token and with the session;
-    - the permission on the folder (section 4).
+    - the permission on the folder acted upon.
 - Some account endpoints work only with the session, because a token cannot start or
   end a session:
     - switching tenant;
@@ -172,19 +175,23 @@ What an access token holds, for example the one that the CLI gets:
     - a session whose user changed the password since then ends;
     - the rebuilt session keeps its tenant.
 
-### Sign-in in the web app
+## 2. Authentication flows
+
+### Web app sign-in using email & password
 
 ```mermaid
 sequenceDiagram
-    participant B as Browser
+    participant B as Browser (web app)
     participant O as Origin
-    B->>O: the email address and the password<br/>today: from the form at /account/sign-in<br/>later: from the web app, through POST /api/v1/account/sign-in
-    Note over O: checks the limit per IP address: 20 attempts a minute<br/>checks the password: 10 wrong ones in a row lock the account
-    alt refused
-        Note over O: writes sign_in_failed to the audit log, and stops
-    else allowed
-        Note over O: chooses the tenant: the last one signed in to, or the oldest membership<br/>writes signed_in to the audit log, in that tenant<br/>starts the session, for the user in that tenant
-        O->>B: the session cookie
+    B->>O: POST /api/v1/account/sign-in<br/>the email address and the password, and optionally a tenantId
+    alt over 20 attempts in one minute from the IP address
+        O->>B: 429 too_many_requests
+    else wrong email or password, locked account, or unconfirmed email
+        Note over O: writes sign_in_failed to the audit log, when the account exists<br/>10 wrong passwords in a row lock the account for 5 minutes
+        O->>B: 401 wrong_credentials, 403 locked_out or 403 email_not_confirmed
+    else right password
+        Note over O: chooses the tenant: the tenantId sent, or else the last one signed in to,<br/>or else the oldest membership<br/>writes signed_in to the audit log, in that tenant<br/>starts the session, for the user in that tenant
+        O->>B: 204, with the session cookie
         B->>O: the cookie, with every later request
     end
 ```
@@ -194,7 +201,41 @@ sequenceDiagram
     - it can read `/api/v1/account/me`;
     - every `/tenants/{id}` endpoint answers 404.
 
-### Authorization of an App or the CLI
+### Web app sign-in using an external account (OAuth)
+
+A user can sign in with an account at another service, instead of a password. The Origin
+asks that service, through OAuth and OpenID Connect, who the user is.
+
+```mermaid
+sequenceDiagram
+    participant B as Browser (web app)
+    participant O as Origin
+    participant P as Provider
+    B->>O: opens GET /api/v1/account/sign-in/google?returnUrl=…<br/>as a page, not with a fetch call
+    O->>B: a redirect to the provider's sign-in page,<br/>with the Origin's client ID
+    B->>P: the provider's sign-in page
+    Note over P: the user signs in there<br/>and agrees to share their email address and name
+    P->>B: a redirect to the Origin, with a code
+    B->>O: the code
+    O->>P: the code, and the Origin's client secret
+    P->>O: the user's ID at the provider, email address and name
+    Note over O: finds the user linked to that account<br/>on the first sign-in: finds or creates the user, then links the account<br/>chooses the tenant and writes signed_in, as for a password sign-in<br/>starts the session
+    O->>B: a redirect to returnUrl, with the session cookie
+```
+
+- The providers:
+    - Google;
+    - Microsoft;
+    - one OpenID Connect provider that the operator sets up, such as Keycloak, Authentik
+      or Entra ID.
+- `GET /api/v1/meta` lists the providers that this Origin has set up, in
+  `account.providers`.
+- On the first sign-in:
+    - the Origin creates the user only when `BFF_SIGN_UP` allows it;
+    - it adds the user to tenants from their invitations, or from a tenant's domain
+      rules.
+
+### How an App is authorized
 
 ```mermaid
 sequenceDiagram
@@ -204,7 +245,7 @@ sequenceDiagram
     C->>B: opens the system browser<br/>at /connect/authorize
     Note over C,B: with its client ID and the scopes it wants<br/>a PKCE challenge, the hash of a secret<br/>that only the CLI knows<br/>its loopback address, such as<br/>http://127.0.0.1:53682/callback
     B->>O: /connect/authorize,<br/>with the session cookie
-    Note over O: no session: shows the sign-in page<br/>first, as above<br/>a client that needs a consent screen:<br/>refused, there is none yet
+    Note over O: no session: sends the browser to the web app's<br/>sign-in screen first, which signs the user in<br/>with a password or an external account, as above<br/>an App from someone else: shows the consent<br/>screen, where the user agrees to the scopes
     O->>B: a redirect to the loopback address,<br/>with an authorization code
     Note over O: the code holds the user,<br/>the session's tenant and the scopes
     B->>C: the authorization code,<br/>at the loopback address
@@ -218,9 +259,29 @@ sequenceDiagram
 - The refresh makes the same check:
     - a deleted user's client loses access when its access token expires;
     - a locked user's client cannot refresh until the lock ends.
-- Only first-party clients can do this today:
-    - they are registered with implicit consent, so the user sees no consent screen;
-    - an App from someone else needs a consent screen, which is not built yet.
+- First-party clients are registered with implicit consent, so their users see no
+  consent screen.
+- The consent screen is not built yet, so an App from someone else is refused.
+
+### Client flows
+
+How each client gets its proof:
+
+- The web app:
+    - it is served by the Origin, on the same origin as the API;
+    - it uses the session cookie, so the browser holds no tokens.
+- The desktop client, the Replica and the CLI:
+    - they get tokens through the authorization code flow with PKCE, in the system
+      browser, with a loopback redirect;
+    - they keep the refresh token in the platform's secure store (DPAPI, keychain,
+      protected file);
+    - headless installs will use the device code flow (not built yet).
+- Apps:
+    - an App that acts for a user gets tokens the same way as the CLI;
+    - an App that acts as itself uses the client-credentials flow, as "Who signs in, and
+      why" says (M3);
+    - an App that acts for a user later, with both identities in the token, will use
+      token exchange (RFC 8693) (M4).
 
 ### Requests
 
@@ -246,7 +307,7 @@ flowchart TB
     the role must allow the endpoint's scope`"]
     Database["`**Database**
     one transaction, with app.tenant_id and app.user_id set
-    row-level security shows only the tenant's rows (section 3)`"]
+    row-level security shows only the tenant's rows (section 4)`"]
 
     Request -->|yes| Token
     Request -->|no| Cookie
@@ -254,26 +315,6 @@ flowchart TB
     Cookie --> Principal
     Principal --> Scope --> CSRF --> Tenant --> Database
 ```
-
-### Client flows
-
-How each client gets its proof:
-
-- The web app:
-    - it is served by the Origin, on the same origin as the API;
-    - it uses the session cookie, so the browser holds no tokens.
-- The desktop client, the Replica and the CLI:
-    - they get tokens through the authorization code flow with PKCE, in the system
-      browser, with a loopback redirect;
-    - they keep the refresh token in the platform's secure store (DPAPI, keychain,
-      protected file);
-    - headless installs will use the device code flow (not built yet).
-- Apps:
-    - an App that acts for a user gets tokens the same way as the CLI;
-    - an App that acts as itself uses the client-credentials flow, as "Who signs in, and
-      why" says (M3);
-    - an App that acts for a user later, with both identities in the token, will use
-      token exchange (RFC 8693) (M4).
 
 ### Token types and keys
 
@@ -305,10 +346,8 @@ How each client gets its proof:
 
 - The Origin is the identity provider. There is no separate auth service.
 - Ways to sign in:
-    - email and password with verification; external providers (Google, Microsoft,
-      GitHub) through standard OAuth;
-    - the operator can point the Origin at one OpenID Connect provider (Keycloak,
-      Authentik, Entra ID).
+    - an email address and a password, once the address is confirmed;
+    - an external account, as "Web app sign-in using an external account" shows.
 - `BFF_SIGN_UP` sets who may sign up:
     - `invitation`, the default: only invited addresses can create an account;
     - `open`: anyone can, and gets a new tenant of their own; the cloud runs this.
@@ -326,8 +365,6 @@ How each client gets its proof:
     - it gets a tenant of its own, so a fresh install has its first tenant.
 - Per-tenant identity providers, SAML, SCIM, group sync and LDAP are licensed modules
   behind `IAuthProvider` (`Architecture.PlatformTopology.md`, section 7).
-- On first sign-in the Origin finds or creates the user, links the external account,
-  and provisions tenant membership from invitations or the tenant's domain rules.
 
 ### Sign-in limits
 
@@ -390,7 +427,7 @@ How each client gets its proof:
     - row-level security does not apply to these tables; users are global and tenant
       membership is ours.
 
-## 2. Tenants
+## 3. Tenants
 
 - A tenant is a company or an individual, with users, groups, drives, a warehouse and
   settings (plan, auth providers);
@@ -415,7 +452,7 @@ How each client gets its proof:
       `Architecture.DataModel.md`, section 4.
 - Each tenant has a plan, which sets its limits (`Architecture.Licensing.md`, section 4).
 
-## 3. Tenant isolation
+## 4. Tenant isolation
 
 - Application-level scoping (first layer):
     - every tenant-owned table carries `tenant_id`, used to filter all queries;
@@ -459,7 +496,7 @@ How each client gets its proof:
         - every start grants the request user its rights, then takes back its rights on
           every partition.
 
-## 4. Permissions
+## 5. Permissions
 
 - Rules on drives and folders grant a role (viewer, editor, owner) to a user, a group
   or the whole tenant; the nearest rule above a node decides. The tables and the check

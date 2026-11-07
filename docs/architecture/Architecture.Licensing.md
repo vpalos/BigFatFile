@@ -92,7 +92,7 @@ flowchart TB
 - `IPlanPolicy.GetPlanAsync(connection, tenantId)` returns the tenant's `TenantPlan`.
 - It runs on the request's connection:
     - a module that keeps plans in its own table reads them with the `tenant_id` being set;
-    - RLS therefore applies to that read (`Architecture.Authentication.md`, section 3).
+    - RLS therefore applies to that read (`Architecture.Authentication.md`, section 4).
 - `TenantPlan`:
     - `Key` names the plan, such as `unlimited` (or `pro`);
     - it holds no limits yet;
