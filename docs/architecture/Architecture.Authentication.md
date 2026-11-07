@@ -218,9 +218,13 @@ sequenceDiagram
     P->>B: a redirect to the Origin, with a code
     B->>O: the code
     O->>P: the code, and the Origin's client secret
-    P->>O: the user's ID at the provider, email address and name
-    Note over O: finds the user linked to that account<br/>on the first sign-in: finds or creates the user, then links the account<br/>chooses the tenant and writes signed_in, as for a password sign-in<br/>starts the session
-    O->>B: a redirect to returnUrl, with the session cookie
+    P->>O: the user's ID at the provider, email address and name,<br/>and whether the provider has verified the address
+    alt the address is not verified
+        O->>B: the sign-in is refused
+    else the address is verified
+        Note over O: finds the user linked to that account<br/>on the first sign-in: finds the user with that address, or creates one,<br/>then links the account<br/>chooses the tenant and writes signed_in, as for a password sign-in<br/>starts the session
+        O->>B: a redirect to returnUrl, with the session cookie
+    end
 ```
 
 - The providers:
@@ -230,8 +234,16 @@ sequenceDiagram
       or Entra ID.
 - `GET /api/v1/meta` lists the providers that this Origin has set up, in
   `account.providers`.
+- The provider must have verified the email address:
+    - the Origin refuses the sign-in when the provider does not say that it has;
+    - without this rule, someone could create an account at a provider with another
+      person's address, and then sign in to that person's account here, or accept their
+      invitations.
 - On the first sign-in:
-    - the Origin creates the user only when `BFF_SIGN_UP` allows it;
+    - the Origin finds the user with the same email address, or creates one when
+      `BFF_SIGN_UP` allows it;
+    - it links the external account to the user, and later sign-ins find the user by
+      that link;
     - it adds the user to tenants from their invitations, or from a tenant's domain
       rules.
 
