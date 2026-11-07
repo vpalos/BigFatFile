@@ -26,6 +26,20 @@
             .markdown-section pre > code {
                 font-size: 0.85em;
             }
+            /* A diagram may be wider than the text, up to the width of the page beside the sidebar. */
+            .markdown-section .mermaid {
+                width: max-content;
+                max-width: calc(100vw - 340px);
+                position: relative;
+                left: 50%;
+                transform: translateX(-50%);
+                overflow-x: auto;
+            }
+            @media screen and (max-width: 768px) {
+                .markdown-section .mermaid {
+                    max-width: calc(100vw - 30px);
+                }
+            }
         </style>
     </head>
     <body>
@@ -45,8 +59,24 @@
                 },
             };
         </script>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+        <script>
+            // A wide diagram keeps its size and scrolls, because shrinking it makes the text too small.
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: "neutral",
+                themeVariables: {
+                    noteBkgColor: "#fff8c4",
+                    noteBorderColor: "#d6c96a",
+                    noteTextColor: "#333",
+                },
+                flowchart: { useMaxWidth: false },
+                sequence: { useMaxWidth: false },
+            });
+        </script>
         <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/docsify-mermaid@2/dist/docsify-mermaid.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-csharp.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>

@@ -6,40 +6,29 @@ Which licensed features an Origin runs, and which plan each tenant has.
 
 How the parts relate:
 
-```
-  ─────────────── For the whole Origin (checked once, at startup) ───────────────
+```mermaid
+flowchart TB
+    subgraph WholeOrigin["For the whole Origin (checked once, at startup)"]
+        Licence["`**Licence**`"]
+        Features["`**Features**
+        one key for each licensed module`"]
+        Modules["`**Modules**`"]
+        Policy["`**Plan policy**
+        when no module brings one, the core's policy is used, which gives every tenant the plan 'unlimited'`"]
+    end
+    subgraph EachTenant["For each tenant (asked on each request)"]
+        Tenant["`**Tenant**`"]
+        Plan["`**Plan**`"]
+        Limits["`**Limits**
+        storage, bandwidth, retention, API rate limits, and which of the Origin's features the tenant may use`"]
+    end
 
-     ┌─────────────┐
-     │ Licence     │
-     └──────┬──────┘
-            │  the licence turns some features on
-            ▼
-     ┌─────────────┐
-     │ Features    │  one key for each licensed module
-     └──────┬──────┘
-            │  a module runs only when its feature (key) is on
-            ▼
-     ┌─────────────┐
-     │ Modules     │
-     └──────┬──────┘
-            │  at most one module can override the core's plan policy
-            ▼
-     ┌─────────────┐
-     │ Plan policy │  when no module brings one, the core's policy is used,
-     └──────┬──────┘  which gives every tenant the plan "unlimited"
-            │
-  ──────────┼──── For each tenant (asked on each request) ───────────────────────
-            │
-            │  the plan policy returns the plan assigned to each tenant
-            ▼
-     ┌─────────────┐   has one   ┌─────────────┐
-     │ Plan        │◀────────────│ Tenant      │
-     └──────┬──────┘             └─────────────┘
-            │  the plan decides the tenant's limits
-            ▼
-     ┌─────────────┐  storage, bandwidth, retention, API rate limits,
-     │ Limits      │  and which of the Origin's features the tenant may use
-     └─────────────┘
+    Licence -->|the licence turns some features on| Features
+    Features -->|"a module runs only when its feature (key) is on"| Modules
+    Modules -->|"at most one module can override the core's plan policy"| Policy
+    Policy -->|the plan policy returns the plan assigned to each tenant| Plan
+    Tenant -->|has one| Plan
+    Plan -->|"the plan decides the tenant's limits"| Limits
 ```
 
 - Licensing answers two questions, with two mechanisms:
@@ -142,33 +131,41 @@ How the parts relate:
 
 Which code runs, and which plan policy is used:
 
-```
-  Licence        the Origin reads the feature keys that the licence turns on
-     │           (not built yet, so every key is off)
-     ▼
-  Modules        each module checks its own key, while it registers its services:
-     │             key off: it registers nothing
-     │             key on:  it registers its services, and maybe a plan policy
-     ▼
-  Plan policy    the core chooses it, after every module:
-                   no module brought one:     the core's policy, "unlimited"
-                   one module brought one:    that module's policy
-                   more than one module did:  the Origin refuses to start
+```mermaid
+flowchart TB
+    Licence["`**Licence**
+    the Origin reads the feature keys that the licence turns on (not built yet, so every key is off)`"]
+    Modules["`**Modules**
+    each module checks its own key, while it registers its services:
+    key off: it registers nothing
+    key on: it registers its services, and maybe a plan policy`"]
+    Policy["`**Plan policy**
+    the core chooses it, after every module`"]
+    CorePolicy["the core's policy, 'unlimited'"]
+    ModulePolicy["that module's policy"]
+    Refused["the Origin refuses to start"]
+
+    Licence --> Modules --> Policy
+    Policy -->|no module brought one| CorePolicy
+    Policy -->|one module brought one| ModulePolicy
+    Policy -->|more than one module did| Refused
 ```
 
 ## 6. Requests
 
 What one tenant gets:
 
-```
-  Request        in one tenant, such as GET /tenants/{id}
-     │           (later also an upload, which checks the storage quota)
-     ▼
-  Plan policy    GetPlanAsync(connection, tenantId), on the request's connection
-     │
-     ▼
-  Plan           its key, such as "unlimited" or "pro",
-     │           and its limits (none yet)
-     ▼
-  The core       shows the key, or enforces the limits (later)
+```mermaid
+flowchart TB
+    Request["`**Request**
+    in one tenant, such as GET /tenants/{id}
+    (later also an upload, which checks the storage quota)`"]
+    Policy["`**Plan policy**
+    GetPlanAsync(connection, tenantId), on the request's connection`"]
+    Plan["`**Plan**
+    its key, such as 'unlimited' or 'pro', and its limits (none yet)`"]
+    Core["`**The core**
+    shows the key, or enforces the limits (later)`"]
+
+    Request --> Policy --> Plan --> Core
 ```

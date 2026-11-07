@@ -80,6 +80,14 @@
   archaeology. Dates appear only as operational data (baselines, cutoffs, last-run
   records). Small declined ideas stay in chat; ROADMAP records big decisions.
 - **Documentation**:
+    - **Every sentence must be needed.** A doc states what exists, and the rules that break
+      things when ignored. Before adding a sentence, ask whether a reader needs it to run
+      the system or to avoid breaking it. If not, leave it out.
+        - No notes about the doc's own format or tooling, or about general knowledge that
+          the reader can see or look up. Bad: "The diagrams are written in Mermaid. VS Code
+          draws them only with an extension."
+        - Each extra sentence is one more thing to keep true later, and makes the doc
+          longer to read.
     - **Merge, don't restate.** A subject is described in one place. When a subject
       already has a summary somewhere (the Replica entry under Projects, the Jobs bullet
       under the Origin), new detail goes there and replaces the summary. Never add a

@@ -83,10 +83,15 @@ permissions, file versions, the change log and the audit log.
 
 How the tree reaches the bytes:
 
-```
-nodes ──current──► manifests ──┬── manifest_chunks ──► chunks ──► warehouse: chunks/<hash>
-  │                    ▲       └── object_id ────────► objects ─► warehouse: <key>
-  └── node_versions ───┘
+```mermaid
+flowchart TB
+    ChunkFiles[("warehouse: chunks/#lt;hash#gt;")]
+    ObjectFiles[("warehouse: #lt;key#gt;")]
+
+    nodes -->|current| manifests
+    nodes --- node_versions --> manifests
+    manifests --- manifest_chunks --> chunks --> ChunkFiles
+    manifests -->|object_id| objects --> ObjectFiles
 ```
 
 - `nodes` is the tree:

@@ -7,71 +7,48 @@ the tenants' data is kept apart, and the permissions inside a tenant.
 
 How the parts relate:
 
-```
-  ┌─────────────────────────────────┐  is a member of,  ┌─────────────────────────────────┐
-  │ User                            │  with one role:   │ Tenant                          │
-  │ a person with an account, who   │──────────────────▶│ the space of a company or of a  │
-  │ signs in to prove who they are  │  admin, member    │ person: its members, its files  │
-  │                                 │  or guest         │ and its settings                │
-  └────────────────┬────────────────┘                   └─────────────────────────────────┘
-                   │ works through
-                   ▼
-  ┌───────────────────────────────────────────────────────────────────────────────────────┐
-  │ Client                                                                                │
-  │ a program that makes requests for the user: the web app, the CLI, the desktop         │
-  │ client, the Replica, or an App. It never sees the user's password.                    │
-  │ An App may also act as itself, with no user, in one tenant (M3).                      │
-  └────────────────┬─────────────────────────────────────────────────────┬────────────────┘
-                   │ the web app uses           every other client uses  │
-                   ▼                                                     ▼
-  ┌─────────────────────────────────┐                   ┌─────────────────────────────────┐
-  │ Session                         │                   │ Token                           │
-  │ the proof that the user signed  │  lets a client    │ a proof, signed by the Origin,  │
-  │ in to the web app. The browser  │──────────────────▶│ that lets one client act for    │
-  │ keeps it in the session cookie  │  get a token      │ one user, in one tenant, for    │
-  │                                 │                   │ one hour, without the password  │
-  └────────────────┬────────────────┘                   └────────────────┬────────────────┘
-                   │                                                     │ holds
-                   │                                                     ▼
-                   │                                    ┌─────────────────────────────────┐
-                   │                                    │ Scopes                          │
-                   │                                    │ names of the kinds of action    │
-                   │                                    │ that the user let the client    │
-                   │                                    │ do, such as files.read or       │
-                   │                                    │ members.manage                  │
-                   │                                    └────────────────┬────────────────┘
-                   │                                                     │
-                   │ sent with each request      sent with each request  │
-                   └──────────────────────────┬──────────────────────────┘
-                                              ▼
-                       ┌─────────────────────────────────────────────┐
-                       │ Request                                     │
-                       │ one call to the API, allowed only when      │
-                       │ all three allow it:                         │
-                       │ - the token's scope (a session passes)      │
-                       │ - the user's role in the tenant             │
-                       │ - the permission on the folder              │
-                       └─────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    User["`**User**
+    a person with an account, who signs in to prove who they are`"]
+    Tenant["`**Tenant**
+    the space of a company or of a person: its members, its files and its settings`"]
+    Client["`**Client**
+    a program that makes requests for the user: the web app, the CLI, the desktop client, the Replica, or an App. It never sees the user's password.
+    An App may also act as itself, with no user, in one tenant (M3).`"]
+    Session["`**Session**
+    the proof that the user signed in to the web app. The browser keeps it in the session cookie`"]
+    Token["`**Token**
+    a proof, signed by the Origin, that lets one client act for one user, in one tenant, for one hour, without the password`"]
+    Scopes["`**Scopes**
+    names of the kinds of action that the user let the client do, such as files.read or members.manage`"]
+    Request["`**Request**
+    one call to the API, allowed only when all three allow it:
+    • the token's scope (a session passes)
+    • the user's role in the tenant
+    • the permission on the folder`"]
+
+    User -->|"is a member of, with one role: admin, member or guest"| Tenant
+    User -->|works through| Client
+    Client -->|the web app uses| Session
+    Client -->|every other client uses| Token
+    Session -->|lets a client get a token| Token
+    Token -->|holds| Scopes
+    Session -->|sent with each request| Request
+    Scopes -->|sent with each request| Request
 ```
 
 What an access token holds, for example the one that the CLI gets:
 
-```
-  ┌──────────────────────────────────────────────────────────────────────────┐
-  │ An access token that the CLI holds (example)                             │
-  │                                                                          │
-  │ "sub":       "0192f0c4-…"        the user that it acts for               │
-  │ "tenant_id": "0192f0c5-…"        the one tenant that it works in         │
-  │ "client_id": "bff-dev-cli"       the client that holds it                │
-  │ "scope":     "files.read files.write offline_access"                     │
-  │                                  the actions that the user allowed       │
-  │ "exp":       1794013200          when it stops working: in one hour      │
-  ├──────────────────────────────────────────────────────────────────────────┤
-  │ the signature, made with the Origin's private key: nobody can change     │
-  │ a line above without the Origin seeing it                                │
-  └──────────────────────────────────────────────────────────────────────────┘
-```
+| Claim       | Example                                 | What it means                      |
+| ----------- | --------------------------------------- | ---------------------------------- |
+| `sub`       | `0192f0c4-…`                            | the user that it acts for          |
+| `tenant_id` | `0192f0c5-…`                            | the one tenant that it works in    |
+| `client_id` | `bff-dev-cli`                           | the client that holds it           |
+| `scope`     | `files.read files.write offline_access` | the actions that the user allowed  |
+| `exp`       | `1794013200`                            | when it stops working: in one hour |
 
+- After the claims, the token holds the Origin's signature, made with its private key.
 - A token also holds the standard claims of a JWT, such as its issuer (`iss`) and the
   time it was issued (`iat`).
 
@@ -197,22 +174,19 @@ What an access token holds, for example the one that the CLI gets:
 
 ### Sign-in in the web app
 
-```
-  Browser       sends the email address and the password:
-     │            today: the form at /account/sign-in
-     │            later: the web app, through POST /api/v1/account/sign-in
-     ▼
-  Origin        checks the limit per IP address: 20 attempts a minute
-     │          checks the password: 10 wrong ones in a row lock the account
-     │            refused: writes sign_in_failed to the audit log, and stops
-     ▼
-  Origin        chooses the tenant: the last one signed in to, or the oldest membership
-     │          writes signed_in to the audit log, in that tenant
-     ▼
-  Origin        starts the session, for the user in that tenant
-     │          sends it back in the session cookie
-     ▼
-  Browser       sends the cookie with every later request
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant O as Origin
+    B->>O: the email address and the password<br/>today: from the form at /account/sign-in<br/>later: from the web app, through POST /api/v1/account/sign-in
+    Note over O: checks the limit per IP address: 20 attempts a minute<br/>checks the password: 10 wrong ones in a row lock the account
+    alt refused
+        Note over O: writes sign_in_failed to the audit log, and stops
+    else allowed
+        Note over O: chooses the tenant: the last one signed in to, or the oldest membership<br/>writes signed_in to the audit log, in that tenant<br/>starts the session, for the user in that tenant
+        O->>B: the session cookie
+        B->>O: the cookie, with every later request
+    end
 ```
 
 - The session cookie lasts 14 days, and is renewed while the user keeps using it.
@@ -222,28 +196,22 @@ What an access token holds, for example the one that the CLI gets:
 
 ### Authorization of an App or the CLI
 
-```
-  CLI           opens the system browser at /connect/authorize, with:
-     │            its client ID and the scopes it wants
-     │            a PKCE challenge, the hash of a secret that only the CLI knows
-     │            its loopback address, such as http://127.0.0.1:53682/callback
-     ▼
-  Origin        reads the session cookie from the browser
-     │            no session: shows the sign-in page first, as above
-     │            a client that needs a consent screen: refused, there is none yet
-     ▼
-  Origin        sends the browser to the loopback address, with an authorization code
-     │            the code holds the user, the session's tenant and the scopes
-     ▼
-  CLI           sends the code and the PKCE secret to /connect/token
-     ▼
-  Origin        checks that the secret matches the challenge
-     │          checks that the user still exists and is not locked
-     │          writes app_authorized to the audit log
-     │          returns an access token, and a refresh token with offline_access
-     ▼
-  CLI           sends the access token with each request
-                when it expires, trades the refresh token for a new one
+```mermaid
+sequenceDiagram
+    participant C as CLI
+    participant B as Browser
+    participant O as Origin
+    C->>B: opens the system browser<br/>at /connect/authorize
+    Note over C,B: with its client ID and the scopes it wants<br/>a PKCE challenge, the hash of a secret<br/>that only the CLI knows<br/>its loopback address, such as<br/>http://127.0.0.1:53682/callback
+    B->>O: /connect/authorize,<br/>with the session cookie
+    Note over O: no session: shows the sign-in page<br/>first, as above<br/>a client that needs a consent screen:<br/>refused, there is none yet
+    O->>B: a redirect to the loopback address,<br/>with an authorization code
+    Note over O: the code holds the user,<br/>the session's tenant and the scopes
+    B->>C: the authorization code,<br/>at the loopback address
+    C->>O: the code and the PKCE secret, to /connect/token
+    Note over O: checks that the secret<br/>matches the challenge<br/>checks that the user still exists<br/>and is not locked<br/>writes app_authorized to the audit log
+    O->>C: an access token, and a refresh token<br/>with offline_access
+    Note over C,O: the CLI sends the access token with each request<br/>when it expires, the CLI trades the refresh token for a new one
 ```
 
 - A refresh writes no audit row, because it only renews what the client already has.
@@ -256,27 +224,35 @@ What an access token holds, for example the one that the CLI gets:
 
 ### Requests
 
-```
-  Request       has an Authorization: Bearer header?
-     │            yes: the Origin checks the token's signature and expiry
-     │            no:  the Origin reads the session cookie
-     ▼
-  Principal     the user and the tenant, and a token's scopes
-     ▼
-  Scope         the endpoint names one scope:
-     │            a token must hold it
-     │            a session passes, except for tenant.mirror
-     ▼
-  CSRF          a write operation that uses the cookie must send X-CSRF-Token
-     ▼
-  Tenant        for /tenants/{id} only:
-     │            the ID must be the principal's tenant
-     │            the user must still be a member of it
-     │            otherwise 404, the same answer as for a tenant that does not exist
-     │            the role must allow the endpoint's scope
-     ▼
-  Database      one transaction, with app.tenant_id and app.user_id set
-                row-level security shows only the tenant's rows (section 3)
+```mermaid
+flowchart TB
+    Request["`**Request**
+    has an Authorization: Bearer header?`"]
+    Token["the Origin checks the token's signature and expiry"]
+    Cookie["the Origin reads the session cookie"]
+    Principal["`**Principal**
+    the user and the tenant, and a token's scopes`"]
+    Scope["`**Scope**
+    the endpoint names one scope:
+    a token must hold it
+    a session passes, except for tenant.mirror`"]
+    CSRF["`**CSRF**
+    a write operation that uses the cookie must send the X-CSRF-Token header`"]
+    Tenant["`**Tenant**
+    for /tenants/{id} only:
+    the ID must be the principal's tenant
+    the user must still be a member of it
+    otherwise 404, the same answer as for a tenant that does not exist
+    the role must allow the endpoint's scope`"]
+    Database["`**Database**
+    one transaction, with app.tenant_id and app.user_id set
+    row-level security shows only the tenant's rows (section 3)`"]
+
+    Request -->|yes| Token
+    Request -->|no| Cookie
+    Token --> Principal
+    Cookie --> Principal
+    Principal --> Scope --> CSRF --> Tenant --> Database
 ```
 
 ### Client flows

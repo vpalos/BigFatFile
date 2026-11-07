@@ -5,7 +5,19 @@ licensed modules plug in, the SDKs, and the developer experience.
 
 ## 1. Core topology
 
-Core topology: Origin Server <-> Replica Server <=> Apps (Clients).
+```mermaid
+flowchart TB
+    Origin["`**Origin**
+    the one authoritative copy of a tenant's data, in the cloud, on a dedicated instance, or self-hosted`"]
+    Replica["`**Replica** (optional)
+    a full mirror of a tenant's data, on the tenant's LAN`"]
+    Apps["`**Apps**
+    Web, Desktop, Cli and any third-party App`"]
+
+    Replica <-->|"syncs all the time, as a tenant-scoped App"| Origin
+    Apps <==>|"at LAN speed, when the Replica is reachable"| Replica
+    Apps <-->|otherwise| Origin
+```
 
 - **Origin**:
     - the one authoritative copy of a tenant's data;
@@ -259,31 +271,57 @@ Licensed modules are (by exception) kept in a separate repository.
 
 ### Dependency graph
 
-```
-BigFatFile.Contracts
-        ^      ^
-        |      +-- BigFatFile.Abstractions
-        |              ^     ^     ^
-        |              |     |     +-- licensed modules (private repository)
-        |              |     +-- open-core modules (modules/)
-        |              +-- BigFatFile.Origin --> api/openapi.json
-        |
-BigFatFile.Client <-- BigFatFile.Testing
-        ^
-        |
-BigFatFile.Sync
-        ^
-        +-- BigFatFile.Desktop
-        +-- BigFatFile.Replica
-        +-- BigFatFile.Cli
+The .NET projects:
 
-api/openapi.json --> @bigfatfile/client --> @bigfatfile/ui --> apps/web,
-                                                              desktop settings UI,
-                                                              Replica admin UI
+```mermaid
+flowchart BT
+    Contracts[BigFatFile.Contracts]
+    Abstractions[BigFatFile.Abstractions]
+    Origin[BigFatFile.Origin]
+    OpenCoreModules["open-core modules<br/>(modules/)"]
+    LicensedModules["licensed modules<br/>(private repository)"]
+    Client[BigFatFile.Client]
+    Testing[BigFatFile.Testing]
+    Sync[BigFatFile.Sync]
+    Desktop[BigFatFile.Desktop]
+    Replica[BigFatFile.Replica]
+    Cli[BigFatFile.Cli]
+
+    Abstractions --> Contracts
+    Origin --> Abstractions
+    OpenCoreModules --> Abstractions
+    LicensedModules --> Abstractions
+    Client --> Contracts
+    Testing --> Client
+    Sync --> Client
+    Desktop --> Sync
+    Replica --> Sync
+    Cli --> Sync
 ```
 
-- An arrow points from the dependency to what depends on it; `api/openapi.json` is
-  generated from the Origin and is the source of the TypeScript types.
+The TypeScript packages:
+
+```mermaid
+flowchart BT
+    Origin[BigFatFile.Origin]
+    OpenApi[api/openapi.json]
+    TsClient["@bigfatfile/client"]
+    Ui["@bigfatfile/ui"]
+    Web[apps/web]
+    DesktopUi[desktop settings UI]
+    ReplicaUi[Replica admin UI]
+
+    OpenApi -->|generated from| Origin
+    TsClient -->|types generated from| OpenApi
+    Ui --> TsClient
+    Web --> Ui
+    DesktopUi --> Ui
+    ReplicaUi --> Ui
+```
+
+- An arrow points from a project to the project that it depends on.
+- `api/openapi.json` is generated from the Origin, and is the source of the TypeScript
+  types.
 - These stay in Server and are never shared with clients: domain rules (permissions,
   quotas, plans), database tables, and anything that references ASP.NET or the database.
 
