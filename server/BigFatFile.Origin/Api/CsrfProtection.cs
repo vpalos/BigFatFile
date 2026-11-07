@@ -8,7 +8,7 @@ namespace BigFatFile.Origin.Api;
 /// Refuses a write operation that uses the session cookie and does not send a
 /// valid <c>X-CSRF-Token</c> header.
 ///
-/// Requests with bearer tokens are allwed, because another website cannot make
+/// Requests with bearer tokens are allowed, because another website cannot make
 /// the browser add a token to a request automatically; this attack vector only
 /// works with session cookies.
 /// </summary>
