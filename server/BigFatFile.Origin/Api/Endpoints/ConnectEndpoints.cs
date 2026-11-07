@@ -73,10 +73,15 @@ internal static class ConnectEndpoints
             var granted = await context.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
             var user = await users.FindByIdAsync(granted.Principal?.GetClaim(Claims.Subject) ?? "");
 
-            // The user may have been locked or deleted since the code or refresh token was issued.
+            // The user may have been deleted or locked since the code or refresh token was issued.
             if (user is null || !await signIn.CanSignInAsync(user))
             {
                 return Forbid(OpenIddictConstants.Errors.InvalidGrant, "The user can no longer sign in.");
+            }
+
+            if (await users.IsLockedOutAsync(user))
+            {
+                return Forbid(OpenIddictConstants.Errors.InvalidGrant, "The account is locked, because of too many wrong passwords. Try again when the lock ends.");
             }
 
             var principal = await TokenIdentity.ForUserAsync(

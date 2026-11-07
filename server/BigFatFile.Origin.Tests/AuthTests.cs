@@ -89,6 +89,36 @@ public sealed class AuthTests(Origin origin) : IClassFixture<Origin>
     }
 
     [Fact]
+    public async Task ALockedAccountCannotRefresh()
+    {
+        const string email = "locked-refresh@bigfatfile.local";
+        var userId = await TestData.CreateUserAsync(origin, email);
+        await TestData.CreateTenantAsync(origin, "Locked refresh", userId);
+        using var browser = origin.CreateClient();
+        await SignIn.SignInWithPasswordAsync(browser, email, TestData.Password);
+        var tokens = await SignIn.AuthorizationCodeAsync(browser, "openid offline_access");
+
+        using (var scope = origin.Factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<BffUser>>();
+            var user = await users.FindByIdAsync(userId.ToString());
+            await users.SetLockoutEndDateAsync(user!, DateTimeOffset.UtcNow.AddMinutes(UserServices.LockoutMinutes));
+        }
+
+        using var client = origin.CreateClient();
+        var refreshed = await client.PostAsync("/connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["grant_type"] = "refresh_token",
+            ["client_id"] = DevelopmentSeed.CliClientId,
+            ["refresh_token"] = tokens.GetProperty("refresh_token").GetString()!,
+        }), TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, refreshed.StatusCode);
+        var body = await refreshed.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+        Assert.Equal("invalid_grant", body.GetProperty("error").GetString());
+    }
+
+    [Fact]
     public async Task SigningInNeedsTheFormToken()
     {
         using var browser = origin.CreateClient();

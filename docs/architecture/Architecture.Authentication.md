@@ -238,7 +238,7 @@ What an access token holds, for example the one that the CLI gets:
   CLI           sends the code and the PKCE secret to /connect/token
      ▼
   Origin        checks that the secret matches the challenge
-     │          checks that the user still exists
+     │          checks that the user still exists and is not locked
      │          writes app_authorized to the audit log
      │          returns an access token, and a refresh token with offline_access
      ▼
@@ -247,8 +247,9 @@ What an access token holds, for example the one that the CLI gets:
 ```
 
 - A refresh writes no audit row, because it only renews what the client already has.
-- The refresh also checks that the user still exists, so a deleted user's client loses
-  access when its access token expires.
+- The refresh makes the same check:
+    - a deleted user's client loses access when its access token expires;
+    - a locked user's client cannot refresh until the lock ends.
 - Only first-party clients can do this today:
     - they are registered with implicit consent, so the user sees no consent screen;
     - an App from someone else needs a consent screen, which is not built yet.
@@ -357,10 +358,13 @@ How each client gets its proof:
 - The account lock (`UserServices.cs`):
     - 10 wrong passwords in a row lock the account for 5 minutes;
     - during the lock, even the right password is refused;
+    - during the lock, the token endpoint also refuses the user's codes and refresh
+      tokens;
     - a successful sign-in sets the count back to 0;
     - the count has no time window, so wrong passwords a month apart count the same;
     - known issue: anyone who knows an address can keep its account locked, by sending
-      10 wrong passwords every 5 minutes.
+      10 wrong passwords every 5 minutes. This also stops the user's CLI and Apps from
+      refreshing their tokens.
 - The limit per IP address (`SignInRateLimit.cs`):
     - one address may make 20 sign-in attempts per minute, for any accounts;
     - more attempts get 429, with a `Retry-After` header;
