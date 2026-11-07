@@ -80,9 +80,9 @@ docs/       architecture documents, developer docs
 - [API](Architecture.API.md):
     - the one public API, `/api/v1`: conventions, authentication, scopes and the
       endpoint list; the chunk-level endpoints are part of it, with an "Advanced" badge.
-- [Tenancy](Architecture.Tenancy.md):
-    - tenants, tenant isolation (scoping and row-level security), groups, permissions and
-      authentication.
+- [Authentication](Architecture.Authentication.md):
+    - users, sessions, tokens and scopes, and how clients sign in;
+    - tenants, tenant isolation (scoping and row-level security), groups and permissions.
 - [Licensing](Architecture.Licensing.md):
     - the licence, the feature keys that turn licensed modules on, and the plan of each
       tenant.

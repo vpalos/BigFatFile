@@ -1,4 +1,4 @@
-# BigFatFile Architecture: Observability
+# Observability
 
 How the Origin, the Replica and the clients report traces, metrics and logs, what BFF
 measures about itself, and where the data goes.

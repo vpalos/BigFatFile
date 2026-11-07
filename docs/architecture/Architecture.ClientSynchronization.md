@@ -1,4 +1,4 @@
-# BigFatFile Architecture: Client synchronization
+# Client synchronization
 
 How clients learn that something changed, how the desktop client keeps its local view
 in step with the server, and how conflicts are handled.

@@ -1,4 +1,4 @@
-# BigFatFile Architecture: Licensing
+# Licensing
 
 Which licensed features an Origin runs, and which plan each tenant has.
 
@@ -103,7 +103,7 @@ How the parts relate:
 - `IPlanPolicy.GetPlanAsync(connection, tenantId)` returns the tenant's `TenantPlan`.
 - It runs on the request's connection:
     - a module that keeps plans in its own table reads them with the `tenant_id` being set;
-    - RLS therefore applies to that read (`Architecture.Tenancy.md`, section 2).
+    - RLS therefore applies to that read (`Architecture.Authentication.md`, section 3).
 - `TenantPlan`:
     - `Key` names the plan, such as `unlimited` (or `pro`);
     - it holds no limits yet;

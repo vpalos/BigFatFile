@@ -1,4 +1,4 @@
-# BigFatFile Architecture: Deployment
+# Deployment
 
 How the Origin Server, the Replica Server, the desktop client and the CLI are packaged, installed
 and updated on each platform.

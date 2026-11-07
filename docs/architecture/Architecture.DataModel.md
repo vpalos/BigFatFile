@@ -1,4 +1,4 @@
-# BigFatFile Architecture: Data model
+# Data model
 
 The tables that describe a tenant's files: the tree, uploads in progress, content,
 permissions, file versions, the change log and the audit log.
@@ -145,7 +145,7 @@ nodes ──current──► manifests ──┬── manifest_chunks ──►
 ## 4. Permissions
 
 What a user may do with a node is decided by rules on folders, found by walking up the
-tree. The policy (why folders and never files) is in `Architecture.Tenancy.md` (section 3);
+tree. The policy (why folders and never files) is in `Architecture.Authentication.md` (section 4);
 this section is about how it works.
 
 ### Roles
@@ -299,7 +299,7 @@ node_id, role, password_hash, expires_at, created_by)`, with `role` either `view
             - `locked_out`: the account is locked after too many wrong passwords;
             - `not_allowed`: the email address is not confirmed;
             - `two_factor_required`: the account has two-factor sign-in turned on
-              (`Architecture.Tenancy.md`, section 4);
+              (`Architecture.Authentication.md`, section 1);
         - the actor is the account that was tried;
         - the row has no tenant, so only the operator reads it, as the database owner;
         - an unknown email address writes no row;
@@ -317,8 +317,8 @@ node_id, role, password_hash, expires_at, created_by)`, with `role` either `view
     - one per month of the event's time, with months starting at midnight UTC;
     - the Origin creates this month's partition and the next two, at startup and in a
       daily job;
-    - requests reach them only through the parent table (`Architecture.Tenancy.md`,
-      section 2).
+    - requests reach them only through the parent table (`Architecture.Authentication.md`,
+      section 3).
 - Retention:
     - the daily job drops a month's partition once its last day is 90 days old, so a
       row is kept for 90 to about 121 days;

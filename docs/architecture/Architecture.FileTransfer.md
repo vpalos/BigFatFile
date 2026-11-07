@@ -1,4 +1,4 @@
-# BigFatFile Architecture: Transfer
+# Transfer
 
 How bytes move between Apps, the Origin and storage: the file-level endpoints, the
 chunk-level endpoints, the tenant-wide scope used by mirroring Apps such as the Replica,

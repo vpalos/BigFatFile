@@ -1,4 +1,4 @@
-# BigFatFile Architecture: API
+# API
 
 The one public API of the Origin: conventions, authentication, scopes and endpoints.
 Everything our own Apps and the Replica use is here; there are no private endpoints.
@@ -93,19 +93,8 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 
 ## 3. Authentication
 
-- Bearer JWT (ES256, keys at the JWKS endpoint) issued by the Origin's OpenIddict
-  server; the web app on the same origin uses a session cookie instead.
-- Every write operation that uses the session cookie sends the `X-CSRF-Token` header,
-  with the token from `GET /api/v1/account/csrf`; bearer requests do not need it.
-- A token carries: the user (if any), the App, the tenant it is scoped to, the granted
-  scopes.
-- Flows:
-    - authorization code with PKCE: desktop, CLI, third-party Apps acting for a user;
-    - device code: headless installs;
-    - client credentials: an App acting as itself for a tenant (service account);
-    - refresh tokens with `offline_access`;
-    - token exchange (RFC 8693): an App acting on behalf of a user later, with both
-      identities in the token.
+- Sessions, tokens, the CSRF header and the flows that clients use are in
+  `Architecture.Authentication.md`, section 1.
 - Public endpoints (section 5, `public` tag) need no token: share links, downloads of
   sends, uploads to file requests; a link token in the path, and the link's own password
   where set.
@@ -115,12 +104,8 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 - Scopes are coarse and readable.
 - An App asks for a set; the tenant administrator sees and grants it, or the user does
   for a user-scoped App.
-- The web app's session cookie carries no scopes:
-    - it satisfies every scope except `tenant.mirror`, which only a token can carry.
-- `members.manage` and `tenant.admin` also need the user to be an admin of the tenant:
-    - anyone else gets 403 with the code `admin_required`, with a token or the cookie.
-- `members.read` also needs the user to be a member or an admin of the tenant:
-    - a guest gets 403 with the code `member_required`, with a token or the cookie.
+- How scopes work with the session cookie and with the user's role in the tenant is in
+  `Architecture.Authentication.md`, section 1, under "Rules".
 - Files:
     - `files.read`: list, read metadata, download; manifests and chunks of the nodes
       it may read;

@@ -1,4 +1,4 @@
-# BigFatFile Architecture: Roadmap
+# Roadmap
 
 Milestones for v2, in order, each with what it contains and when it counts as done.
 

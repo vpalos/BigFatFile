@@ -1,7 +1,7 @@
 - [Overview](/)
 - [Platform topology](Architecture.PlatformTopology.md)
 - [API](Architecture.API.md)
-- [Tenancy](Architecture.Tenancy.md)
+- [Authentication](Architecture.Authentication.md)
 - [Licensing](Architecture.Licensing.md)
 - [Data model](Architecture.DataModel.md)
 - [File storage](Architecture.FileStorage.md)

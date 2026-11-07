@@ -1,4 +1,4 @@
-# BigFatFile Architecture: Content Storage
+# Content Storage
 
 How file content is stored: chunking and manifests, warehouses, garbage collection,
 encryption.

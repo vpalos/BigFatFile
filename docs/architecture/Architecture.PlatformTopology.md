@@ -1,4 +1,4 @@
-# BigFatFile Architecture: Platform topology
+# Platform topology
 
 The platform as a whole: the topology, the projects and the repository, how Apps and
 licensed modules plug in, the SDKs, and the developer experience.
@@ -93,7 +93,7 @@ Licensed modules are (by exception) kept in a separate repository.
               together run as one implicit transaction.
 - Tenant isolation:
     - application-level scoping;
-    - PostgreSQL row-level security (`Architecture.Tenancy.md`, section 2).
+    - PostgreSQL row-level security (`Architecture.Authentication.md`, section 3).
 - Jobs and queues:
     - Hangfire with PostgreSQL storage is the single scheduling mechanism;
     - recurring jobs: expiry of sends, garbage collection, retention;
@@ -111,7 +111,7 @@ Licensed modules are (by exception) kept in a separate repository.
     - Paraglide (i18n);
     - TanStack Query (server state), TanStack Virtual, TanStack HotKeys.
 - Authentication:
-    - the Origin is the identity provider for the whole system (`Architecture.Tenancy.md`, section 4).
+    - the Origin is the identity provider for the whole system (`Architecture.Authentication.md`, section 1).
 
 #### **BigFatFile.Replica** (.NET), aka the Replica:
 
