@@ -5,9 +5,12 @@ using Microsoft.AspNetCore.Antiforgery;
 namespace BigFatFile.Origin.Api;
 
 /// <summary>
-/// Refuses a write operation that uses the session cookie and does not send a valid
-/// <c>X-CSRF-Token</c> header. A request with a bearer token passes, because another website
-/// cannot make the browser add a token to a request.
+/// Refuses a write operation that uses the session cookie and does not send a
+/// valid <c>X-CSRF-Token</c> header.
+///
+/// Requests with bearer tokens are allwed, because another website cannot make
+/// the browser add a token to a request automatically; this attack vector only
+/// works with session cookies.
 /// </summary>
 internal static class CsrfProtection
 {

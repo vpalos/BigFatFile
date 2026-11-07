@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.RateLimiting;
 using BigFatFile.Origin.Api.Errors;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace BigFatFile.Origin.Auth.SignIn;
 
