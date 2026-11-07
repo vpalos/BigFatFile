@@ -9,7 +9,9 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace BigFatFile.Origin.Tests;
 
-/// <summary>The steps a CLI goes through: sign in in the browser, then authorization code with PKCE.</summary>
+/// <summary>
+/// The steps a CLI goes through: sign in in the browser, then authorization code with PKCE.
+/// </summary>
 internal static class SignIn
 {
     public static async Task SignInWithPasswordAsync(HttpClient browser, string email, string password)
@@ -18,7 +20,9 @@ internal static class SignIn
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
     }
 
-    /// <summary>Sends the sign-in form. A redirect means signed in; the form again means refused.</summary>
+    /// <summary>
+    /// Sends the sign-in form. A redirect means signed in; the form again means refused.
+    /// </summary>
     public static async Task<HttpResponseMessage> PostSignInFormAsync(HttpClient browser, string email, string password) =>
         await browser.PostAsync("/account/sign-in", new FormUrlEncodedContent(new Dictionary<string, string>
         {
@@ -28,7 +32,9 @@ internal static class SignIn
             ["returnUrl"] = "/",
         }));
 
-    /// <summary>A token for the browser's current user. The sign-in form accepts it too.</summary>
+    /// <summary>
+    /// A token for the browser's current user. The sign-in form accepts it too.
+    /// </summary>
     public static async Task<string> CsrfTokenAsync(HttpClient browser) =>
         (await browser.GetFromJsonAsync<CsrfToken>("/api/v1/account/csrf"))!.Token;
 

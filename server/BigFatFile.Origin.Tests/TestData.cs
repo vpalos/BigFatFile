@@ -7,7 +7,9 @@ using Npgsql;
 
 namespace BigFatFile.Origin.Tests;
 
-/// <summary>Users and tenants for tests. Tenants are written as the owner, so row-level security does not apply.</summary>
+/// <summary>
+/// Users and tenants for tests. Tenants are written as the owner, so row-level security does not apply.
+/// </summary>
 public static class TestData
 {
     public const string Password = "a-test-password";

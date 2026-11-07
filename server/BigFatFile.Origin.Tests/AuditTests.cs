@@ -13,7 +13,9 @@ using Npgsql;
 
 namespace BigFatFile.Origin.Tests;
 
-/// <summary>The audit log: what sign-ins write, the read endpoint and the monthly partitions. Rows are read as the owner.</summary>
+/// <summary>
+/// The audit log: what sign-ins write, the read endpoint and the monthly partitions. Rows are read as the owner.
+/// </summary>
 public sealed class AuditTests(Origin origin) : IClassFixture<Origin>
 {
     private const string UserAgent = "BigFatFileTests/1.0";
@@ -201,7 +203,9 @@ public sealed class AuditTests(Origin origin) : IClassFixture<Origin>
         return browser;
     }
 
-    /// <summary>Signs the browser in as the admin of a new tenant.</summary>
+    /// <summary>
+    /// Signs the browser in as the admin of a new tenant.
+    /// </summary>
     private async Task<(Guid TenantId, Guid AdminId)> AdminOfNewTenantAsync(HttpClient browser, string name)
     {
         var email = name + "@bigfatfile.local";

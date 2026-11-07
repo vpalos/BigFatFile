@@ -11,7 +11,9 @@ namespace BigFatFile.Origin.Auth.Users;
 
 internal static class UserServices
 {
-    /// <summary>This many wrong passwords in a row lock the account for <see cref="LockoutMinutes"/>.</summary>
+    /// <summary>
+    /// This many wrong passwords in a row lock the account for <see cref="LockoutMinutes"/>.
+    /// </summary>
     public const int LockoutAttempts = 10;
     public const int LockoutMinutes = 5;
 

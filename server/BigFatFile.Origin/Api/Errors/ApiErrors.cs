@@ -10,7 +10,9 @@ internal sealed record ApiError(int Status, string Code, string Title, string De
     public string Type => "urn:bigfatfile:problem:" + Code;
 }
 
-/// <summary>Every error that the API returns, each one defined once.</summary>
+/// <summary>
+/// Every error that the API returns, each one defined once.
+/// </summary>
 internal static class ApiErrors
 {
     public static readonly ApiError BadRequest = new(400, ErrorCodes.BadRequest,
@@ -105,7 +107,9 @@ internal static class ApiErrors
         "This invitation was sent to another email address.",
         "Sign in with the invited address instead, or ask for an invitation to the address of the signed-in user.");
 
-    /// <summary>The errors that any endpoint can return. The server gives them to errors that it writes without a code.</summary>
+    /// <summary>
+    /// The errors that any endpoint can return. The server gives them to errors that it writes without a code.
+    /// </summary>
     public static IReadOnlyList<ApiError> Generic { get; } =
     [
         BadRequest, InvalidFields, AuthenticationRequired, Forbidden, NotFound, MethodNotAllowed, RequestTooLarge,
@@ -119,7 +123,9 @@ internal static class ApiErrors
         SignUpClosed, WrongCredentials, EmailNotConfirmed, LockedOut, InvalidCode, AlreadyConfirmed, WrongAccount,
     ];
 
-    /// <summary>The generic error for a status that came without a code.</summary>
+    /// <summary>
+    /// The generic error for a status that came without a code.
+    /// </summary>
     public static ApiError ForStatus(int status) => status switch
     {
         400 => BadRequest,

@@ -14,15 +14,21 @@ internal static class AuthAudit
     public const string AppAuthorized = "app_authorized";
     public const string SignInFailed = "sign_in_failed";
 
-    /// <summary>A password sign-in, in the tenant that the sign-in chose.</summary>
+    /// <summary>
+    /// A password sign-in, in the tenant that the sign-in chose.
+    /// </summary>
     public static AuditModel.Entry SignedInEntry(HttpContext context, Guid tenantId, Guid userId) =>
         Entry(context, tenantId, SignedIn, userId);
 
-    /// <summary>An App or the CLI received tokens to act for the user.</summary>
+    /// <summary>
+    /// An App or the CLI received tokens to act for the user.
+    /// </summary>
     public static AuditModel.Entry AppAuthorizedEntry(HttpContext context, Guid tenantId, Guid userId, string? clientId) =>
         Entry(context, tenantId, AppAuthorized, userId, agentClientId: clientId);
 
-    /// <summary>A refused password sign-in. It has no tenant, so only the owner can read it.</summary>
+    /// <summary>
+    /// A refused password sign-in. It has no tenant, so only the owner can read it.
+    /// </summary>
     public static AuditModel.Entry SignInFailedEntry(HttpContext context, Guid userId, SignInResult result)
     {
         var reason = result switch
@@ -35,7 +41,9 @@ internal static class AuthAudit
         return Entry(context, tenantId: null, SignInFailed, userId, details: new Dictionary<string, string> { ["reason"] = reason });
     }
 
-    /// <summary>Writes the row in a transaction of its own, in the row's tenant.</summary>
+    /// <summary>
+    /// Writes the row in a transaction of its own, in the row's tenant.
+    /// </summary>
     public static async Task WriteAsync(NpgsqlDataSource dataSource, AuditModel.Entry entry, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);

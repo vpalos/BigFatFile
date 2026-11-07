@@ -4,7 +4,9 @@ using Npgsql;
 
 namespace BigFatFile.Origin.Auth.SignIn;
 
-/// <summary>Chooses the tenant that a new session works in, and records the sign-in there.</summary>
+/// <summary>
+/// Chooses the tenant that a new session works in, and records the sign-in there.
+/// </summary>
 internal static class SignInTenant
 {
     /// <returns>The tenant that the user signed in to last, or else the oldest membership; null when the user is a member of none.</returns>

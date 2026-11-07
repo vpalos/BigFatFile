@@ -8,15 +8,21 @@ namespace BigFatFile.Origin.Auth;
 
 internal static class AuthServices
 {
-    /// <summary>The default scheme: bearer tokens when the request has one, the session cookie otherwise.</summary>
+    /// <summary>
+    /// The default scheme: bearer tokens when the request has one, the session cookie otherwise.
+    /// </summary>
     public const string Scheme = "bff";
 
-    /// <summary>For the account endpoints that act on the browser's session, which a bearer token cannot start or end.</summary>
+    /// <summary>
+    /// For the account endpoints that act on the browser's session, which a bearer token cannot start or end.
+    /// </summary>
     public const string SessionPolicy = "session";
 
     public const string CsrfHeader = "X-CSRF-Token";
 
-    /// <summary>True when the user comes from the session cookie, not from a bearer token.</summary>
+    /// <summary>
+    /// True when the user comes from the session cookie, not from a bearer token.
+    /// </summary>
     public static bool UsesSession(ClaimsPrincipal user) =>
         user.Identity is { IsAuthenticated: true } identity && identity.AuthenticationType == IdentityConstants.ApplicationScheme;
 

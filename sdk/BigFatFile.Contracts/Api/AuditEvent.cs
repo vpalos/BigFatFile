@@ -2,7 +2,9 @@ using System.Text.Json.Serialization;
 
 namespace BigFatFile.Contracts.Api;
 
-/// <summary>One entry of a tenant's audit log.</summary>
+/// <summary>
+/// One entry of a tenant's audit log.
+/// </summary>
 /// <param name="Actor">The user who acted. Null when no signed-in user did it.</param>
 /// <param name="AgentClientId">The client ID of the App or the CLI that acted for the user. Null when the user acted alone.</param>
 /// <param name="IpAddress">The address that the request came from.</param>

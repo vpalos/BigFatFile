@@ -23,7 +23,9 @@ internal static class ApiErrorsOpenApi
             .AddSchemaTransformer(DescribeBodyFields)
             .AddOperationTransformer(DescribeErrorsAsync);
 
-    /// <summary>The "Errors" section of the API's description.</summary>
+    /// <summary>
+    /// The "Errors" section of the API's description.
+    /// </summary>
     public static string ErrorsSection()
     {
         var text = new StringBuilder("""

@@ -12,10 +12,14 @@ public sealed record FileManifest
 {
     public required ManifestChunking Chunking { get; init; }
 
-    /// <summary>The chunks in order. Null when the chunking is <c>none</c>.</summary>
+    /// <summary>
+    /// The chunks in order. Null when the chunking is <c>none</c>.
+    /// </summary>
     public IReadOnlyList<ManifestChunk>? Chunks { get; init; }
 
-    /// <summary>The ID of the whole object. Set only when the chunking is <c>none</c>.</summary>
+    /// <summary>
+    /// The ID of the whole object. Set only when the chunking is <c>none</c>.
+    /// </summary>
     public Guid? Object { get; init; }
 
     public required long Size { get; init; }

@@ -4,7 +4,9 @@ namespace BigFatFile.Contracts.Names;
 
 public static class NodeNames
 {
-    /// <summary>The Unicode version of the case folding table.</summary>
+    /// <summary>
+    /// The Unicode version of the case folding table.
+    /// </summary>
     public const string UnicodeVersion = CaseFolding.UnicodeVersion;
 
     /// <summary>

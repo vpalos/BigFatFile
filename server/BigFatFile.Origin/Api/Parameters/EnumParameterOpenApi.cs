@@ -3,7 +3,9 @@ using Microsoft.OpenApi;
 
 namespace BigFatFile.Origin.Api.Parameters;
 
-/// <summary>Shows each <see cref="EnumParameter{TEnum}"/> in the spec as its enum, with the allowed values.</summary>
+/// <summary>
+/// Shows each <see cref="EnumParameter{TEnum}"/> in the spec as its enum, with the allowed values.
+/// </summary>
 internal static class EnumParameterOpenApi
 {
     public static OpenApiOptions AddEnumParameters(this OpenApiOptions options) =>

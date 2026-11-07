@@ -2,7 +2,9 @@ using System.Text.Json.Serialization;
 
 namespace BigFatFile.Contracts.Account;
 
-/// <summary>What the sign-in and sign-up flows offer on this server.</summary>
+/// <summary>
+/// What the sign-in and sign-up flows offer on this server.
+/// </summary>
 /// <param name="Password">Whether people can sign in, and sign up, with an email address and a password. When it is false, they use the external providers only.</param>
 /// <param name="Providers">The external accounts a person can sign in with, in display order.</param>
 public sealed record AccountOptions(SignUpPolicy SignUp, bool Password, IReadOnlyList<SignInProvider> Providers);

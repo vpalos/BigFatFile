@@ -55,7 +55,9 @@ internal sealed class OriginSettings
     public static string ModulesPathFrom(IConfiguration configuration) =>
         configuration[ModulesPathKey] is { Length: > 0 } path ? path : "/app/modules";
 
-    /// <summary>Stops startup with a message that names every wrong variable.</summary>
+    /// <summary>
+    /// Stops startup with a message that names every wrong variable.
+    /// </summary>
     public void Validate()
     {
         if (errors.Count > 0)

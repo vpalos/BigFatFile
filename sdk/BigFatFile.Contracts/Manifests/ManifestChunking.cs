@@ -22,7 +22,9 @@ public sealed record ManifestChunking(
 {
     public const string NoneAlgorithm = "none";
 
-    /// <summary>The parameters of the chunker in this library.</summary>
+    /// <summary>
+    /// The parameters of the chunker in this library.
+    /// </summary>
     public static ManifestChunking Default { get; } = new(
         ChunkerParameters.Algorithm,
         ChunkerParameters.Gear,

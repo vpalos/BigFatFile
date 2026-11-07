@@ -7,7 +7,9 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace BigFatFile.Origin.Auth.SignIn;
 
-/// <summary>Limits how many sign-in attempts one client address makes per minute, whatever the account.</summary>
+/// <summary>
+/// Limits how many sign-in attempts one client address makes per minute, whatever the account.
+/// </summary>
 internal static class SignInRateLimit
 {
     public const string Policy = "sign-in";

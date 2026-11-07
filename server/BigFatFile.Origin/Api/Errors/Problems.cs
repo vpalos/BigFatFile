@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BigFatFile.Origin.Api.Errors;
 
-/// <summary>Problem responses (RFC 9457) built from the definitions in <see cref="ApiErrors"/>.</summary>
+/// <summary>
+/// Problem responses (RFC 9457) built from the definitions in <see cref="ApiErrors"/>.
+/// </summary>
 internal static class Problems
 {
     public const string CodeField = "code";
@@ -25,7 +27,9 @@ internal static class Problems
             Extensions = { [CodeField] = ApiErrors.InvalidFields.Code },
         });
 
-    /// <summary>Gives a code to the errors that ASP.NET Core writes itself, such as 404 for an unknown address.</summary>
+    /// <summary>
+    /// Gives a code to the errors that ASP.NET Core writes itself, such as 404 for an unknown address.
+    /// </summary>
     public static void FillInCode(ProblemDetailsContext context)
     {
         var problem = context.ProblemDetails;

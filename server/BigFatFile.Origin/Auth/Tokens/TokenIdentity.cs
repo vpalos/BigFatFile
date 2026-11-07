@@ -7,7 +7,9 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace BigFatFile.Origin.Auth.Tokens;
 
-/// <summary>The claims that the token endpoints put into the tokens they issue.</summary>
+/// <summary>
+/// The claims that the token endpoints put into the tokens they issue.
+/// </summary>
 internal static class TokenIdentity
 {
     public static async Task<ClaimsPrincipal> ForUserAsync(

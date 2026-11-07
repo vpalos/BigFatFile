@@ -6,7 +6,9 @@ using Npgsql;
 
 namespace BigFatFile.Origin.Tests;
 
-/// <summary>The policies, checked directly as the user that requests connect as.</summary>
+/// <summary>
+/// The policies, checked directly as the user that requests connect as.
+/// </summary>
 public sealed class RowLevelSecurityTests(Origin origin) : IClassFixture<Origin>
 {
     [Fact]

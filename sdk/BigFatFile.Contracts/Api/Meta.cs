@@ -3,7 +3,9 @@ using BigFatFile.Contracts.Manifests;
 
 namespace BigFatFile.Contracts.Api;
 
-/// <summary>What a client needs to know about a server before it talks to it.</summary>
+/// <summary>
+/// What a client needs to know about a server before it talks to it.
+/// </summary>
 /// <param name="AcceptedChunkings">The chunking parameter sets that this server accepts in a manifest.</param>
 /// <param name="Features">The licensed features that are on.</param>
 /// <param name="Account">What the sign-in and sign-up flows offer on this server.</param>

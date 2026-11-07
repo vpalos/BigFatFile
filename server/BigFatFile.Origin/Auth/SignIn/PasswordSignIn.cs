@@ -6,7 +6,9 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace BigFatFile.Origin.Auth.SignIn;
 
-/// <summary>Signs a user in with a password. Every form and endpoint that takes a password calls this.</summary>
+/// <summary>
+/// Signs a user in with a password. Every form and endpoint that takes a password calls this.
+/// </summary>
 internal static class PasswordSignIn
 {
     /// <summary>

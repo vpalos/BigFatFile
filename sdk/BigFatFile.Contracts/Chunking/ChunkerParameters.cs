@@ -8,7 +8,9 @@ public static class ChunkerParameters
 {
     public const string Algorithm = "fastcdc-2020";
 
-    /// <summary>The number of the GEAR table that the chunker uses. A different table cuts differently.</summary>
+    /// <summary>
+    /// The number of the GEAR table that the chunker uses. A different table cuts differently.
+    /// </summary>
     public const int Gear = 1;
 
     public const int MinSize = 1 * 1024 * 1024;

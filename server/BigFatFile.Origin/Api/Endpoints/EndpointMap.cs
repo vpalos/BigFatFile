@@ -7,7 +7,9 @@ using Scalar.AspNetCore;
 
 namespace BigFatFile.Origin.Api.Endpoints;
 
-/// <summary>Every route of the Origin. Each group is made here, so this file shows how the API spec is put together.</summary>
+/// <summary>
+/// Every route of the Origin. Each group is made here, so this file shows how the API spec is put together.
+/// </summary>
 internal static class EndpointMap
 {
     public static void MapEndpoints(this IEndpointRouteBuilder app, IReadOnlyList<LoadedModule> modules)

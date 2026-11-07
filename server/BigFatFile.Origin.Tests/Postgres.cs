@@ -6,7 +6,9 @@ using Testcontainers.PostgreSql;
 
 namespace BigFatFile.Origin.Tests;
 
-/// <summary>One PostgreSQL container for the test run; each origin gets its own database.</summary>
+/// <summary>
+/// One PostgreSQL container for the test run; each origin gets its own database.
+/// </summary>
 public sealed class Postgres : IAsyncLifetime
 {
     // Each Origin's job server keeps about 20 connections open, and the test classes run

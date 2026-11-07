@@ -2,7 +2,9 @@ using OpenIddict.Abstractions;
 
 namespace BigFatFile.Origin.Auth.Tokens;
 
-/// <summary>The scopes an App can ask for. <c>Architecture.API.md</c> section 4 says what each allows.</summary>
+/// <summary>
+/// The scopes an App can ask for. <c>Architecture.API.md</c> section 4 says what each allows.
+/// </summary>
 internal static class BffScopes
 {
     public const string OpenId = OpenIddictConstants.Scopes.OpenId;
@@ -51,13 +53,20 @@ internal static class BffScopes
         [TenantMirror] = "Every chunk and the whole change feed of the tenant, for mirroring and backup Apps.",
     };
 
-    /// <summary>The scopes that the session cookie does not satisfy. Only a token can carry them.</summary>
+    /// <summary>
+    /// The scopes that the session cookie does not satisfy.
+    /// Only a token can carry them.
+    /// </summary>
     public static IReadOnlySet<string> TokenOnly { get; } = new HashSet<string> { TenantMirror };
 
-    /// <summary>The scopes whose endpoints only an admin of the tenant may call, with a token or the session cookie.</summary>
+    /// <summary>
+    /// The scopes whose endpoints only an admin of the tenant may call, with a token or the session cookie.
+    /// </summary>
     public static IReadOnlySet<string> AdminOnly { get; } = new HashSet<string> { MembersManage, TenantAdmin };
 
-    /// <summary>The scopes whose endpoints a guest of the tenant may not call, with a token or the session cookie.</summary>
+    /// <summary>
+    /// The scopes whose endpoints a guest of the tenant may not call, with a token or the session cookie.
+    /// </summary>
     public static IReadOnlySet<string> NotForGuests { get; } = new HashSet<string> { MembersRead };
 
     public static IReadOnlyList<string> Api { get; } = [.. Descriptions.Keys.Except(Standard)];

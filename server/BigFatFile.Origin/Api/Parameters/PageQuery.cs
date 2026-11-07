@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BigFatFile.Origin.Api.Parameters;
 
-/// <summary>The query parameters of every listing: <c>cursor</c> and <c>limit</c>.</summary>
+/// <summary>
+/// The query parameters of every listing: <c>cursor</c> and <c>limit</c>.
+/// </summary>
 internal sealed class PageQuery
 {
     public const int DefaultLimit = 100;

@@ -18,10 +18,14 @@ public sealed class ChunkReader(Stream input) : IDisposable
     private bool endOfInput;
     private ContentHash? fileHash;
 
-    /// <summary>The number of bytes in the chunks returned so far.</summary>
+    /// <summary>
+    /// The number of bytes in the chunks returned so far.
+    /// </summary>
     public long Length => offset;
 
-    /// <summary>The hash of the whole file. Available once <see cref="ReadNextAsync"/> has returned null.</summary>
+    /// <summary>
+    /// The hash of the whole file. Available once <see cref="ReadNextAsync"/> has returned null.
+    /// </summary>
     public ContentHash FileHash =>
         fileHash ?? throw new InvalidOperationException("The file hash is known only after the last chunk.");
 

@@ -25,7 +25,9 @@ internal static partial class AuditModel
     {
         public const int MaxUserAgentLength = 512;
 
-        /// <summary>Cut to <see cref="MaxUserAgentLength"/> characters. An empty one is stored as null.</summary>
+        /// <summary>
+        /// Cut to <see cref="MaxUserAgentLength"/> characters. An empty one is stored as null.
+        /// </summary>
         public string? UserAgent { get; } = string.IsNullOrEmpty(UserAgent) ? null : UserAgent[..Math.Min(UserAgent.Length, MaxUserAgentLength)];
     }
 
@@ -59,7 +61,9 @@ internal static partial class AuditModel
             },
             cancellationToken: cancellationToken));
 
-    /// <summary>The tenant's events, newest first.</summary>
+    /// <summary>
+    /// The tenant's events, newest first.
+    /// </summary>
     /// <param name="from">Inclusive.</param>
     /// <param name="to">Exclusive.</param>
     /// <param name="after">The time and the ID of the last row of the previous page.</param>
@@ -135,7 +139,9 @@ internal static partial class AuditModel
         }
     }
 
-    /// <summary>Drops the monthly partitions whose last row is older than <paramref name="cutoff"/>.</summary>
+    /// <summary>
+    /// Drops the monthly partitions whose last row is older than <paramref name="cutoff"/>.
+    /// </summary>
     public static async Task DropPartitionsAsync(NpgsqlConnection connection, DateTimeOffset cutoff, CancellationToken cancellationToken)
     {
         foreach (var (name, start) in await PartitionsAsync(connection, cancellationToken))

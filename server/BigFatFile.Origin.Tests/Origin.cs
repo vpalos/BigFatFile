@@ -7,18 +7,26 @@ using Npgsql;
 
 namespace BigFatFile.Origin.Tests;
 
-/// <summary>An Origin on its own empty database, with the development seed.</summary>
+/// <summary>
+/// An Origin on its own empty database, with the development seed.
+/// </summary>
 public class Origin(Postgres postgres) : IAsyncLifetime
 {
-    /// <summary>The address of every request from <see cref="CreateClient"/>, because the test client has none.</summary>
+    /// <summary>
+    /// The address of every request from <see cref="CreateClient"/>, because the test client has none.
+    /// </summary>
     public static readonly IPAddress ClientAddress = IPAddress.Parse("192.0.2.10");
 
     private WebApplicationFactory<Program>? factory;
 
-    /// <summary>The owner's connection string. Row-level security does not apply to it.</summary>
+    /// <summary>
+    /// The owner's connection string. Row-level security does not apply to it.
+    /// </summary>
     public string ConnectionString { get; private set; } = "";
 
-    /// <summary>The connection string that requests use. The server creates this user at startup.</summary>
+    /// <summary>
+    /// The connection string that requests use. The server creates this user at startup.
+    /// </summary>
     public string AppConnectionString => new NpgsqlConnectionStringBuilder(ConnectionString)
     {
         Username = "bigfatfile_app",
