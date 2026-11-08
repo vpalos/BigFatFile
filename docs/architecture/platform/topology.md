@@ -27,9 +27,6 @@ flowchart TB
     - acts as Origin for listening Apps (replicates APIs downstream);
     - serves downstream Apps at LAN speed (even when uplink is down);
     - is actually itself an App (chunk-level, tenant-scoped);
-    - more details in:
-        - [API (section 4)](./api.md#_4-scopes);
-        - [File transfer (section 4)](../files/transfer.md#_4-tenant-scoped-apps).
 - **Apps**:
     - our own apps (Web, Desktop, Cli, Replica) as well as any 3rd-party apps;
     - Apps talk to the Replica when one is reachable, otherwise to the Origin;
@@ -395,7 +392,7 @@ Designed for Apps rather than discovered by them. Our own clients use these.
 ### Core vs. platform modules
 
 - Open core (AGPL):
-    - all projects in [section 2](#_2-projects) except the licensed modules;
+    - all projects in section 2 except the licensed modules;
     - it is a complete product for a team, including:
         - cluster mode;
         - the PostgreSQL notifier;

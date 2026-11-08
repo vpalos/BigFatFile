@@ -96,7 +96,7 @@ flowchart TB
 - A scope limits the client, not the user:
     - a token with `members.manage` still fails for a user who is not an admin;
     - the full rule is under "Rules" below.
-- The list of scopes, and what each one allows, is in [API](../platform/api.md#_4-scopes).
+- The list of scopes, and what each one allows, is in [API](../platform/api.md).
 
 ### Token payload
 
