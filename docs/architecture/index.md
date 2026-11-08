@@ -6,7 +6,7 @@
     - BFF supports the development of an ecosystem of apps (or even marketplace);
     - applications (aka BFF Apps) are built on the published API and SDKs;
     - BFF Apps are installed by tenant admins;
-    - provided BFF clients are also BFF Apps (more in `Architecture.PlatformTopology.md`);
+    - provided BFF clients are also BFF Apps (more in [Platform topology](./platform/topology.md));
 - One codebase, three deployments:
     - the public cloud at bigfatfile.com;
     - dedicated single-tenant instances for specific clients;
@@ -21,10 +21,10 @@
 - Limits never slow real users:
     - transfer endpoints are never rate-limited;
     - abuse controls count and open a ticket before anything blocks
-      (`Architecture.FileTransfer.md`, section 6).
+      ([File transfer](./files/transfer.md), section 6).
 - Open-source core, plus licensed modules:
     - the core is AGPL and is a complete product for a team;
-    - licensed modules that plug into the core (`Architecture.PlatformTopology.md`, section 7).
+    - licensed modules that plug into the core ([Platform topology](./platform/topology.md), section 7).
 - One UI stack:
     - all UIs are Svelte 5 apps that share design, components and translations.
 
@@ -74,34 +74,34 @@ docs/       architecture documents, developer docs
 
 ## 3. Chapters
 
-- [Platform topology](Architecture.PlatformTopology.md):
+- [Platform topology](./platform/topology.md):
     - the platform topology (Origin, Replica, Apps), the projects and their dependencies,
       jobs, SDKs, licensed modules and the developer experience.
-- [API](Architecture.API.md):
+- [API](./platform/api.md):
     - the one public API, `/api/v1`: conventions, authentication, scopes and the
       endpoint list; the chunk-level endpoints are part of it, with an "Advanced" badge.
-- [Authentication](Architecture.Authentication.md):
+- [Authentication](./security/authentication.md):
     - users, sessions, tokens and scopes, and how clients sign in;
     - tenants, tenant isolation (scoping and row-level security), groups and permissions.
-- [Licensing](Architecture.Licensing.md):
+- [Licensing](./platform/licensing.md):
     - the licence, the feature keys that turn licensed modules on, and the plan of each
       tenant.
-- [Data Model](Architecture.DataModel.md):
+- [Data Model](./files/data-model.md):
     - the file tree, uploads in progress, content, permissions, file versioning, the change
       log and the audit log.
-- [File storage](Architecture.FileStorage.md):
+- [File storage](./files/storage.md):
     - how drive files are stored using CDC, in warehouses.
-- [File transfer](Architecture.FileTransfer.md):
+- [File transfer](./files/transfer.md):
     - file transfer through the API, the API scopes and throughput optimization.
-- [File materialisation](Architecture.FileMaterialisation.md):
+- [File materialisation](./files/materialisation.md):
     - how a desktop client shows the whole remote drive as a local folder with
       explorer (OS) integration, and how file changes are detected on each platform.
-- [Client synchronization](Architecture.ClientSynchronization.md):
+- [Client synchronization](./files/synchronization.md):
     - how clients learn about changes, the client sync loop and conflict handling.
-- [Deployment](Architecture.Deployment.md):
+- [Deployment](./operations/deployment.md):
     - how the Origin, the Replica, the desktop client and the CLI are packaged, installed
       and updated on each platform, and how images are signed.
-- [Observability](Architecture.Observability.md):
+- [Observability](./operations/observability.md):
     - traces, metrics and logs with OpenTelemetry; what BFF measures and where the data goes.
-- [Roadmap](Architecture.Roadmap.md):
+- [Roadmap](./roadmap.md):
     - milestones for v2 in order, with contents and definition of done.

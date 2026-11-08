@@ -18,7 +18,7 @@
 #   ./dev migration <name>   create the next migration script of the core
 #
 # Docs:
-#   ./dev docs <name>        serve the docs site in docs/<name>, such as architecture
+#   ./dev docs               serve the docs site at http://localhost:3000, with live reload
 
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -90,6 +90,8 @@ cmd_build() {
     # The .NET build writes api/openapi.json, and pnpm generate reads it.
     pnpm generate
     pnpm build
+    # Also fails on a link to a page that does not exist.
+    pnpm docs:build
 }
 
 # The arguments go to dotnet test. check passes --no-build, because it has just built.
@@ -146,19 +148,8 @@ cmd_migration() {
 }
 
 cmd_docs() {
-    local site="docs/${1:-}"
-    if [[ ! -f "$site/index.html" ]]; then
-        echo "There is no docs site at $site. The sites are:" >&2
-        for index in docs/*/index.html; do
-            echo "  ./dev docs $(basename "$(dirname "$index")")" >&2
-        done
-        exit 1
-    fi
-    echo "Serving $site at http://localhost:3000. Press Ctrl+C to stop."
-    # Without --init, the server runs as the container's first process, and Ctrl+C does not stop it.
-    # Without the .md content type, Firefox logs an error for every page.
-    exec docker run --rm --init --publish 3000:3000 --volume "$PWD/$site:/www:ro" busybox:stable \
-        sh -c 'echo ".md:text/markdown; charset=utf-8" > /etc/httpd.conf && exec httpd -f -p 3000 -h /www'
+    pnpm install
+    pnpm docs:dev
 }
 
 name="${1:-}"

@@ -5,7 +5,7 @@ in step with the server, and how conflicts are handled.
 
 ## 1. Notifications
 
-- The change log is the authoritative truth (`Architecture.DataModel.md`, section 6);
+- The change log is the authoritative truth ([Data model](./data-model.md), section 6);
 - Clients connect to a SignalR hub and receive `ChangesAvailable(tenantId, latestSeq)`;
     - the push channel only says that something changed;
     - the payload carries no data.

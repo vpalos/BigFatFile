@@ -11,7 +11,7 @@ and updated on each platform.
   clients.
 - Every .NET artifact is self-contained: no runtime to install on the target machine.
 - Origin Server and Replica Server containers use BBR congestion control
-  (`Architecture.FileTransfer.md`, section 5):
+  ([File transfer](../files/transfer.md), section 5):
     - the compose files set `sysctls: net.ipv4.tcp_congestion_control: bbr` on the
       Origin Server and Replica Server services; the setting is per container network, so the host
       keeps its own;
@@ -74,7 +74,7 @@ and updated on each platform.
     - `BFF_MODULES_PATH`: the modules folder; default `/app/modules`;
     - `BFF_DEVELOPMENT_SEED`: `true` creates the demo tenant, user and clients; refused unless
       `ASPNETCORE_ENVIRONMENT` is `Development`;
-    - `OTEL_*`: the standard OpenTelemetry variables (`Architecture.Observability.md`).
+    - `OTEL_*`: the standard OpenTelemetry variables ([Observability](./observability.md)).
 - The cloud and paying dedicated instances run the licensed image with a licence key;
   self-hosters run the public image. A dedicated client instance is the reference
   deployment on its own VPS.

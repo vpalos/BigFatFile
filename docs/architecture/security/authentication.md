@@ -96,7 +96,7 @@ flowchart TB
 - A scope limits the client, not the user:
     - a token with `members.manage` still fails for a user who is not an admin;
     - the full rule is under "Rules" below.
-- The list of scopes, and what each one allows, is in [API](Architecture.API.md#_4-scopes).
+- The list of scopes, and what each one allows, is in [API](../platform/api.md#_4-scopes).
 
 ### Token payload
 
@@ -124,7 +124,8 @@ What an access token holds, for example the one that the CLI App gets:
   the user again;
 - **authorization code**: a one-use value that the Origin gives a client after the user
   signs in, and that the client then trades for tokens;
-- **PKCE**: a check used to protect against [code injection](https://oauth.net/2/pkce/):
+- **PKCE**: a check used to protect against [code injection](https://oauth.net/2/pkce/)
+  in non-web clients (e.g. CLI):
     - the client generates a secret that only it knows (the "verifier");
     - it sends the hash of the secret (the "challenge") with the authorization request;
     - it receives a code;
@@ -376,7 +377,7 @@ flowchart TB
     - that address may sign up under either policy;
     - it gets a tenant of its own, so a fresh install has its first tenant.
 - Per-tenant identity providers, SAML, SCIM, group sync and LDAP are licensed modules
-  behind `IAuthProvider` (`Architecture.PlatformTopology.md`, section 7).
+  behind `IAuthProvider` ([Platform topology](../platform/topology.md), section 7).
 
 ### Sign-in limits
 
@@ -410,7 +411,7 @@ flowchart TB
     - the screens are sign-in, sign-up, email confirmation, password reset and
       invitations;
     - the authorization endpoint sends a browser there, and the pages call the
-      `/api/v1/account` endpoints (`Architecture.API.md`, section 5);
+      `/api/v1/account` endpoints ([API](../platform/api.md), section 5);
     - links in emails carry their code after `#`, which browsers never send to a server,
       so the codes stay out of request logs.
 
@@ -461,8 +462,8 @@ flowchart TB
       the web UI; the directory is its source and overwrites it on every sync;
     - deleting a group removes its rules; nothing else refers to it;
     - the tables and how a group enters the permission check are in
-      `Architecture.DataModel.md`, section 4.
-- Each tenant has a plan, which sets its limits (`Architecture.Licensing.md`, section 4).
+      [Data model](../files/data-model.md), section 4.
+- Each tenant has a plan, which sets its limits ([Licensing](../platform/licensing.md), section 4).
 
 ## 4. Tenant isolation
 
@@ -512,7 +513,7 @@ flowchart TB
 
 - Rules on drives and folders grant a role (viewer, editor, owner) to a user, a group
   or the whole tenant; the nearest rule above a node decides. The tables and the check
-  are in `Architecture.DataModel.md`, section 4.
+  are in [Data model](../files/data-model.md), section 4.
 - Never on a single file, a decision carried over from v1:
     - every row of a listing is visible to everyone who may open the folder, so paged
       listings are the same for every viewer and can be cached as one;

@@ -1,7 +1,7 @@
 # BigFatFile
 
 A platform that runs file storage and sync apps for teams.
-The design is explained in detail in `docs/architecture`.
+The design is explained in detail in `docs/architecture`, and the reasons for it in `docs/decisions`.
 
 ## 1. Requirements
 
@@ -21,7 +21,7 @@ The design is explained in detail in `docs/architecture`.
 - `./dev psql` opens psql on the database, as the owner of the tables:
     - `./dev psql --app` signs in as `bigfatfile_app`, the role that row-level security
       applies to;
-- `./dev docs architecture` serves the architecture docs at http://localhost:3000.
+- `./dev docs` serves the docs site at http://localhost:3000, with live reload.
 
 **Notes:**
 
@@ -75,7 +75,8 @@ With `./dev up` running:
     - `dotnet build BigFatFile.slnx`, which also rewrites `api/openapi.json`;
     - `pnpm install`;
     - `pnpm generate`, which generates the TypeScript types from `api/openapi.json`;
-    - `pnpm build`.
+    - `pnpm build`;
+    - `pnpm docs:build`, which also fails on a link to a page that does not exist.
 - `./dev test` runs the tests, in this order:
     - `dotnet test --solution BigFatFile.slnx`, which starts PostgreSQL in Docker through
       Testcontainers;

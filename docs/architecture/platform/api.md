@@ -83,7 +83,7 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
     - per App and per tenant, reported in `RateLimit-*` headers;
     - limits are plan settings;
     - they apply to API calls, not to the transfer endpoints (`content`, `upload`, `chunks`): a slow transfer is a refused product, and abuse is handled by counting
-      and ticketing (`Architecture.FileTransfer.md`, section 6).
+      and ticketing ([File transfer](../files/transfer.md), section 6).
 - Trace context:
     - `traceparent` accepted and propagated.
 - Other general conventions:
@@ -94,7 +94,7 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 ## 3. Authentication
 
 - Sessions, tokens, CSRF protection and authentication flows are described in detail in
-  [Authentication](Architecture.Authentication.md).
+  [Authentication](../security/authentication.md).
 - Public endpoints (section 5, `public` tag) don't need tokens.
 
 ## 4. Scopes
@@ -103,7 +103,7 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 - An App asks for a set; the tenant administrator sees and grants it, or the user does
   for a user-scoped App.
 - How scopes work with the session cookie and with the user's role in the tenant is in
-  `Architecture.Authentication.md`, section 1, under "Rules".
+  [Authentication](../security/authentication.md), section 1, under "Rules".
 - Files:
     - `files.read`: list, read metadata, download; manifests and chunks of the nodes
       it may read;
@@ -173,7 +173,7 @@ permissions apply on top.
         - a guest gets 403 `member_required`;
     - `PATCH /drives/{id}`, `DELETE /drives/{id}` (`files.write`):
         - need the `owner` role on the drive's root;
-        - an admin is the owner of every drive (`Architecture.DataModel.md`, section 4).
+        - an admin is the owner of every drive ([Data model](../files/data-model.md), section 4).
 - Nodes (files and folders as tree entries):
     - `GET /nodes/{id}` (`files.read`):
         - get the node's metadata, without content or manifest;
@@ -205,7 +205,7 @@ permissions apply on top.
     - The upload ID is actually the node ID:
         - the client gives a UUIDv7 at creation,
         - the `uploads` table is keyed by it, and...
-        - the node keeps that ID once it's in the tree (`Architecture.DataModel.md`, section 2).
+        - the node keeps that ID once it's in the tree ([Data model](../files/data-model.md), section 2).
     - One upload per node at a time:
         - a second start gets 409 unless it resumes the same one.
     - `POST /nodes` (`files.write`):

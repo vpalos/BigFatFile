@@ -1,0 +1,21 @@
+:root {
+    --vp-c-brand-1: #2f6fed;
+    --vp-c-brand-2: #4a83f0;
+    --vp-c-brand-3: #2f6fed;
+}
+
+/* The chapters hold wide tables and diagrams, so the text column is wider than the default. */
+@media (min-width: 1280px) {
+    .VPDoc .content-container {
+        max-width: 960px !important;
+    }
+    .VPDoc.has-aside .container {
+        max-width: 1400px !important;
+    }
+}
+
+.vp-doc .mermaid-container[data-natural-height]:not(.dialog-fullscreen-active) {
+    height: var(--diagram-height);
+    min-height: 0;
+    max-height: none;
+}

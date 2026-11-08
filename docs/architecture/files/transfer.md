@@ -2,13 +2,13 @@
 
 How bytes move between Apps, the Origin and storage: the file-level endpoints, the
 chunk-level endpoints, the tenant-wide scope used by mirroring Apps such as the Replica,
-sends, and the transport layer. All of it is one API (`Architecture.API.md`); there
+sends, and the transport layer. All of it is one API ([API](../platform/api.md)); there
 are no private endpoints.
 
 ## 1. File-level transfer
 
 - What Apps use regularly. File level only: no chunks or hashes appear in it.
-- The upload ID is the node ID (`Architecture.DataModel.md`, section 2): the client
+- The upload ID is the node ID ([Data model](./data-model.md), section 2): the client
   gives the node a UUIDv7 when it creates it, and every upload endpoint is under
   `/nodes/{id}`.
 - Upload: one sequential stream, resumable by offset:
@@ -104,7 +104,7 @@ are no private endpoints.
 ## 3. Sends (transfers)
 
 - A send (a transfer to recipients outside the system) is stored as whole objects, not
-  chunks: each file has a `none` manifest (`Architecture.FileStorage.md`, section 1):
+  chunks: each file has a `none` manifest ([File storage](./storage.md), section 1):
     - a send is immutable, has no versions and needs no delta;
     - most of its traffic is downloads by external recipients on any browser or phone,
       and each of those must be a plain download.

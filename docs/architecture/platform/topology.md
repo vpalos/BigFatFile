@@ -1,21 +1,19 @@
-# Platform topology
+# Topology
 
 ## 1. Basics
 
 ```mermaid
 flowchart TB
     Origin["`**Origin**
-    the one authoritative copy of all data for all tenants,
-    in the cloud or self-hosted`"]
+    authoritative data for all tenants, cloud or self-hosted`"]
     Replica["`**Replica** (optional)
-    full-mirror for one tenant,
-    hosted on local LAN`"]
+    full-mirror for a tenant, on LAN`"]
     Apps["`**Apps**
-    Web, Desktop, Cli and any third-party App`"]
+    Web, Desktop, Cli or 3rd-party`"]
 
     Replica <-->|"syncs in real-time"| Origin
-    Apps <==>|"use Replica if reachable"| Replica
-    Apps <-->|else, use Origin| Origin
+    Apps <==>|"uses Replica if possible"| Replica
+    Apps <-->|else, uses Origin| Origin
 ```
 
 - **Origin**:
@@ -30,13 +28,13 @@ flowchart TB
     - serves downstream Apps at LAN speed (even when uplink is down);
     - is actually itself an App (chunk-level, tenant-scoped);
     - more details in:
-        - `Architecture.API.md` [section 4](Architecture.API.md#_4-scopes);
-        - `Architecture.FileTransfer.md` section 4.
+        - [API (section 4)](./api.md#_4-scopes);
+        - [File transfer (section 4)](../files/transfer.md#_4-tenant-scoped-apps).
 - **Apps**:
     - our own apps (Web, Desktop, Cli, Replica) as well as any 3rd-party apps;
     - Apps talk to the Replica when one is reachable, otherwise to the Origin;
     - Origin and Replica talk the same protocol:
-        - the same API is published by both (`Architecture.API.md`);
+        - the same [API](./api.md) is published by both;
         - the same SDKs work seamlessly with both.
     - Apps have scope:
         - _user_-scoped Apps act on what their users may see;
@@ -102,7 +100,7 @@ Licensed modules are (by exception) kept in a separate repository.
               together run as one implicit transaction.
 - Tenant isolation:
     - application-level scoping;
-    - PostgreSQL row-level security (`Architecture.Authentication.md`, section 4).
+    - PostgreSQL row-level security ([Authentication](../security/authentication.md), section 4).
 - Jobs and queues:
     - Hangfire with PostgreSQL storage is the single scheduling mechanism;
     - recurring jobs: expiry of sends, garbage collection, retention;
@@ -113,14 +111,14 @@ Licensed modules are (by exception) kept in a separate repository.
     - in cluster mode Hangfire coordinates across nodes through its PostgreSQL storage.
 - Storage:
     - content-defined chunks or whole objects written into warehouses
-      (`Architecture.FileStorage.md`).
+      ([File storage](../files/storage.md)).
 - Web UI (served from .NET):
     - Svelte 5 SPA built with Vite;
     - Tailwind CSS, shadcn-svelte, Lucide icons;
     - Paraglide (i18n);
     - TanStack Query (server state), TanStack Virtual, TanStack HotKeys.
 - Authentication:
-    - the Origin is the identity provider for the whole system (`Architecture.Authentication.md`, section 2).
+    - the Origin is the identity provider for the whole system ([Authentication](../security/authentication.md), section 2).
 
 #### **BigFatFile.Replica** (.NET), aka the Replica:
 
@@ -165,7 +163,7 @@ Licensed modules are (by exception) kept in a separate repository.
     - pull the Origin's changes since the stored cursor and emit them as local events;
     - replay the journal in order, each operation carrying its base version;
     - on a rejected write, upload the LAN version as a conflict copy and keep the
-      Origin's version as primary (`Architecture.ClientSynchronization.md`, section 3);
+      Origin's version as primary ([Client synchronization](../files/synchronization.md), section 3);
     - chunks are uploaded before the manifest that references them, so a half-uploaded
       file is never visible.
 - Authentication on the LAN:
@@ -182,7 +180,7 @@ Licensed modules are (by exception) kept in a separate repository.
     - shows the whole remote drive immediately, however large;
     - when a file is first opened, fetches its content into a managed local cache (LRU);
 - Uses materialisation model (avoid filesystem drivers where possible):
-    - real folder entries that are hollow until opened ([Architecture.FileMaterialisation.md](Architecture.FileMaterialisation.md)).
+    - real folder entries that are hollow until opened ([File materialisation](../files/materialisation.md)).
 - Platforms:
     - Linux: FUSE with a local write-back cache.
     - Windows: Cloud Files API (similar to OneDrive), Windows 10 1903+, NTFS, packaged as MSIX;
@@ -337,7 +335,7 @@ flowchart BT
 - Developer role per tenant:
     - creates Apps, rotates keys, sets webhook endpoints;
     - sees webhook delivery logs and API usage for its Apps.
-- Scopes: the list, and what each one allows, is in `Architecture.API.md`, section 4.
+- Scopes: the list, and what each one allows, is in [API](./api.md), section 4.
 
 ## 4. Primitives
 
@@ -348,7 +346,7 @@ Designed for Apps rather than discovered by them. Our own clients use these.
 - Transfers:
     - `bff.files.upload(folder, input)` and `bff.files.download(id)` in the SDKs;
     - the SDK picks the file-level or the chunk-level endpoints; an App never sees
-      chunks (`Architecture.API.md`).
+      chunks ([API](./api.md)).
 - Change feed:
     - `GET /changes?since=<seq>`, the same cursor semantics the desktop client
       uses;
@@ -381,7 +379,7 @@ Designed for Apps rather than discovered by them. Our own clients use these.
 
 - The one public API of the Origin, `/api/v1`: conventions, authentication, scopes and
   the endpoint list; the chunk-level endpoints are part of it, with an "Advanced" badge.
-- [Architecture.API.md](Architecture.API.md)
+- [API](./api.md)
 
 ## 6. SDKs and UI packages
 
@@ -441,7 +439,7 @@ Designed for Apps rather than discovered by them. Our own clients use these.
     - the public image has the loader and no modules.
 - Licence:
     - a module runs only when the licence turns on its feature key
-      (`Architecture.Licensing.md`, sections 2 and 3).
+      ([Licensing](./licensing.md), sections 2 and 3).
 - UI:
     - `/api/ui/manifest` lists enabled features, menu entries and settings pages;
     - the licensed web build includes the modules' UI packages from the private part of

@@ -1,3 +1,5 @@
 packages:
   - "sdk/@bigfatfile/*"
   - "examples/*"
+allowBuilds:
+  esbuild: true

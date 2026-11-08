@@ -102,7 +102,7 @@ flowchart TB
     - one row per `(node_id, version)`, with the `manifest_id` of that version, the actor and the time;
     - `nodes.manifest_id` is a copy from the most recent version, to avoid any joins when listing;
     - retention (30 days, a year, legal hold) prunes rows here and nothing else.
-- `manifests` is content, immutable (`Architecture.FileStorage.md`, section 1):
+- `manifests` is content, immutable ([File storage](./storage.md), section 1):
     - one row per file version (with bytes actually changed);
     - in theory two versions (even two files) could point to the same manifest ID;
     - columns: `chunking`, `size`, `hash` (nullable) and `object_id` (nullable);
@@ -150,7 +150,7 @@ flowchart TB
 ## 4. Permissions
 
 What a user may do with a node is decided by rules on folders, found by walking up the
-tree. The policy (why folders and never files) is in `Architecture.Authentication.md` (section 5);
+tree. The policy (why folders and never files) is in [Authentication](../security/authentication.md) (section 5);
 this section is about how it works.
 
 ### Roles
@@ -254,7 +254,7 @@ node_id, role, password_hash, expires_at, created_by)`, with `role` either `view
 ## 5. File versioning
 
 - Every node has an integer `version` that increases on each change;
-- Each file version is stored as a manifest (see `Architecture.FileStorage.md`, section 1);
+- Each file version is stored as a manifest (see [File storage](./storage.md), section 1);
 - Every write carries the version the client last saw (`If-Match`);
     - the Origin rejects the write if the version changed in the meantime;
     - this detects every conflict case:
@@ -276,7 +276,7 @@ node_id, role, password_hash, expires_at, created_by)`, with `role` either `view
 - The sequence number comes from a counter row on the tenant:
     - incremented inside the transaction, so sequence order == commit order;
     - a plain database sequence would not guarantee that.
-- Clients read it with `GET /changes?since=<seq>` (`Architecture.ClientSynchronization.md`).
+- Clients read it with `GET /changes?since=<seq>` ([Client synchronization](./synchronization.md)).
 - Retention is configurable (default 90 days):
     - a client with an older cursor does a full tree resync.
 
@@ -304,7 +304,7 @@ node_id, role, password_hash, expires_at, created_by)`, with `role` either `view
             - `locked_out`: the account is locked after too many wrong passwords;
             - `not_allowed`: the email address is not confirmed;
             - `two_factor_required`: the account has two-factor sign-in turned on
-              (`Architecture.Authentication.md`, section 2);
+              ([Authentication](../security/authentication.md), section 2);
         - the actor is the account that was tried;
         - the row has no tenant, so only the operator reads it, as the database owner;
         - an unknown email address writes no row;
@@ -322,7 +322,7 @@ node_id, role, password_hash, expires_at, created_by)`, with `role` either `view
     - one per month of the event's time, with months starting at midnight UTC;
     - the Origin creates this month's partition and the next two, at startup and in a
       daily job;
-    - requests reach them only through the parent table (`Architecture.Authentication.md`,
+    - requests reach them only through the parent table ([Authentication](../security/authentication.md),
       section 4).
 - Retention:
     - the daily job drops a month's partition once its last day is 90 days old, so a

@@ -40,6 +40,8 @@ jobs:
       - name: The generated types match the committed spec
         run: pnpm generate && git diff --exit-code -- sdk/@bigfatfile/client/src/generated
       - run: pnpm build
+      - name: Build the docs site (fails on a link to a page that does not exist)
+        run: pnpm docs:build
       - run: pnpm typecheck
       - run: pnpm test
 

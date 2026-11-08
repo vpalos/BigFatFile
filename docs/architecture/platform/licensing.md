@@ -69,7 +69,7 @@ flowchart TB
 
 - Each licensed module has one reserved key, such as `sso.saml` or `platform.billing`:
     - `FeatureKeys` lists them all;
-    - the modules and their keys are in `Architecture.PlatformTopology.md`, section 7.
+    - the modules and their keys are in [Platform topology](./topology.md), section 7.
 - `IFeatureGate.IsEnabled(key)` is the one check:
     - it answers for the whole Origin, and takes no tenant;
     - a key that is not reserved throws an error, so a typo fails at once instead of
@@ -92,7 +92,7 @@ flowchart TB
 - `IPlanPolicy.GetPlanAsync(connection, tenantId)` returns the tenant's `TenantPlan`.
 - It runs on the request's connection:
     - a module that keeps plans in its own table reads them with the `tenant_id` being set;
-    - RLS therefore applies to that read (`Architecture.Authentication.md`, section 4).
+    - RLS therefore applies to that read ([Authentication](../security/authentication.md), section 4).
 - `TenantPlan`:
     - `Key` names the plan, such as `unlimited` (or `pro`);
     - it holds no limits yet;

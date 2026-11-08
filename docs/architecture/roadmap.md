@@ -19,7 +19,7 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 ### M0. Bootstrapping
 
 - Status: done.
-- The repository as in `Architecture.md` section 2:
+- The repository as in [Architecture overview](./index.md) section 2:
     - CI building images;
     - packages;
     - the OpenAPI specification from one tag;
@@ -59,7 +59,7 @@ Milestones for v2, in order, each with what it contains and when it counts as do
     - the SDK calls, in `@bigfatfile/client` and `BigFatFile.Client`;
     - the web app screens, on `@bigfatfile/client`;
     - the CLI commands, on `BigFatFile.Client`;
-    - the spans and metrics (`Architecture.Observability.md`, section 2), not
+    - the spans and metrics ([Observability](./operations/observability.md), section 2), not
       afterwards.
 - M1 is done when M1.7 is.
 
@@ -127,8 +127,8 @@ Milestones for v2, in order, each with what it contains and when it counts as do
   the startup probes.
 - The chunk store behind `IChunkStore`.
 - Manifests in the database and in the warehouse, in the commit order of
-  `Architecture.FileStorage.md`.
-- The content tables (`Architecture.DataModel.md`, section 3):
+  [File storage](./files/storage.md).
+- The content tables ([Data model](./files/data-model.md), section 3):
     - `node_versions`, `manifests`, `manifest_chunks`, `chunks` and `objects`.
 - Whole objects and `none` manifests:
     - the switch that turns off chunking on the Origin, per tenant and per upload;

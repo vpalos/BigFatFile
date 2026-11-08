@@ -69,16 +69,23 @@
   code, and the spec shows it as a list.
 - **Mechanisms are explained in docs, not comments.** How a subsystem works as a whole
   (its layers, state machine, flows, corners to watch) lives in a readable doc under
-  `bff-ops/docs/architecture/` in bullets and clear lines (`TRANSFER-ENGINE.md` is the
-  model).
+  `docs/architecture/` in bullets and clear lines.
   Comments only add what is local to one spot; a comment growing past three lines means
   the doc is missing something. Update the doc when the mechanism changes.
 - **Docs are current-state only.** Active docs describe the present and the decisions
   in force; when something changes, rewrite in place and move superseded material to
   `bff-ops/archive/`. A doc describing something not built yet belongs in
-  `bff-ops/docs/research/`, never in `architecture/`. No override notes, no amendment parentheticals, no decision
-  archaeology. Dates appear only as operational data (baselines, cutoffs, last-run
-  records). Small declined ideas stay in chat; ROADMAP records big decisions.
+  `bff-ops/docs/research/`, never in `architecture/`. No override notes, no amendment
+  parentheticals, no decision archaeology. Dates appear only as operational data (baselines,
+  cutoffs, last-run records, the date a decision record was written). Small declined ideas
+  stay in chat.
+- **Decision records.** Each big decision gets an architecture decision record (ADR) in
+  `docs/decisions/`, in the format of `docs/decisions/index.md`.
+    - The record holds the reasons and the options that were turned down; the chapter
+      describes the design in force and links to the record.
+    - A record is not edited after it is accepted. A changed decision gets a new record,
+      and the old one is marked "Superseded by".
+    - Write the record in the same change that puts the decision into a chapter.
 - **Documentation**:
     - **Every sentence must be needed.** A doc states what exists, and the rules that break
       things when ignored. Before adding a sentence, ask whether a reader needs it to run

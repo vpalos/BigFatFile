@@ -103,7 +103,7 @@ encryption.
     - the chunk sizes add up to the file size;
     - an empty file has no chunks;
     - with `none`, there are no chunks and `object` names the whole file.
-- How a manifest relates to the tree and to storage is in `Architecture.DataModel.md`,
+- How a manifest relates to the tree and to storage is in [Data model](./data-model.md),
   section 3.
 
 ### Chunking parameters
@@ -130,7 +130,7 @@ encryption.
     - its identity is `(warehouse, tenant, object ID)`, the ID a UUIDv7;
     - chunk identity stays `(warehouse, tenant, hash)`; the two never mix;
     - each object has one row in `objects`: ID, size, storage key, and the hash when
-      known (`Architecture.DataModel.md`, section 3);
+      known ([Data model](./data-model.md), section 3);
     - the key follows the warehouse layout (section 2) by default, but a row may carry
       any key. This is what lets an object that already exists in storage be adopted
       without being read or copied;
@@ -147,7 +147,7 @@ encryption.
   verifies it. A client that has the bytes anyway computes BLAKE3 while sending, and
   the manifest keeps it.
 - Where whole objects are used:
-    - sends (`Architecture.FileTransfer.md`, section 3);
+    - sends ([File transfer](./transfer.md), section 3);
     - file-level uploads when inline chunking is off, by a tenant setting or by a choice
       per upload, so the cost of chunking on the Origin can be turned off;
     - files that existed before they were chunked, adopted by key. Whether and when such
@@ -173,7 +173,7 @@ encryption.
 
 - Chunking runs where files are produced (desktop, CLI, Replica, browser) through the
   SDKs, and on the Origin, inline, for uploads through the file-level endpoints
-  (`Architecture.FileTransfer.md`).
+  ([File transfer](./transfer.md)).
 - Chunking and hashing happen in one streaming pass over the file.
 - Speed: about 0.7 to 1 GB/s per core natively, and 150 to 300 MB/s in WebAssembly,
   far above any uplink.
@@ -235,7 +235,7 @@ encryption.
   object is deleted when the send expires.
 - Two safeguards for content in flight:
     - an upload in progress pins its chunks or its object until it completes or expires
-      (`Architecture.DataModel.md`, section 2);
+      ([Data model](./data-model.md), section 2);
     - the sweep never deletes a chunk or an object written less than 24 hours ago.
 - Runs as a recurring Hangfire job.
 
