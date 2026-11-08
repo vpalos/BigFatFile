@@ -19,12 +19,12 @@
 
 - SQLite as an option on the Origin:
     - the Origin depends on features that only PostgreSQL has:
-        - [row-level security](./0004-row-level-security.md);
-        - advisory locks for migrations in cluster mode ([Evolve for migrations](./0006-evolve-migrations.md));
-        - Hangfire's PostgreSQL storage ([Hangfire for jobs](./0008-hangfire.md)).
+        - [row-level security](./004-row-level-security.md);
+        - advisory locks for migrations in cluster mode ([Evolve for migrations](./006-evolve-migrations.md));
+        - Hangfire's PostgreSQL storage ([Hangfire for jobs](./008-hangfire.md)).
 
 ## 4. Consequences
 
 - The server SQL is written for one dialect.
 - A SQLite database needs no lock, because one process uses it.
-- Details: [Platform topology](../architecture/platform/topology.md), section 2.
+- Details: [Platform topology (section 2)](../architecture/platform/topology.md#_2-projects).

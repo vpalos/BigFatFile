@@ -27,6 +27,9 @@ flowchart TB
     - acts as Origin for listening Apps (replicates APIs downstream);
     - serves downstream Apps at LAN speed (even when uplink is down);
     - is actually itself an App (chunk-level, tenant-scoped);
+    - more details in:
+        - [API (section 4)](./api.md#_4-scopes);
+        - [File transfer (section 4)](../files/transfer.md#_4-tenant-scoped-apps).
 - **Apps**:
     - our own apps (Web, Desktop, Cli, Replica) as well as any 3rd-party apps;
     - Apps talk to the Replica when one is reachable, otherwise to the Origin;
@@ -97,7 +100,7 @@ Licensed modules are (by exception) kept in a separate repository.
               together run as one implicit transaction.
 - Tenant isolation:
     - application-level scoping;
-    - PostgreSQL row-level security ([Authentication](../security/authentication.md), section 4).
+    - PostgreSQL row-level security ([Tenancy (section 4)](../security/tenancy.md#_4-tenant-isolation)).
 - Jobs and queues:
     - Hangfire with PostgreSQL storage is the single scheduling mechanism;
     - recurring jobs: expiry of sends, garbage collection, retention;
@@ -115,7 +118,7 @@ Licensed modules are (by exception) kept in a separate repository.
     - Paraglide (i18n);
     - TanStack Query (server state), TanStack Virtual, TanStack HotKeys.
 - Authentication:
-    - the Origin is the identity provider for the whole system ([Authentication](../security/authentication.md), section 2).
+    - the Origin is the identity provider for the whole system ([Authentication (section 4)](../security/authentication.md#_4-sign-in-flows)).
 
 #### **BigFatFile.Replica** (.NET), aka the Replica:
 
@@ -160,7 +163,7 @@ Licensed modules are (by exception) kept in a separate repository.
     - pull the Origin's changes since the stored cursor and emit them as local events;
     - replay the journal in order, each operation carrying its base version;
     - on a rejected write, upload the LAN version as a conflict copy and keep the
-      Origin's version as primary ([Client synchronization](../files/synchronization.md), section 3);
+      Origin's version as primary ([Client synchronization (section 3)](../files/synchronization.md#_3-conflicts));
     - chunks are uploaded before the manifest that references them, so a half-uploaded
       file is never visible.
 - Authentication on the LAN:
@@ -332,7 +335,7 @@ flowchart BT
 - Developer role per tenant:
     - creates Apps, rotates keys, sets webhook endpoints;
     - sees webhook delivery logs and API usage for its Apps.
-- Scopes: the list, and what each one allows, is in [API](./api.md), section 4.
+- Scopes: the list, and what each one allows, is in [API (section 4)](./api.md#_4-scopes).
 
 ## 4. Primitives
 
@@ -392,7 +395,7 @@ Designed for Apps rather than discovered by them. Our own clients use these.
 ### Core vs. platform modules
 
 - Open core (AGPL):
-    - all projects in section 2 except the licensed modules;
+    - all projects in [section 2](#_2-projects) except the licensed modules;
     - it is a complete product for a team, including:
         - cluster mode;
         - the PostgreSQL notifier;
@@ -436,7 +439,7 @@ Designed for Apps rather than discovered by them. Our own clients use these.
     - the public image has the loader and no modules.
 - Licence:
     - a module runs only when the licence turns on its feature key
-      ([Licensing](./licensing.md), sections 2 and 3).
+      ([Licensing (sections 2 and 3)](./licensing.md#_2-licence)).
 - UI:
     - `/api/ui/manifest` lists enabled features, menu entries and settings pages;
     - the licensed web build includes the modules' UI packages from the private part of

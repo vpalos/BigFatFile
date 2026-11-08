@@ -103,7 +103,7 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
 - An App asks for a set; the tenant administrator sees and grants it, or the user does
   for a user-scoped App.
 - How scopes work with the session cookie and with the user's role in the tenant is in
-  [Authentication](../security/authentication.md), section 1, under "Rules".
+  [Authentication (section 5)](../security/authentication.md#_5-requests), under "Rules".
 - Files:
     - `files.read`: list, read metadata, download; manifests and chunks of the nodes
       it may read;

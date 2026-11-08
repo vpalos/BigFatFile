@@ -8,12 +8,18 @@ const docsDir = join(import.meta.dirname, "..");
 function decisionItems(): DefaultTheme.SidebarItem[] {
     const dir = join(docsDir, "decisions");
     return readdirSync(dir)
-        .filter((file) => /^\d{4}-.+\.md$/.test(file) && !file.startsWith("0000-"))
+        .filter(
+            (file) => /^\d{3}-.+\.md$/.test(file) && !file.startsWith("000-"),
+        )
         .sort()
         .map((file) => {
-            const heading = readFileSync(join(dir, file), "utf-8").match(/^# (.+)$/m);
+            const heading = readFileSync(join(dir, file), "utf-8").match(
+                /^# (.+)$/m,
+            );
+            // Record 001 is the one that explains the records.
+            const title = heading ? heading[1] : file;
             return {
-                text: heading ? heading[1] : file,
+                text: file.startsWith("001-") ? "About decisions" : title,
                 link: `/decisions/${file.replace(/\.md$/, "")}`,
             };
         });
@@ -31,7 +37,7 @@ const sidebar: DefaultTheme.Sidebar = [
         text: "Platform",
         collapsed: false,
         items: [
-            { text: "Platform topology", link: "/architecture/platform/topology" },
+            { text: "Topology", link: "/architecture/platform/topology" },
             { text: "API", link: "/architecture/platform/api" },
             { text: "Licensing", link: "/architecture/platform/licensing" },
         ],
@@ -39,7 +45,13 @@ const sidebar: DefaultTheme.Sidebar = [
     {
         text: "Security",
         collapsed: false,
-        items: [{ text: "Authentication", link: "/architecture/security/authentication" }],
+        items: [
+            { text: "Tenancy", link: "/architecture/security/tenancy" },
+            {
+                text: "Authentication",
+                link: "/architecture/security/authentication",
+            },
+        ],
     },
     {
         text: "Files",
@@ -48,8 +60,14 @@ const sidebar: DefaultTheme.Sidebar = [
             { text: "Data model", link: "/architecture/files/data-model" },
             { text: "File storage", link: "/architecture/files/storage" },
             { text: "File transfer", link: "/architecture/files/transfer" },
-            { text: "File materialisation", link: "/architecture/files/materialisation" },
-            { text: "Client synchronization", link: "/architecture/files/synchronization" },
+            {
+                text: "File materialisation",
+                link: "/architecture/files/materialisation",
+            },
+            {
+                text: "Client synchronization",
+                link: "/architecture/files/synchronization",
+            },
         ],
     },
     {
@@ -57,13 +75,16 @@ const sidebar: DefaultTheme.Sidebar = [
         collapsed: false,
         items: [
             { text: "Deployment", link: "/architecture/operations/deployment" },
-            { text: "Observability", link: "/architecture/operations/observability" },
+            {
+                text: "Observability",
+                link: "/architecture/operations/observability",
+            },
         ],
     },
     {
         text: "Decisions",
         collapsed: true,
-        items: [{ text: "About the records", link: "/decisions/" }, ...decisionItems()],
+        items: decisionItems(),
     },
 ];
 
@@ -72,13 +93,16 @@ export default defineConfig({
     description: "Architecture documents for BigFatFile v2",
     cleanUrls: true,
     lastUpdated: true,
-    srcExclude: ["decisions/0000-template.md"],
+    srcExclude: ["decisions/000-template.md"],
     // Mermaid is one large chunk, loaded only on pages that have a diagram.
     vite: { build: { chunkSizeWarningLimit: 4000 } },
     themeConfig: {
         nav: [
             { text: "Architecture", link: "/architecture/" },
-            { text: "Decisions", link: "/decisions/" },
+            {
+                text: "Decisions",
+                link: "/decisions/001-architecture-decision-records",
+            },
         ],
         sidebar,
         outline: { level: [2, 3] },

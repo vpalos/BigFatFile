@@ -3,40 +3,64 @@
 This document shows:
 
 - how users and Apps sign in and prove who they act for,
-- how multi-tenancy works,
-- how data is kept isolated between tenants,
-- and how permissions are handled inside a tenant.
+- and how each request is authorized.
+
+Users, tenants, tenant isolation and permissions are in [Tenancy](./tenancy.md).
 
 ## 1. Core concepts
 
 ```mermaid
 flowchart TB
-    User["`**User**
-    a person with an account, who signs in to prove who they are`"]
-    Tenant["`**Tenant**
-    the space of a company or of a person: its members, its files and its settings`"]
-    Client["`**Client**
-    a program that makes requests for the user, such as Web, Desktop etc.;
-    it never sees the user's password; may also act as itself, with no user, inside a tenant (M3).`"]
-    Session["`**Session**
-    the proof that the user signed in to the Web app. The browser keeps it in the session cookie`"]
-    Token["`**Token**
-    a proof, signed by the Origin, that lets one client act for one user, in one tenant, for one hour, without the password`"]
-    Scopes["`**Scopes**
-    actions that the user allowed the client to perform, such as files.read or members.manage`"]
-    Request["`**Request**
-    an API call, authorized by: session/token, user role and permissions`"]
-
-    User -->|"is a member of a tenant
+    User -->|"member of a tenant
     (admin, member or guest)"| Tenant
     User -->|works through| Client
     Client -->|the Web app uses| Session
-    Session -->|used to make a token for a client| Token
+    Session -->|makes a token for a client| Token
     Client -->|all other clients use| Token
     Token -->|holds| Scopes
     Session -->|sent with each request| Request
     Scopes -->|sent with each request| Request
 ```
+
+### Glossary
+
+- **User**:
+    - a person with an account, who signs in to prove who they are.
+- **Tenant**:
+    - the space of an organization or of a person ([Tenancy](./tenancy.md)).
+- **Client**:
+    - a program that makes requests for the user, such as Web, Desktop etc.;
+    - it never sees the user's password;
+    - may also act as itself, with no user, inside a tenant (M3).
+- **Session**:
+    - the proof that the user signed in to the Web app;
+    - the browser keeps it in the session cookie.
+- **Token**:
+    - a proof, signed by the Origin, that lets one client act for one user, in one tenant, for one hour, without the password.
+- **Scopes**:
+    - actions that the user allowed the client to perform, such as `files.read` or `members.manage`.
+- **Request**:
+    - an API call, authorized by session or token, the user's role and folder permissions.
+- **Claim**:
+    - one fact field in a session or a token, such as `sub` (the user's ID) or `tenant_id`
+      (the tenant).
+- **Principal**:
+    - the set of claims that the Origin reads from the cookie or the token, at the start
+      of each request.
+- **Refresh token**:
+    - a value that a client trades for a new access token, without asking the user again.
+- **Authorization code**:
+    - a one-use value that the Origin gives a client after the user signs in, and that
+      the client then trades for tokens.
+- **PKCE**:
+    - a check used to protect against [code injection](https://oauth.net/2/pkce/) in
+      non-web clients (e.g. CLI), when requesting an authorized token:
+        - the client generates a secret that only it knows (the "verifier");
+        - it sends the hash of the secret (the "challenge") with the authorization request;
+        - it receives a code;
+        - it then sends the code + the verifier in exchange for a token;
+        - this way, the server uses the challenge (from the first request) and the
+          verifier to ensure that only that client can finish the authorization flow.
 
 ### Who signs in, and why
 
@@ -59,29 +83,65 @@ flowchart TB
     - it proves who it is with its own secret, through the client-credentials flow;
     - its token holds the tenant and the scopes, and needs no user.
 
+## 2. Sessions
+
+### How sessions work
+
+- Only the web app uses sessions cookies for authorization:
+    - the session cookie lasts 14 days.
+- A user who is a member of no tenant gets a session without a tenant:
+    - it can read `/api/v1/account/me`;
+    - every `/tenants/{id}` endpoint answers 404.
+- A user with several tenants can have only one tenant active at a time:
+    - the web app switches the tenant by asking for a new session cookie,
+      so every open tab switches carries the active tenant;
+    - a client can switch to another tenant by getting a new token, but
+      this can happen only after the user switches the session to that tenant.
+- Some API endpoints (under `/account`) work only with sessions (tokens are not enough), such as:
+    - switching the active tenant;
+    - accepting an invitation;
+    - signing out.
+- The session is renewed every 30 minutes by the Origin (the security stamp check):
+    - only when the user is active (uses the session);
+    - session whose user changed the password since then, is ended;
+    - the rebuilt session keeps its tenant.
+
+### CSRF protection
+
+- **CSRF token**:
+    - a value that the web app sends with each write request, to prevent
+      [CSRF attacks](https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/CSRF)
+      (section 2);
+    - the web app can always get a new CSRF token from `GET /api/v1/account/csrf`.
+- **CSRF flow**:
+    - every write request that uses the session cookie must also send the CSRF token;
+    - then attaches it to the request in the `X-CSRF-Token` header;
+    - another website can't read it, so it can't make the browser send a forged write
+      operation with the cookie.
+
+## 3. Tokens and scopes
+
 ### Why clients use tokens
 
-- The web app runs the Origin's own site, so the browser keeps the session in a cookie.
-- Every other client runs elsewhere, such as in a shell or on another server, so it
-  needs a proof of its own:
-    - it must not keep the user's password (would give full access to the account);
-    - a token gives much less:
-        - one client;
-        - one user;
-        - one tenant;
-        - the scopes that the user allowed;
-        - for one hour;
+- Tokens are used by clients that don't run in a browser:
+    - shell, remote server etc.
+- Such a client needs another kind of authorization proof (not sessions) because:
+    - it can't keep a session cookie;
+    - it must not keep the user's password (this would give full access to the account);
+- The solution is a token, which gives much less (than a session):
+    - one client;
+    - one user;
+    - one tenant;
+    - the scopes that the user allowed;
+    - for only one hour.
+- Token lifetime:
     - when the token expires, the client trades its refresh token for a new one, without
       asking the user;
     - when the user is deleted, the next refresh fails, and the client loses access.
-- The Origin signs each token:
-    - nobody can change a token without the signature showing it;
-    - anyone with the Origin's public key can check a token, without asking the Origin;
-    - this allows the Replica to checks tokens while its internet connection is down.
 
 ### Scopes
 
-- A scope is the name of one kind of action, written as an area, a dot and an action:
+- A scope is the name of one kind of action, written as `<area><dot><action>`, for example:
     - `files.read`: list folders and download files;
     - `files.write`: upload, rename, move and trash files;
     - `members.manage`: invite and remove members, and change their roles.
@@ -95,8 +155,19 @@ flowchart TB
     - `GET /tenants/{id}/audit` needs `tenant.admin`.
 - A scope limits the client, not the user:
     - a token with `members.manage` still fails for a user who is not an admin;
-    - the full rule is under "Rules" below.
-- The list of scopes, and what each one allows, is in [API](../platform/api.md).
+    - the full rule is in section 5, under "Rules".
+- The list of scopes, and what each one allows, is in [API](../platform/api.md#_4-scopes).
+
+### Token signing
+
+- The Origin signs each token with its private key (ES256), which it never shares.
+- Anyone with the matching public key can check the signature:
+    - a token that was changed after signing fails the check;
+    - only the private key can make a valid signature, so nobody else can make a token.
+- The Origin publishes the public key at `/.well-known/jwks`.
+- So the Replica can check tokens without asking the Origin, even while its internet
+  connection is down.
+- A token is signed but not encrypted, so anyone who holds it can read its claims.
 
 ### Token payload
 
@@ -110,75 +181,50 @@ What an access token holds, for example the one that the CLI App gets:
 | `scope`     | `files.read files.write offline_access` | the actions that the user allowed  |
 | `exp`       | `1794013200`                            | when it stops working: in one hour |
 
-- After the claims, the token holds the Origin's signature, made with its private key.
 - A token also holds the standard claims of a JWT, such as its issuer (`iss`) and the
   time it was issued (`iat`).
 
-### Glossary
+### Token types and keys
 
-- **claim**: one fact in a session or a token, such as `sub` (the user's ID) or
-  `tenant_id` (the tenant);
-- **principal**: the set of claims that the Origin reads from the cookie or the token,
-  at the start of each request;
-- **refresh token**: a value that a client trades for a new access token, without asking
-  the user again;
-- **authorization code**: a one-use value that the Origin gives a client after the user
-  signs in, and that the client then trades for tokens;
-- **PKCE**: a check used to protect against [code injection](https://oauth.net/2/pkce/)
-  in non-web clients (e.g. CLI):
-    - the client generates a secret that only it knows (the "verifier");
-    - it sends the hash of the secret (the "challenge") with the authorization request;
-    - it receives a code;
-    - it then sends the code + the verifier in exchange for a token;
-    - this way, the server uses the challenge (from the first request) and the verifier
-      to ensure that only that client can finish the authorization flow;
-- **CSRF token**: a value sent by the web app with each write request, to prevent
-  [CSRF attacks](https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/CSRF):
-    - the web app reads it from `GET /api/v1/account/csrf`;
-    - then attaches it to the request in the `X-CSRF-Token` header;
-    - another website can't read it, so it can't make the browser send a forged write
-      operation with the cookie.
+- **The access token**:
+    - a signed JWT, as "Token signing" describes;
+    - it holds the user, the App (its client ID), the tenant and the scopes;
+    - it lasts one hour.
+- **The refresh token**:
+    - it is given only with the `offline_access` scope;
+    - it lasts 14 days.
+- The authorization code lasts 5 minutes, and works once.
+- The identity token tells the client who the user is:
+    - it holds the user's name only with the `profile` scope, and the email address
+      only with the `email` scope;
+    - the API does not accept it.
+- Authorization codes and refresh tokens are read only by the Origin, so they are
+  signed and also encrypted (AES).
+- The lifetimes are OpenIddict's defaults, which the Origin does not change.
+- **Keys**:
+    - the signing key and the encryption key are created at first start, and kept in
+      the `server_keys` table, so every node uses the same pair;
+    - they are stored unencrypted, like the Data Protection keys: whoever can read the
+      database can sign tokens.
 
-### Rules
+## 4. Sign-in flows
 
-- A session and a token each work for one user, in one tenant:
-    - the tenant is in the `tenant_id` claim;
-    - a token gets the tenant of the session that let the client get it;
-    - a refreshed token keeps its tenant and its scopes;
-    - every request finds its tenant in the same place, the principal.
-- A user with several tenants works in one at a time:
-    - the web app switches the session's tenant by asking for a new session cookie, so
-      every open tab switches with it (not built yet);
-    - a client works in another tenant by getting a new token, after the user switches
-      the session to that tenant.
-- The role is in neither the session nor the token:
-    - the Origin reads it from the membership on every request;
-    - so that a change of role, or a removal from the tenant, is applied immediately.
-- A request is allowed only if allowed by all of these:
-    - the scope, which contains the claims that the user let the client perform:
-        - a token must hold the scope that the endpoint names;
-        - a session holds no scopes, and may do all that its user may do;
-        - the one exception is `tenant.mirror`, which only a token can hold (it's for Apps);
-    - the role, which represents what the user may do within the tenant:
-        - `members.manage` and `tenant.admin` need an admin:
-            - others get 403 with the error code `admin_required`;
-        - `members.read` refuses a guest:
-            - a guest gets 403 with the code `member_required`;
-        - both rules apply with a token and with the session;
-    - the permission on the folder acted upon.
-- Some account endpoints work only with the session, because a token cannot start or
-  end a session:
-    - switching tenant;
-    - accepting an invitation;
-    - signing out.
-- Every 30 minutes the Origin rebuilds the session from the user (the security stamp
-  check):
-    - a session whose user changed the password since then ends;
-    - the rebuilt session keeps its tenant.
+### Sign-in methods
 
-## 2. Authentication flows
+- The Origin is the identity provider. There is no separate auth service.
+- A password works only once the email address is confirmed.
+- `BFF_PASSWORD_SIGN_IN` turns signing in and signing up with a password on or off:
+    - `true`, the default;
+    - `false`: people sign in only through the external providers, and the password
+      endpoints refuse: sign-in, sign-up, forgot password and reset password;
+    - `GET /api/v1/meta` reports it in `account.password`;
+    - the Origin refuses to start with it off and no external provider set up,
+      because nobody could sign in.
+- Who may sign up, and the operator's account, are in [Tenancy](./tenancy.md#_2-accounts).
+- Per-tenant identity providers, SAML, SCIM, group sync and LDAP are licensed modules
+  behind `IAuthProvider` ([Topology (section 7)](../platform/topology.md#_7-licensed-modules)).
 
-### Web app sign-in using email & password
+### Web app sign-in using email and password
 
 ```mermaid
 sequenceDiagram
@@ -196,11 +242,6 @@ sequenceDiagram
         B->>O: the cookie, with every later request
     end
 ```
-
-- The session cookie lasts 14 days, and is renewed while the user keeps using it.
-- A user who is a member of no tenant gets a session without a tenant:
-    - it can read `/api/v1/account/me`;
-    - every `/tenants/{id}` endpoint answers 404.
 
 ### Web app sign-in using an external account (OAuth)
 
@@ -296,7 +337,7 @@ How each client gets its proof:
     - an App that acts for a user later, with both identities in the token, will use
       token exchange (RFC 8693) (M4).
 
-### Requests
+## 5. Requests
 
 ```mermaid
 flowchart TB
@@ -320,7 +361,7 @@ flowchart TB
     the role must allow the endpoint's scope`"]
     Database["`**Database**
     one transaction, with app.tenant_id and app.user_id set
-    row-level security shows only the tenant's rows (section 4)`"]
+    row-level security shows only the tenant's rows (Tenancy, section 4)`"]
 
     Request -->|yes| Token
     Request -->|no| Cookie
@@ -329,55 +370,30 @@ flowchart TB
     Principal --> Scope --> CSRF --> Tenant --> Database
 ```
 
-### Token types and keys
+### Rules
 
-- The access token:
-    - a JWT, signed with an asymmetric key (ES256) and not encrypted;
-    - anyone with the public key can check it, which lets the Replica check tokens
-      offline;
-    - the public keys are published at the JWKS endpoint;
-    - it holds the user, the App (its client ID), the tenant and the scopes;
-    - it lasts one hour.
-- The refresh token:
-    - it is given only with the `offline_access` scope;
-    - it lasts 14 days.
-- The authorization code lasts 5 minutes, and works once.
-- The identity token tells the client who the user is:
-    - it holds the user's name only with the `profile` scope, and the email address
-      only with the `email` scope;
-    - the API does not accept it.
-- Authorization codes and refresh tokens are read only by the Origin, so they are
-  signed and also encrypted (AES).
-- The lifetimes are OpenIddict's defaults, which the Origin does not change.
-- Keys:
-    - the signing key and the encryption key are created at first start, and kept in
-      the `server_keys` table, so every node uses the same pair;
-    - they are stored unencrypted, like the Data Protection keys: whoever can read the
-      database can sign tokens.
+- A session and a token each work for one user, in one tenant:
+    - the tenant is in the `tenant_id` claim;
+    - a token gets the tenant of the session that let the client get it;
+    - a refreshed token keeps its tenant and its scopes;
+    - every request finds its tenant in the same place, the principal.
+- The role is in neither the session nor the token:
+    - the Origin reads it from the membership on every request;
+    - so that a change of role, or a removal from the tenant, is applied immediately.
+- A request is allowed only if allowed by all of these:
+    - the scope, which contains the claims that the user let the client perform:
+        - a token must hold the scope that the endpoint names;
+        - a session holds no scopes, and may do all that its user may do;
+        - the one exception is `tenant.mirror`, which only a token can hold (it's for Apps);
+    - the role, which represents what the user may do within the tenant:
+        - `members.manage` and `tenant.admin` need an admin:
+            - others get 403 with the error code `admin_required`;
+        - `members.read` refuses a guest:
+            - a guest gets 403 with the code `member_required`;
+        - both rules apply with a token and with the session;
+    - the permission on the folder acted upon ([Tenancy](./tenancy.md#_5-permissions)).
 
-### Accounts
-
-- The Origin is the identity provider. There is no separate auth service.
-- Ways to sign in:
-    - an email address and a password, once the address is confirmed;
-    - an external account, as "Web app sign-in using an external account" shows.
-- `BFF_SIGN_UP` sets who may sign up:
-    - `invitation`, the default: only invited addresses can create an account;
-    - `open`: anyone can, and gets a new tenant of their own; the cloud runs this.
-- `BFF_PASSWORD_SIGN_IN` turns signing in and signing up with a password on or off:
-    - `true`, the default;
-    - `false`: people sign in only through the external providers, and the password
-      endpoints refuse: sign-in, sign-up, forgot password and reset password;
-    - `GET /api/v1/meta` reports it in `account.password`;
-    - the Origin refuses to start with it off and no external provider set up,
-      because nobody could sign in.
-- The operator is the account whose address is `BFF_OPERATOR_EMAIL`, once the address
-  is confirmed:
-    - the operator can open the job dashboard and create tenants;
-    - that address may sign up under either policy;
-    - it gets a tenant of its own, so a fresh install has its first tenant.
-- Per-tenant identity providers, SAML, SCIM, group sync and LDAP are licensed modules
-  behind `IAuthProvider` ([Platform topology](../platform/topology.md), section 7).
+## 6. Implementation details
 
 ### Sign-in limits
 
@@ -439,92 +455,3 @@ flowchart TB
           changes the model, the test fails until a new core script matches it;
     - row-level security does not apply to these tables; users are global and tenant
       membership is ours.
-
-## 3. Tenants
-
-- A tenant is a company or an individual, with users, groups, drives, a warehouse and
-  settings (plan, auth providers);
-- One user may belong to several tenants.
-- Members have a tenant role: `admin`, `member` or `guest`:
-    - an administrator manages members, groups, drives and settings, and is owner of
-      every drive;
-    - a member may create drives and see the member list;
-    - a guest has only what rules name them, and sees neither the member list nor the
-      groups.
-- Groups:
-    - a group is a named set of members of the tenant, used as one principal in
-      permission rules ("the accounting team may edit this folder");
-    - administrators create groups and set their members; a member may see the groups
-      they are in;
-    - a group is flat: no groups inside groups, so the permission check stays one join
-      and there are no cycles to detect;
-    - a group that comes from a directory (`sso.groups` licensed module) is read-only in
-      the web UI; the directory is its source and overwrites it on every sync;
-    - deleting a group removes its rules; nothing else refers to it;
-    - the tables and how a group enters the permission check are in
-      [Data model](../files/data-model.md), section 4.
-- Each tenant has a plan, which sets its limits ([Licensing](../platform/licensing.md), section 4).
-
-## 4. Tenant isolation
-
-- Application-level scoping (first layer):
-    - every tenant-owned table carries `tenant_id`, used to filter all queries;
-    - the `/tenants/{id}` endpoints answer 404 unless the ID is the tenant of the session
-      or token and the user is still a member of it;
-    - a set of isolation tests calls every endpoint with another tenant's IDs and
-      expects 404s.
-- Row-level security (second layer):
-    - two database users:
-        - requests connect as the user in `BFF_DATABASE`, which owns nothing, because
-          table owners skip row-level security;
-        - migrations and the job queue connect as the owner, in `BFF_DATABASE_OWNER`;
-        - cross-tenant work (GC, billing, admin tasks) runs as the owner;
-        - at startup the Origin creates the request user if it is missing, and grants it
-          its rights;
-        - the Origin refuses to start when row-level security would not apply to the
-          request user;
-    - each request has one transaction, which first sets two values:
-        - `app.tenant_id`, the tenant of the session or token;
-        - `app.user_id`, the signed-in user;
-        - both are local to the transaction, so a reused connection never carries them
-          into the next request;
-        - nothing is saved until the handler commits;
-        - the code that runs SQL never opens a connection of its own; it runs on the
-          connection it is given, because a query on another connection would run
-          without the tenant and the user set;
-    - one policy per table, with a simple predicate:
-        - `tenant_id = app_tenant_id()`;
-        - `app_tenant_id()` and `app_user_id()` read the two values, and return null when
-          they are not set;
-        - predicates are kept simple so the planner can use the `(tenant_id, …)` indexes;
-    - memberships and tenants are also visible to their user, in every tenant:
-        - `/api/v1/account/me` lists the user's tenants, and sign-in chooses one of them;
-        - this second policy is for reading only, so a membership changes only inside its
-          own tenant.
-    - partitions of a partitioned table, such as the audit log's monthly partitions:
-        - policies apply only through the parent table, so a partition read directly
-          would show every tenant's rows;
-        - the request user has no rights on any partition, and reaches the rows only
-          through the parent;
-        - every start grants the request user its rights, then takes back its rights on
-          every partition.
-
-## 5. Permissions
-
-- Rules on drives and folders grant a role (viewer, editor, owner) to a user, a group
-  or the whole tenant; the nearest rule above a node decides. The tables and the check
-  are in [Data model](../files/data-model.md), section 4.
-- Never on a single file, a decision carried over from v1:
-    - every row of a listing is visible to everyone who may open the folder, so paged
-      listings are the same for every viewer and can be cached as one;
-    - no per-file exception list to evaluate on every request;
-    - "everyone except this person" cannot be expressed with encryption keys, so this
-      keeps end-to-end encryption possible later;
-    - handing one file to someone is what sends and share links do.
-- External people get access through share links and guest memberships, never through
-  anonymous write.
-- Sends (transfers to recipients outside the system):
-    - nodes under a hidden send root with:
-        - an expiry;
-        - a download link;
-        - an optional password.

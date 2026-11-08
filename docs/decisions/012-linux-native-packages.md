@@ -5,7 +5,7 @@
 
 ## 1. Context
 
-- The Linux desktop client mounts the drive with FUSE ([File materialisation on the desktop](./0002-materialised-desktop-drive.md)).
+- The Linux desktop client mounts the drive with FUSE ([Desktop file materialisation](./002-materialised-desktop-drive.md)).
 
 ## 2. Decision
 

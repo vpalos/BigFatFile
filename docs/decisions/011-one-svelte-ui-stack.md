@@ -26,4 +26,4 @@
 ## 4. Consequences
 
 - The web app and the desktop windows reuse the same components.
-- Details: [Platform topology](../architecture/platform/topology.md), section 2.
+- Details: [Platform topology (section 2)](../architecture/platform/topology.md#_2-projects).

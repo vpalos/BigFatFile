@@ -80,7 +80,7 @@
   cutoffs, last-run records, the date a decision record was written). Small declined ideas
   stay in chat.
 - **Decision records.** Each big decision gets an architecture decision record (ADR) in
-  `docs/decisions/`, in the format of `docs/decisions/index.md`.
+  `docs/decisions/`, in the format set by `001-architecture-decision-records.md`.
     - The record holds the reasons and the options that were turned down; the chapter
       describes the design in force and links to the record.
     - A record is not edited after it is accepted. A changed decision gets a new record,

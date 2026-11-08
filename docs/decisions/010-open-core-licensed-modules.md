@@ -27,5 +27,5 @@
 - Hosting BigFatFile for yourself and your own organisations is free.
 - A module compiles against `Abstractions` from NuGet, and never references another
   module's tables.
-- Details: [Platform topology](../architecture/platform/topology.md), section 7, and
+- Details: [Platform topology (section 7)](../architecture/platform/topology.md#_7-licensed-modules) and
   [Licensing](../architecture/platform/licensing.md).

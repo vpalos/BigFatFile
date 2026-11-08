@@ -12,8 +12,13 @@
 
 ## 2. Decision
 
-- Each big decision gets its own record in `docs/decisions/`, in the format described in
-  [About the records](./index.md).
+- Each big decision gets its own record in `docs/decisions/`.
+- File name: `NNN-short-title.md`, numbered in order (start from `000-template.md`).
+- Status values:
+    - Proposed: under discussion;
+    - Accepted: in force;
+    - Superseded by NNN: replaced by a later record;
+    - Rejected: discussed and turned down.
 
 ## 3. Alternatives
 

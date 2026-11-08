@@ -21,4 +21,4 @@
 
 - Nodes coordinate through PostgreSQL; no message broker is needed.
 - Jobs receive identifiers, not objects, and are retried with backoff.
-- Details: [Platform topology](../architecture/platform/topology.md), section 2.
+- Details: [Platform topology (section 2)](../architecture/platform/topology.md#_2-projects).

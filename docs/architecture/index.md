@@ -2,31 +2,27 @@
 
 ## 1. Goals
 
-- A platform:
+- **A platform**:
     - BFF supports the development of an ecosystem of apps (or even marketplace);
     - applications (aka BFF Apps) are built on the published API and SDKs;
     - BFF Apps are installed by tenant admins;
-    - provided BFF clients are also BFF Apps (more in [Platform topology](./platform/topology.md));
-- One codebase, three deployments:
+    - provided BFF clients are also BFF Apps (more in [Topology](./platform/topology.md));
+- **One codebase, three deployments**:
     - the public cloud at bigfatfile.com;
     - dedicated single-tenant instances for specific clients;
     - self-hosted installs by anyone (running on Docker Compose).
-- Local disk experience:
+- **One UI stack**:
+    - all UIs are Svelte 5 apps that share design, components and translations.
+- **Local disk experience**:
     - files open at the speed of a local disk;
     - an office keeps working undisturbed even if the internet connection is down.
-- Security and protection:
+- **Security and protection**:
     - data is protected against ransomware;
     - files are versioned, protecting against mistakes and losses;
     - data is encrypted in transit and at rest.
-- Limits never slow real users:
-    - transfer endpoints are never rate-limited;
-    - abuse controls count and open a ticket before anything blocks
-      ([File transfer](./files/transfer.md), section 6).
-- Open-source core, plus licensed modules:
+- **Open-source core, plus licensed modules**:
     - the core is AGPL and is a complete product for a team;
-    - licensed modules that plug into the core ([Platform topology](./platform/topology.md), section 7).
-- One UI stack:
-    - all UIs are Svelte 5 apps that share design, components and translations.
+    - licensed modules that plug into the core ([Topology](./platform/topology.md), section 7).
 
 ## 2. Repository structure
 
@@ -74,15 +70,17 @@ docs/       architecture documents, developer docs
 
 ## 3. Chapters
 
-- [Platform topology](./platform/topology.md):
-    - the platform topology (Origin, Replica, Apps), the projects and their dependencies,
+- [Topology](./platform/topology.md):
+    - the platform topology, the component projects and their dependencies,
       jobs, SDKs, licensed modules and the developer experience.
 - [API](./platform/api.md):
-    - the one public API, `/api/v1`: conventions, authentication, scopes and the
-      endpoint list; the chunk-level endpoints are part of it, with an "Advanced" badge.
+    - the one public API, `/api/v1`: conventions and endpoints are described.
+- [Tenancy](./security/tenancy.md):
+    - users, accounts and tenants, roles and groups, tenant isolation (scoping and
+      row-level security) and permissions.
 - [Authentication](./security/authentication.md):
-    - users, sessions, tokens and scopes, and how clients sign in;
-    - tenants, tenant isolation (scoping and row-level security), groups and permissions.
+    - sessions, tokens and scopes, how users and clients sign in, and how each request is
+      authorized.
 - [Licensing](./platform/licensing.md):
     - the licence, the feature keys that turn licensed modules on, and the plan of each
       tenant.

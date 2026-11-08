@@ -22,11 +22,11 @@
 - A migration runner of our own:
     - added complexity, and more code to maintain.
 - EF Core migrations:
-    - they do not fit explicit SQL ([Dapper for data access](./0005-dapper.md));
+    - they do not fit explicit SQL ([Dapper for data access](./005-dapper.md));
     - EF's own migrations never run.
 
 ## 4. Consequences
 
 - Evolve's cluster mode takes a PostgreSQL advisory lock, so each script runs once.
 - A changed script that was already applied stops the run.
-- Details: [Platform topology](../architecture/platform/topology.md), section 2.
+- Details: [Platform topology (section 2)](../architecture/platform/topology.md#_2-projects).

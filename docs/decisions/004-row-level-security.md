@@ -27,4 +27,4 @@
 - Each request runs in one transaction that first sets the tenant and the user.
 - Code that runs SQL uses only the connection it is given.
 - Partitions of a partitioned table are reachable only through the parent table.
-- Details: [Authentication](../architecture/security/authentication.md), section 4.
+- Details: [Tenancy (section 4)](../architecture/security/tenancy.md#_4-tenant-isolation).
