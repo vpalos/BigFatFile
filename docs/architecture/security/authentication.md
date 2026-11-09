@@ -52,15 +52,6 @@ flowchart TB
 - **Authorization code**:
     - a one-use value that the Origin gives a client after the user signs in, and that
       the client then trades for tokens.
-- **PKCE**:
-    - a check used to protect against [code injection](https://oauth.net/2/pkce/) in
-      non-web clients (e.g. CLI), when requesting an authorized token:
-        - the client generates a secret that only it knows (the "verifier");
-        - it sends the hash of the secret (the "challenge") with the authorization request;
-        - it receives a code;
-        - it then sends the code + the verifier in exchange for a token;
-        - this way, the server uses the challenge (from the first request) and the
-          verifier to ensure that only that client can finish the authorization flow.
 
 ### Who signs in, and why
 
@@ -316,6 +307,11 @@ sequenceDiagram
 - First-party clients are registered with implicit consent, so their users see no
   consent screen.
 - The consent screen is not built yet, so an App from someone else is refused.
+- **PKCE**:
+    - a check that protects clients outside the browser, such as the CLI, against
+      [authorization code injection](https://oauth.net/2/pkce/), when they ask for a
+      token;
+    - with it, a program that steals the authorization code cannot trade it for a token.
 
 ### Client flows
 
@@ -336,6 +332,13 @@ How each client gets its proof:
       why" says (M3);
     - an App that acts for a user later, with both identities in the token, will use
       token exchange (RFC 8693) (M4).
+- **PKCE flow**:
+    - the client generates a secret that only it knows (the "verifier");
+    - it sends the hash of the secret (the "challenge") with the authorization request;
+    - it receives an authorization code;
+    - it then sends the code and the verifier, in exchange for a token;
+    - the Origin checks that the hash of the verifier equals the challenge, so only the
+      client that started the flow can finish it.
 
 ## 5. Requests
 
