@@ -41,5 +41,5 @@
 
 - A hydrated file is an ordinary local file, and keeps working if our process stops.
 - One sync engine runs behind three platform adapters.
-- Details: [File materialisation](../architecture/files/materialisation.md), sections 2,
+- Details: [File materialisation](../files/materialisation.md), sections 2,
   5 and 6.

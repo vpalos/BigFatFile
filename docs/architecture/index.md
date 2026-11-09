@@ -60,7 +60,7 @@ artwork/    draft branding, logos, raw cuts
 
 bench/      benchmarks, prototypes
 
-docs/       architecture documents, developer docs
+docs/       architecture documents, feature pages, developer docs
 ```
 
 **Note on licensed modules:**

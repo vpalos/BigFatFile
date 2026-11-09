@@ -4,28 +4,27 @@ import { defineConfig, type DefaultTheme } from "vitepress";
 
 const docsDir = join(import.meta.dirname, "..");
 
-// Records are listed from the folder, so a new record needs no change here.
-function decisionItems(): DefaultTheme.SidebarItem[] {
-    const dir = join(docsDir, "decisions");
-    return readdirSync(dir)
-        .filter(
-            (file) => /^\d{3}-.+\.md$/.test(file) && !file.startsWith("000-"),
-        )
+const aboutDecisions = "/decisions";
+
+// Records are listed from their folder, so a new record needs no change here.
+function decisionItems(folder: string): DefaultTheme.SidebarItem[] {
+    const dir = join(docsDir, folder);
+    const records = readdirSync(dir)
+        .filter((file) => /^\d{3}-.+\.md$/.test(file))
         .sort()
         .map((file) => {
             const heading = readFileSync(join(dir, file), "utf-8").match(
                 /^# (.+)$/m,
             );
-            // Record 001 is the one that explains the records.
-            const title = heading ? heading[1] : file;
             return {
-                text: file.startsWith("001-") ? "About decisions" : title,
-                link: `/decisions/${file.replace(/\.md$/, "")}`,
+                text: heading ? heading[1] : file,
+                link: `/${folder}/${file.replace(/\.md$/, "")}`,
             };
         });
+    return [{ text: "About decisions", link: aboutDecisions }, ...records];
 }
 
-const sidebar: DefaultTheme.Sidebar = [
+const architectureSidebar: DefaultTheme.SidebarItem[] = [
     {
         text: "Architecture",
         items: [
@@ -84,27 +83,42 @@ const sidebar: DefaultTheme.Sidebar = [
     {
         text: "Decisions",
         collapsed: true,
-        items: decisionItems(),
+        items: decisionItems("architecture/decisions"),
+    },
+];
+
+const featuresSidebar: DefaultTheme.SidebarItem[] = [
+    {
+        text: "Features",
+        items: [
+            { text: "Overview", link: "/features/" },
+            { text: "Sends", link: "/features/sends" },
+        ],
+    },
+    {
+        text: "Decisions",
+        collapsed: true,
+        items: decisionItems("features/decisions"),
     },
 ];
 
 export default defineConfig({
     title: "BigFatFile",
-    description: "Architecture documents for BigFatFile v2",
+    description: "Architecture and features of BigFatFile v2",
     cleanUrls: true,
     lastUpdated: true,
-    srcExclude: ["decisions/000-template.md"],
     // Mermaid is one large chunk, loaded only on pages that have a diagram.
     vite: { build: { chunkSizeWarningLimit: 4000 } },
     themeConfig: {
         nav: [
             { text: "Architecture", link: "/architecture/" },
-            {
-                text: "Decisions",
-                link: "/decisions/001-architecture-decision-records",
-            },
+            { text: "Features", link: "/features/" },
+            { text: "Decisions", link: aboutDecisions },
         ],
-        sidebar,
+        sidebar: {
+            "/architecture/": architectureSidebar,
+            "/features/": featuresSidebar,
+        },
         outline: { level: [2, 3] },
         search: { provider: "local" },
     },

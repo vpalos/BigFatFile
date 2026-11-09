@@ -202,13 +202,16 @@ Milestones for v2, in order, each with what it contains and when it counts as do
 - Sends as whole objects:
     - presigned multipart upload on S3, `PUT` on `local`;
     - passwords, expiry and the expiry job;
-    - the public download pages and the "report abuse" link.
+    - the public download pages and the "report abuse" link;
+    - editing, reactivation and "Send again to..." ([Sends](../features/sends.md)).
 - File requests: password, expiry and required fields stored as metadata.
 - Notification emails.
 - ClamAV scanning built as an `IBffModule` compiled into the core, behind
   `IMalwareScanner`, to prove the module seam before a licensed module depends on it.
 - Done when:
     - every upload path is scanned;
+    - a sender replaces a file in a send, and a recipient downloads the new file from the
+      same link;
     - the web app and the CLI reach v1 feature parity using only the published API and
       SDKs, except billing and abuse moderation, which are licensed modules (M5).
 

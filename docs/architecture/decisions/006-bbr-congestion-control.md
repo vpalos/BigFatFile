@@ -27,4 +27,4 @@
   same path; this is acceptable on a server that sends to many clients.
 - Client hosts still rely on parallel connections, because Windows and macOS do not let
   an application choose the congestion control.
-- Details: [File transfer](../architecture/files/transfer.md), section 5.
+- Details: [File transfer](../files/transfer.md), section 5.

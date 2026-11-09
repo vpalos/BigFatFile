@@ -12,7 +12,7 @@ encryption.
     - as one whole object: the file is stored as it is, in one piece.
 - Drive files are stored as chunks by default.
 - Whole objects are used for:
-    - sends, which never change and are downloaded whole;
+    - sends, whose files are only ever uploaded and downloaded whole;
     - uploads for which chunking on the Origin is switched off;
     - files that existed in storage before they were chunked.
 - A manifest describes which form a file version has, and where its bytes are. Every
@@ -231,8 +231,7 @@ encryption.
     - list every referenced hash and object ID;
     - list the tenant's chunks and objects;
     - delete what is stored but not referenced.
-- A pruned version's warehouse manifest is deleted the same way; an expired send's
-  object is deleted when the send expires.
+- A pruned version's warehouse manifest is deleted the same way.
 - Two safeguards for content in flight:
     - an upload in progress pins its chunks or its object until it completes or expires
       ([Data model](./data-model.md), section 2);

@@ -38,4 +38,4 @@
 - The C# and WebAssembly builds must split a file identically; shared test vectors check
   this.
 - Garbage collection must count references per tenant.
-- Details: [File storage](../architecture/files/storage.md), section 1.
+- Details: [File storage](../files/storage.md), section 1.

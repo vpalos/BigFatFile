@@ -110,7 +110,7 @@ Everything our own Apps and the Replica use is here; there are no private endpoi
     - `files.write`: create, upload, rename, move, trash, restore; chunked uploads.
 - Sharing:
     - `shares.manage`: create and revoke share links on nodes the App may read;
-    - `sends.manage`: create sends;
+    - `sends.manage`: create and edit sends;
     - `requests.manage`: create and manage file requests.
 - People:
     - `members.read`: list members and groups;
@@ -278,10 +278,20 @@ permissions apply on top.
     - public: `GET /public/shares/{token}`, `GET /public/shares/{token}/content`,
       `POST /public/shares/{token}/unlock` (password).
 - Sends (transfers to recipients outside the system):
-    - `POST /sends` (`sends.manage`): files with sizes, recipients, expiry, password;
-      returns per-file upload targets (presigned multipart on S3, `PUT` on local);
+    - `POST /sends` (`sends.manage`): files with sizes, title, message, recipients,
+      expiry, password; returns per-file upload targets (presigned multipart on S3, `PUT`
+      on local);
     - `PUT /sends/{id}/files/{fileId}/content` (local warehouses);
     - `POST /sends/{id}/complete`, `GET /sends`, `GET /sends/{id}`, `DELETE /sends/{id}`;
+    - editing after creation:
+        - `PATCH /sends/{id}`: title, message, recipients, expiry, password; a new expiry
+          on a send in the Trash reactivates it;
+        - `POST /sends/{id}/files`: adds files and returns their upload targets, as
+          `POST /sends` does; `POST /sends/{id}/complete` then completes them;
+        - `DELETE /sends/{id}/files/{fileId}`;
+        - a file is replaced by adding the new file and removing the old one;
+        - `POST /sends/{id}/notify`: emails the recipients about an edit, when the sender
+          chooses to tell them; the client calls it once per edit, not once per request;
     - public: `GET /public/sends/{token}`, `GET /public/sends/{token}/content`,
       `GET /public/sends/{token}/files/{fileId}/content`,
       `POST /public/sends/{token}/report` (abuse).

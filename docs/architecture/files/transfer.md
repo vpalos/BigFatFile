@@ -103,11 +103,13 @@ are no private endpoints.
 
 ## 3. Sends (transfers)
 
-- A send (a transfer to recipients outside the system) is stored as whole objects, not
-  chunks: each file has a `none` manifest ([File storage](./storage.md), section 1):
-    - a send is immutable, has no versions and needs no delta;
+- A send ([Sends](../../features/sends.md)) is stored as whole objects, not chunks: each
+  file has a `none` manifest ([File storage](./storage.md), section 1):
+    - an edit adds, removes or replaces whole files, so a send needs no delta;
     - most of its traffic is downloads by external recipients on any browser or phone,
       and each of those must be a plain download.
+- A send keeps no versions: garbage collection deletes the object of a removed or a
+  replaced file ([File storage](./storage.md), section 3).
 - Upload:
     - presigned multipart upload to storage on S3 warehouses;
     - direct `PUT` to the Origin on `local` warehouses;
@@ -117,7 +119,8 @@ are no private endpoints.
     - on `local` warehouses the Origin streams the object.
     - a multi-file send is zipped in the recipient's browser, with the rules of section 1;
       the streamed zip from the Origin is the same fallback to explore.
-- Expiry deletes the objects.
+- Garbage collection deletes the objects of an expired send once retention removes the
+  send from the Trash, as for any deleted node ([Data model](./data-model.md), section 3).
 
 ## 4. Tenant-scoped Apps
 

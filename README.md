@@ -1,7 +1,8 @@
 # BigFatFile
 
 A platform that runs file storage and sync apps for teams.
-The design is explained in detail in `docs/architecture`, and the reasons for it in `docs/decisions`.
+How it is built is explained in `docs/architecture`, and what it does for its users in `docs/features`.
+Each keeps the reasons for its decisions in its own `decisions` folder.
 
 ## 1. Requirements
 
