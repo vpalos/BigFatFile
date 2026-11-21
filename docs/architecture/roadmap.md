@@ -203,7 +203,7 @@ Milestones for v2, in order, each with what it contains and when it counts as do
     - presigned multipart upload on S3, `PUT` on `local`;
     - passwords, expiry and the expiry job;
     - the public download pages and the "report abuse" link;
-    - editing, reactivation and "Send again to..." ([Sends](../features/sends.md)).
+    - editing, reactivation and "Send again to..." ([Sends](../changes/sends.md)).
 - File requests: password, expiry and required fields stored as metadata.
 - Notification emails.
 - ClamAV scanning built as an `IBffModule` compiled into the core, behind

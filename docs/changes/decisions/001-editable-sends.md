@@ -7,10 +7,12 @@
 
 - A send (also called a transfer) delivers files to people outside the system, through a
   download link.
-- In v1, only the expiry and the password of a send can change after it is sent.
-    - To fix a wrong file, a missing file or a mistake in the message, the user creates a
-      new send.
-    - The recipients then get a second link for the same delivery.
+- In v1, the sender can edit a sent transfer while its link works:
+    - the files, with the same tools as a drive, including folders and earlier versions;
+    - the title, the message and the recipients;
+    - the expiry and the password.
+- In v1, the sender can keep the files of a send after its link expires. Kept files count
+  as storage until the sender removes them.
 
 ## 2. Decision
 
@@ -23,12 +25,12 @@
     - the password.
 - The download link stays the same after an edit.
 - For each edit, the sender chooses whether the recipients get an email about it.
-- An expired send moves to the sender's Trash, as in v1. The sender can reactivate it from
+- An expired send always moves to the sender's Trash. The sender can reactivate it from
   there with a new expiry, until retention removes it.
 
 ## 3. Alternatives
 
-- A send that cannot change, as in v1:
+- A send that cannot change:
     - every fix needs a new send and a new link.
 - Edits to the title, message, expiry and password only:
     - a wrong or a missing file still needs a new send.
@@ -36,7 +38,7 @@
     - nothing is left to reactivate.
 - Keeping an expired send for a set number of days of its own:
     - it adds a second rule for how long deleted content is kept, next to the Trash.
-- Keeping an expired send until the sender deletes it:
+- Keeping an expired send until the sender deletes it, as v1 does for a kept send:
     - it keeps using storage until the sender acts.
 
 ## 4. Consequences

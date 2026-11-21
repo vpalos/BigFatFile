@@ -5,7 +5,7 @@ down.
 
 ## 1. Purpose
 
-- The architecture chapters and the feature pages describe what is in force.
+- The architecture chapters and the change pages describe what is in force.
 - When the design changes, they are rewritten in place, and the reasons for the old
   choice are lost.
 - Without those reasons, a settled question gets asked again.
@@ -21,7 +21,7 @@ down.
 
 - Each category keeps its own list:
     - `docs/architecture/decisions/`: how the system is built;
-    - `docs/features/decisions/`: what the product does for its users.
+    - `docs/changes/decisions/`: what v2 changes from v1 for its users.
 - Each list is numbered on its own, from 001.
 
 ## 4. Format

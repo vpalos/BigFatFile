@@ -103,7 +103,7 @@ are no private endpoints.
 
 ## 3. Sends (transfers)
 
-- A send ([Sends](../../features/sends.md)) is stored as whole objects, not chunks: each
+- A send ([Sends](../../changes/sends.md)) is stored as whole objects, not chunks: each
   file has a `none` manifest ([File storage](./storage.md), section 1):
     - an edit adds, removes or replaces whole files, so a send needs no delta;
     - most of its traffic is downloads by external recipients on any browser or phone,

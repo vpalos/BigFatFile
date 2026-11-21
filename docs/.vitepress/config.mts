@@ -6,8 +6,7 @@ const docsDir = join(import.meta.dirname, "..");
 
 const aboutDecisions = "/decisions";
 
-// Records are listed from their folder, so a new record needs no change here.
-function decisionItems(folder: string): DefaultTheme.SidebarItem[] {
+function scanDecisionItems(folder: string): DefaultTheme.SidebarItem[] {
     const dir = join(docsDir, folder);
     const records = readdirSync(dir)
         .filter((file) => /^\d{3}-.+\.md$/.test(file))
@@ -83,41 +82,40 @@ const architectureSidebar: DefaultTheme.SidebarItem[] = [
     {
         text: "Decisions",
         collapsed: true,
-        items: decisionItems("architecture/decisions"),
+        items: scanDecisionItems("architecture/decisions"),
     },
 ];
 
-const featuresSidebar: DefaultTheme.SidebarItem[] = [
+const changesSidebar: DefaultTheme.SidebarItem[] = [
     {
-        text: "Features",
+        text: "Changes",
         items: [
-            { text: "Overview", link: "/features/" },
-            { text: "Sends", link: "/features/sends" },
+            { text: "Overview", link: "/changes/" },
+            { text: "Authentication", link: "/changes/authentication" },
+            { text: "Sends", link: "/changes/sends" },
         ],
     },
     {
         text: "Decisions",
         collapsed: true,
-        items: decisionItems("features/decisions"),
+        items: scanDecisionItems("changes/decisions"),
     },
 ];
 
 export default defineConfig({
     title: "BigFatFile",
-    description: "Architecture and features of BigFatFile v2",
+    description: "Design documentation for BigFatFile v2",
     cleanUrls: true,
     lastUpdated: true,
-    // Mermaid is one large chunk, loaded only on pages that have a diagram.
-    vite: { build: { chunkSizeWarningLimit: 4000 } },
     themeConfig: {
         nav: [
             { text: "Architecture", link: "/architecture/" },
-            { text: "Features", link: "/features/" },
+            { text: "Changes", link: "/changes/" },
             { text: "Decisions", link: aboutDecisions },
         ],
         sidebar: {
             "/architecture/": architectureSidebar,
-            "/features/": featuresSidebar,
+            "/changes/": changesSidebar,
         },
         outline: { level: [2, 3] },
         search: { provider: "local" },

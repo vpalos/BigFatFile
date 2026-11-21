@@ -79,14 +79,14 @@
   parentheticals, no decision archaeology. Dates appear only as operational data (baselines,
   cutoffs, last-run records, the date a decision record was written). Small declined ideas
   stay in chat.
-- **Architecture and features are kept apart.** How the system is built goes in
-  `docs/architecture/`; what the product does for its users goes in `docs/features/`,
-  one page per feature.
+- **Architecture and changes are kept apart.** How the system is built goes in
+  `docs/architecture/`; what v2 changes from v1 for its users goes in `docs/changes/`,
+  one page per area. Behaviour that is the same as in v1 is not listed.
 - **Decision records.** Only a major decision gets a record: one that was studied and
   challenged enough that it no longer changes, unless another major decision replaces it.
   Every other choice lives in its chapter or page, with no record.
     - The record goes in the `decisions/` folder of its category
-      (`docs/architecture/decisions/` or `docs/features/decisions/`), in the format and
+      (`docs/architecture/decisions/` or `docs/changes/decisions/`), in the format and
       from the template in `docs/decisions.md`.
     - The record holds the reasons and the options that were turned down; the chapter
       describes the design in force and links to the record.
