@@ -1,9 +1,8 @@
-import { h, nextTick, onMounted, watch } from "vue";
-import { useData } from "vitepress";
-import DefaultTheme from "vitepress/theme";
 import type { Theme } from "vitepress";
+import { useData } from "vitepress";
 import { createMermaidRenderer } from "vitepress-mermaid-renderer";
-import { sizeDiagramsToContent } from "./diagramHeight";
+import DefaultTheme from "vitepress/theme";
+import { h, nextTick, watch } from "vue";
 import "./custom.css";
 
 export default {
@@ -13,7 +12,7 @@ export default {
 
     const renderDiagrams = () => {
       const renderer = createMermaidRenderer({
-        theme: isDark.value ? "dark" : "forest",
+        theme: isDark.value ? "redux-dark-color" : "redux-color",
       });
       renderer.setToolbar({ fullscreenMode: "browser" });
     };
@@ -22,8 +21,5 @@ export default {
     watch(isDark, renderDiagrams);
 
     return h(DefaultTheme.Layout);
-  },
-  setup() {
-    onMounted(sizeDiagramsToContent);
   },
 } satisfies Theme;

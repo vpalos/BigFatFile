@@ -2,25 +2,23 @@
 
 ## 1. Goals
 
-- **A platform**:
-    - BFF supports the development of an ecosystem of apps (or even marketplace);
-    - applications (aka BFF Apps) are built on the published API and SDKs;
-    - BFF Apps are installed by tenant admins;
-    - provided BFF clients are also BFF Apps (more in [Topology](./platform/topology.md));
-- **One codebase, three deployments**:
+1. **The platform**:
+    - supports development of apps via the published API and SDKs;
+    - apps are installed by tenant admins;
+    - BFF clients are also BFF Apps (more in [Topology](./platform/topology.md));
+2. **Deployed from monorepo**:
     - the public cloud at bigfatfile.com;
-    - dedicated single-tenant instances for specific clients;
-    - self-hosted installs by anyone (running on Docker Compose).
-- **One UI stack**:
-    - all UIs are Svelte 5 apps that share design, components and translations.
-- **Local disk experience**:
-    - files open at the speed of a local disk;
-    - an office keeps working undisturbed even if the internet connection is down.
-- **Security and protection**:
+    - self-hosted installs (running on Docker Compose).
+3. **One UI stack**:
+    - core BFF UIs share design, components and translations.
+4. **Local disk UX**:
+    - user files open at the speed of a local disk;
+    - an office keeps working normally even if the internet connection is down.
+5. **Security and protection**:
     - data is protected against ransomware;
     - files are versioned, protecting against mistakes and losses;
     - data is encrypted in transit and at rest.
-- **Open-source core, plus licensed modules**:
+6. **Open-source core**:
     - the core is AGPL and is a complete product for a team;
     - licensed modules that plug into the core ([Topology](./platform/topology.md), section 7).
 
@@ -63,43 +61,36 @@ bench/      benchmarks, prototypes
 docs/       architecture documents, feature pages, developer docs
 ```
 
-**Note on licensed modules:**
+**Additional licensed modules:**
 
-- These live in a private repository, separately;
-- They compile against the `Abstractions` project from NuGet.
+- The `Abstractions` sub-project (published on NuGet) is the interface between the
+  open-source core and private modules, which are proprietary code (e.g. billing).
 
 ## 3. Chapters
 
 - [Topology](./platform/topology.md):
-    - the platform topology, the component projects and their dependencies,
-      jobs, SDKs, licensed modules and the developer experience.
+    - the platform architecture in more detail, with components and deps.
 - [API](./platform/api.md):
-    - the one public API, `/api/v1`: conventions and endpoints are described.
+    - the public API; endpoints and conventions.
 - [Tenancy](./security/tenancy.md):
-    - users, accounts and tenants, roles and groups, tenant isolation (scoping and
-      row-level security) and permissions.
+    - users, accounts, tenants, roles, groups and permissions.
 - [Authentication](./security/authentication.md):
-    - sessions, tokens and scopes, how users and clients sign in, and how each request is
-      authorized.
+    - how authentication and authorization are implemented.
 - [Licensing](./platform/licensing.md):
-    - the licence, the feature keys that turn licensed modules on, and the plan of each
-      tenant.
+    - details about plans, features and the split between open and licensed code.
 - [Data Model](./files/data-model.md):
-    - the file tree, uploads in progress, content, permissions, file versioning, the change
-      log and the audit log.
+    - how the metadata is stored, audited and managed.
 - [File storage](./files/storage.md):
-    - how drive files are stored using CDC, in warehouses.
+    - how file data is stored using CDC, in warehouses.
 - [File transfer](./files/transfer.md):
-    - file transfer through the API, the API scopes and throughput optimization.
+    - how file transfers work through the API and throughput optimization.
 - [File materialisation](./files/materialisation.md):
-    - how a desktop client shows the whole remote drive as a local folder with
-      explorer (OS) integration, and how file changes are detected on each platform.
+    - how a client shows remote drives as local folders and OS integration.
 - [Client synchronization](./files/synchronization.md):
-    - how clients learn about changes, the client sync loop and conflict handling.
+    - how clients learn about changes, the sync loop and conflict handling.
 - [Deployment](./operations/deployment.md):
-    - how the Origin, the Replica, the desktop client and the CLI are packaged, installed
-      and updated on each platform, and how images are signed.
+    - how the binaries are packaged, signed, installed and updated on each platform.
 - [Observability](./operations/observability.md):
-    - traces, metrics and logs with OpenTelemetry; what BFF measures and where the data goes.
+    - OpenTelemetry integration; what BFF measures and where the data goes.
 - [Roadmap](./roadmap.md):
     - milestones for v2 in order, with contents and definition of done.

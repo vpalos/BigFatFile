@@ -8,27 +8,26 @@ How the parts relate:
 
 ```mermaid
 flowchart TB
-    subgraph WholeOrigin["For the whole Origin (checked once, at startup)"]
+    subgraph WholeOrigin["For the whole Origin (checked at startup)"]
+        Core["`**Core**`"]
         Licence["`**Licence**`"]
-        Features["`**Features**
-        one key for each licensed module`"]
+        Features["`**Features**`"]
         Modules["`**Modules**`"]
-        Policy["`**Plan policy**
-        when no module brings one, the core's policy is used, which gives every tenant the plan 'unlimited'`"]
+        Policy["`**Plan policy**`"]
     end
-    subgraph EachTenant["For each tenant (asked on each request)"]
+    subgraph EachTenant["For each tenant (checked on each request)"]
         Tenant["`**Tenant**`"]
         Plan["`**Plan**`"]
-        Limits["`**Limits**
-        storage, bandwidth, retention, API rate limits, and which of the Origin's features the tenant may use`"]
+        Limits["`**Limits**`"]
     end
 
-    Licence -->|the licence turns some features on| Features
-    Features -->|"a module runs only when its feature (key) is on"| Modules
-    Modules -->|"at most one module can override the core's plan policy"| Policy
-    Policy -->|the plan policy returns the plan assigned to each tenant| Plan
-    Tenant -->|has one| Plan
-    Plan -->|"the plan decides the tenant's limits"| Limits
+    Licence -->|"activates"| Features
+    Features -->|"activates"| Modules
+    Core -->|"default"| Policy
+    Modules -->|"override"| Policy
+    Policy -->|"assigns to tenant"| Plan
+    Tenant -->|"has one"| Plan
+    Plan -->|"decides"| Limits
 ```
 
 - Licensing answers two questions, with two mechanisms:

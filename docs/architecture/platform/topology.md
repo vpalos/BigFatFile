@@ -8,44 +8,62 @@ flowchart TB
     authoritative data for all tenants, cloud or self-hosted`"]
     Replica["`**Replica** (optional)
     full-mirror for a tenant, on LAN`"]
-    Apps["`**Apps**
+    App["`**App**
     Web, Desktop, Cli or 3rd-party`"]
 
-    Replica <-->|"syncs in real-time"| Origin
-    Apps <==>|"uses Replica if possible"| Replica
-    Apps <-->|else, uses Origin| Origin
+    Replica <-->|"syncs continuously
+    in real-time"| Origin
+    App <==>|"connects to Replica
+    if present and reachable"| Replica
+    App <-->|otherwise,
+    connects to Origin| Origin
 ```
 
-- **Origin**:
-    - the one authoritative copy of all data (can be multi-tenant);
-    - runs in the cloud, on a dedicated instance, or self-hosted;
-    - it the core of the entire platform.
-- **Replica** (optional):
-    - designed to act as a full mirror of a single tenant's data;
-    - it's hosted on the tenant's LAN;
-    - constantly syncs with the Origin upstream in real-time;
-    - acts as Origin for listening Apps (replicates APIs downstream);
-    - serves downstream Apps at LAN speed (even when uplink is down);
-    - is actually itself an App (chunk-level, tenant-scoped);
-    - more details in:
-        - [API (section 4)](./api.md#_4-scopes);
-        - [File transfer (section 4)](../files/transfer.md#_4-tenant-scoped-apps).
-- **Apps**:
-    - our own apps (Web, Desktop, Cli, Replica) as well as any 3rd-party apps;
+### **Origin**
+
+- the one authoritative copy of all data (can be multi-tenant);
+- runs in the cloud, on a dedicated instance or self-hosted;
+- it's the core of the entire platform.
+
+### **Replica**
+
+- acts as a full mirror of a single tenant's data;
+- designed to be hosted on the tenant's LAN;
+- constantly syncs with the Origin upstream in real-time;
+- acts as Origin for downstream apps (replicates APIs);
+- keeps clients working even when uplink is down;
+- it's optional.
+
+### **Apps**
+
+- An App is a first-class object in the Origin:
+    - has its own tables and admin page;
+    - name, owner, OAuth client (scopes, redirect URLs), webhook endpoint, metadata namespace;
+    - an App acts as a signed-in user (via PKCE) or as itself on behalf of a tenant (service account,
+      client credentials);
+    - every action an App takes is audited under the App's identity and the acting user, if any.
+- Upstream connection:
     - Apps talk to the Replica when one is reachable, otherwise to the Origin;
     - Origin and Replica talk the same protocol:
         - the same [API](./api.md) is published by both;
         - the same SDKs work seamlessly with both.
-    - Apps have scope:
-        - _user_-scoped Apps act on what their users may see;
-        - _tenant_-scoped Apps may see all the tenant's data (i.e. the `tenant.mirror` scope);
-    - our Apps (Web, Desktop.? etc.) are Apps:
-        - they use only the published API and SDKs (acceptance test);
-        - no private endpoints, no internal shortcuts;
-        - anything our UI can do, a 3rd party App can also do;
-        - this means:
-            - the API provides completeness from scratch;
-            - the SDKs are battle-tested by our own Apps before others use them.
+- Apps have scope:
+    - the list of scopes, and what each one allows, is in [API (section 4)](./api.md#_4-scopes);
+    - _user_-scoped apps may see only the user's data;
+    - _tenant_-scoped apps may see all the tenant's data (i.e. the `tenant.mirror` scope);
+- Our own apps (Web, Desktop.? etc.) are _strictly speaking_ BFF apps:
+    - they use only the published API and SDKs (acceptance test);
+    - no private endpoints, no internal shortcuts;
+    - anything our UI can do, a 3rd party app can also do (in theory);
+    - this means:
+        - the API provides completeness from scratch;
+        - the SDKs are battle-tested by our own Apps before others use them.
+- Installing:
+    - the tenant administrator installs and manages Apps;
+    - the admin sees the scopes requested by an App, and can revoke them at any time.
+- Developer role per tenant:
+    - creates Apps, rotates keys, sets webhook endpoints;
+    - sees webhook delivery logs and API usage for its Apps.
 
 ## 2. Projects
 
@@ -319,23 +337,6 @@ flowchart BT
   types.
 - These stay in Server and are never shared with clients: domain rules (permissions,
   quotas, plans), database tables, and anything that references ASP.NET or the database.
-
-## 3. Apps
-
-- An App is a first-class object in the Origin:
-    - has its own tables and admin page;
-    - name, owner, OAuth client (scopes, redirect URLs), webhook endpoint, metadata namespace;
-    - an App acts as a signed-in user (authorization code with PKCE) or as itself on
-      behalf of a tenant (service account, client credentials);
-    - every action an App takes is audited under the App's identity and the acting
-      user, if any.
-- Installing:
-    - the tenant administrator installs and manages Apps;
-    - the admin sees the scopes requested by an App, and can revoke them at any time.
-- Developer role per tenant:
-    - creates Apps, rotates keys, sets webhook endpoints;
-    - sees webhook delivery logs and API usage for its Apps.
-- Scopes: the list, and what each one allows, is in [API (section 4)](./api.md#_4-scopes).
 
 ## 4. Primitives
 
